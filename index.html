@@ -2417,18 +2417,20 @@ if (/operations|fincon/i.test(lastDept)) {
     const actionText = action + ' ' + explanationText;
     
     function extractLabeled(text, labelPatterns) {
-      for (const pat of labelPatterns) {
-        const rx = new RegExp(pat + '[:\\s\\-]+([₦N]?\\s*[\\d,]+\\.?\\d*\\s*[BMKbmk]?(?:mn|MN|Mn)?)', 'i');
-        const m = text.match(rx);
-        if (m) {
-          let raw = m[1].trim().replace(/,/g,'').toUpperCase().replace(/MN$/,'M');
-          if (!raw.startsWith('₦')) raw = raw.replace(/^N(?=\d)/, '₦');
-          if (!raw.startsWith('₦')) raw = '₦' + raw;
-          return raw;
-        }
-      }
-      return null;
+  for (const pat of labelPatterns) {
+    // This upgraded Regex allows for intermediate words (like "to date") and ignores missing spaces/dashes
+    // e.g., it will catch "Total Inflow to Date - 500m" or "TVS683m" 
+    const rx = new RegExp(pat + '(?:[\\s\\w]*?)[:\\s\\-]*([₦N]?\\s*[\\d,]+\\.?\\d*\\s*[BMKbmk]?(?:mn|MN|Mn)?)\\b', 'i');
+    const m = text.match(rx);
+    if (m) {
+      let raw = m[1].trim().replace(/,/g,'').toUpperCase().replace(/MN$/,'M');
+      if (!raw.startsWith('₦')) raw = raw.replace(/^N(?=\d)/, '₦');
+      if (!raw.startsWith('₦')) raw = '₦' + raw;
+      return raw;
     }
+  }
+  return null;
+}
 
     function extractLabeledCount(text, labelPatterns) {
       for (const pat of labelPatterns) {
@@ -2443,13 +2445,14 @@ if (/operations|fincon/i.test(lastDept)) {
     const hasMetricData = /[₦N][\d,]+|\bsales[-:\s]+\d|\d+\s*units|\d+\s*offer/i.test(actionText);
 
     if (hasMetricData) {
-      const inflow = extractLabeled(actionText, ['inflow', 'total inflow']);
+      // 1. THE FLEXIBILITY RULES
+      // We added more keywords here so it catches variations like "Total Inflow to Date"
+      const inflow = extractLabeled(actionText, ['total inflow to date', 'total inflow', 'sales inflow', 'inflow']);
       const units = extractLabeledCount(actionText, ['sales', 'units sold', 'no\\.?\\s*of\\s*sales']);
-      const salesVal = extractLabeled(actionText, ['value of sales', 'tvs']);
+      const salesVal = extractLabeled(actionText, ['total value of sales', 'value of sales', 'tvs']);
       const balance = extractLabeled(actionText, ['account balance', 'account bal', 'bal(?!lard|lot|c)']);
       const offers = extractLabeledCount(actionText, ['offer letters?', 'active offer', 'offer letter']);
 
-      // 1. UPDATE DOM UI ONLY IF IT IS THE LATEST SHEET
       if (isLatest) {
         if (inflow) setMetric(proj === 'Crossings' ? 'val-cx-inflow' : 'val-annex-inflow', inflow);
         if (units) setMetric(proj === 'Crossings' ? 'val-cx-units' : 'val-annex-units', units);
@@ -2461,9 +2464,10 @@ if (/operations|fincon/i.test(lastDept)) {
         }
       }
 
-      // 2. POPULATE CHART METRICS FOR ALL SHEETS (Dynamic Data)
-      if (inflow) window._chartMetrics[proj][sheetName].inflow = parseNairaToM(inflow) / 1000;
-      if (balance) window._chartMetrics[proj][sheetName].balance = parseNairaToM(balance) / 100;
+      // 2. THE CHART SWAP
+      // Notice below: We kept inflow, but we deleted 'balance' and replaced it with 'salesVal'
+      if (inflow) window._chartMetrics[proj][sheetName].inflow = parseNairaToM(inflow);
+      if (salesVal) window._chartMetrics[proj][sheetName].salesValue = parseNairaToM(salesVal);
     }
 }
     
@@ -4612,60 +4616,171 @@ function renderDynamicCharts() {
   if (typeof Chart === 'undefined') return;
 
   function getChartMetrics(proj, session) {
-  // 1. THE HYBRID OVERRIDE (Pre-May 2026 Legacy Data)
-  // Hardcode the sheet names exactly as they appear in the dashboard tabs
+  // THE HYBRID OVERRIDE: Tracking Inflow vs Value of Sales (Gap in Receivables)
+  // All values are mapped in Millions (e.g., 1.3B = 1300)
+  
   const legacyData = {
     'Crossings': {
-      'Sept 29': { inflow: 0.38, balance: 0.84 },
-      'Oct 6': { inflow: 0.45, balance: 0.90 },
-      // ... Add all the unreadable legacy sheet dates and values here
-      'Apr 27': { inflow: 1.72, balance: 0.40 } 
+      'Sept 29': { inflow: 380, salesValue: 683.3 },
+      'Oct 6': { inflow: 75, salesValue: 683.3 },
+      'Oct 13': { inflow: 75, salesValue: 683.3 },
+      'Oct 20': { inflow: 75, salesValue: 683.3 },
+      'Oct 23': { inflow: 75, salesValue: 683.3 },
+      'Oct 27': { inflow: 75, salesValue: 683.3 },
+      'Nov 3': { inflow: 75, salesValue: 683.3 },
+      'Nov 10': { inflow: 531.8, salesValue: 683.3 },
+      'Nov 17': { inflow: 531.8, salesValue: 683.3 },
+      'Nov 20': { inflow: 531.8, salesValue: 683.3 },
+      'Nov 25': { inflow: 531.8, salesValue: 683.3 },
+      'Dec 1': { inflow: 531.8, salesValue: 683.3 },
+      'Dec 8': { inflow: 607.5, salesValue: 683.3 },
+      'Dec 15': { inflow: 607.5, salesValue: 904 },
+      'Dec 22': { inflow: 607.5, salesValue: 904 },
+      'Jan 5': { inflow: 1050, salesValue: 1848 },
+      'Jan 12': { inflow: 1050, salesValue: 1848 },
+      'Jan 19': { inflow: 1300, salesValue: 2202 },
+      'Jan 26': { inflow: 1300, salesValue: 2202 },
+      'Feb 02': { inflow: 1415, salesValue: 2202 },
+      'Feb 09': { inflow: 1415, salesValue: 2202 },
+      'Feb 16': { inflow: 1415, salesValue: 2202 },
+      'Feb 23': { inflow: 1415, salesValue: 2202 },
+      'Mar 02': { inflow: 1415, salesValue: 2202 },
+      'Mar 09': { inflow: 1415, salesValue: 2202 },
+      'Mar 16': { inflow: 1415, salesValue: 2202 },
+      'Mar 23': { inflow: 1415, salesValue: 2202 },
+      'Mar 30': { inflow: 1415, salesValue: 2202 },
+      'Apr 2': { inflow: 1415, salesValue: 2202 },
+      'Apr 7': { inflow: 1415, salesValue: 2202 },
+      'Apr 13': { inflow: 1415, salesValue: 2202 },
+      'Apr 20': { inflow: 1415, salesValue: 2202 },
+      'Apr 27': { inflow: 1415, salesValue: 2202 }
     },
     'Annexe': {
-      'Sept 2': { inflow: 4.5, balance: 1.1 },
-      'Sept 8': { inflow: 4.6, balance: 1.0 },
-      // ... Add all the unreadable legacy sheet dates and values here
-      'Apr 27': { inflow: 6.27, balance: 1.8 }
+      'Jun 24': { inflow: 4790, salesValue: 6380 },
+      'Jun 26': { inflow: 4790, salesValue: 6380 },
+      'Jun 30': { inflow: 4790, salesValue: 6380 },
+      'Jul 3': { inflow: 4790, salesValue: 6380 },
+      'Jul 8': { inflow: 4790, salesValue: 6380 },
+      'Jul 16': { inflow: 4790, salesValue: 6380 },
+      'Jul 17': { inflow: 4800, salesValue: 6380 },
+      'Jul 22': { inflow: 4800, salesValue: 6380 },
+      'Jul 24': { inflow: 4800, salesValue: 6380 },
+      'Jul 29': { inflow: 4800, salesValue: 6380 },
+      'Jul 31': { inflow: 4790, salesValue: 6380 },
+      'Aug 4': { inflow: 4790, salesValue: 6380 },
+      'Aug 11': { inflow: 4800, salesValue: 6380 },
+      'Aug 12': { inflow: 4800, salesValue: 6380 },
+      'Aug 19': { inflow: 4900, salesValue: 6420 },
+      'Aug 21': { inflow: 4900, salesValue: 6420 },
+      'Aug 25': { inflow: 5000, salesValue: 6420 },
+      'Aug 28': { inflow: 5020, salesValue: 6420 },
+      'Sept 2': { inflow: 5070, salesValue: 6420 },
+      'Sept 8': { inflow: 5070, salesValue: 6420 },
+      'Sept 11': { inflow: 5070, salesValue: 6420 },
+      'Sept 15': { inflow: 5090, salesValue: 6600 },
+      'Sept 18': { inflow: 5200, salesValue: 6800 },
+      'Sept22': { inflow: 5200, salesValue: 6800 },
+      'Sept 25': { inflow: 5200, salesValue: 6800 },
+      'Sept 29': { inflow: 5300, salesValue: 6800 },
+      'Oct 2': { inflow: 5340, salesValue: 6950 },
+      'Oct 6': { inflow: 5340, salesValue: 6950 },
+      'Oct 9': { inflow: 5340, salesValue: 6950 },
+      'Oct 13': { inflow: 5340, salesValue: 6950 },
+      'Oct 20': { inflow: 5340, salesValue: 6950 },
+      'Oct 23': { inflow: 5340, salesValue: 6950 },
+      'Oct 27': { inflow: 5340, salesValue: 6950 },
+      'Oct 30': { inflow: 5340, salesValue: 6950 },
+      'Nov 3': { inflow: 5340, salesValue: 6950 },
+      'Nov 6': { inflow: 5340, salesValue: 6950 },
+      'Nov 10': { inflow: 5340, salesValue: 6950 },
+      'Nov 13': { inflow: 5340, salesValue: 6950 },
+      'Nov 17': { inflow: 5340, salesValue: 6950 },
+      'Nov 20': { inflow: 5340, salesValue: 6950 },
+      'Nov 25': { inflow: 5340, salesValue: 6950 },
+      'Nov 27': { inflow: 5340, salesValue: 6950 },
+      'Dec 1': { inflow: 5340, salesValue: 6950 },
+      'Dec 4': { inflow: 5340, salesValue: 6950 },
+      'Dec 8': { inflow: 5340, salesValue: 6950 },
+      'Dec 15': { inflow: 5340, salesValue: 6950 },
+      'Dec 18': { inflow: 5340, salesValue: 6950 },
+      'Dec 22': { inflow: 5340, salesValue: 6950 },
+      'Jan 5': { inflow: 5970, salesValue: 6910 },
+      'Jan 8': { inflow: 5970, salesValue: 6980 },
+      'Jan 12': { inflow: 5140, salesValue: 6910 },
+      'Jan 15': { inflow: 5970, salesValue: 6910 },
+      'Jan 19': { inflow: 5970, salesValue: 6910 },
+      'Jan 22': { inflow: 5970, salesValue: 6910 },
+      'Jan 26': { inflow: 5970, salesValue: 6910 },
+      'Jan 29': { inflow: 5970, salesValue: 6910 },
+      'Feb 02': { inflow: 5970, salesValue: 6910 },
+      'Feb 05': { inflow: 5970, salesValue: 6910 },
+      'Feb 09': { inflow: 5970, salesValue: 6910 },
+      'Feb 12': { inflow: 5970, salesValue: 6910 },
+      'Feb 16': { inflow: 5970, salesValue: 6910 },
+      'Feb 23': { inflow: 5970, salesValue: 6910 },
+      'Feb 26': { inflow: 5970, salesValue: 6910 },
+      'Mar 02': { inflow: 5970, salesValue: 6910 },
+      'Mar 05': { inflow: 5970, salesValue: 6910 },
+      'Mar 09': { inflow: 5970, salesValue: 6910 },
+      'Mar 12': { inflow: 5970, salesValue: 6910 },
+      'Mar 16': { inflow: 5970, salesValue: 6910 },
+      'Mar 23': { inflow: 5970, salesValue: 6910 },
+      'Mar 26': { inflow: 5970, salesValue: 6910 },
+      'Mar 30': { inflow: 5970, salesValue: 6910 },
+      'Apr 02': { inflow: 5970, salesValue: 6910 },
+      'Apr 07': { inflow: 5970, salesValue: 6910 },
+      'Apr 09': { inflow: 5970, salesValue: 6910 },
+      'Apr 13': { inflow: 5970, salesValue: 6910 },
+      'Apr 16': { inflow: 5970, salesValue: 6910 },
+      'Apr 20': { inflow: 5970, salesValue: 6910 },
+      'Apr 23': { inflow: 5970, salesValue: 6910 },
+      'Apr 27': { inflow: 5970, salesValue: 6910 },
+      'Apr 30': { inflow: 5970, salesValue: 6910 }
     }
   };
 
-  // 2. IF THIS DATE IS IN OUR LEGACY DICTIONARY, USE HARDCODED VALUES
+  // 1. IF THIS DATE IS IN OUR LEGACY DICTIONARY, USE THE HARDCODED VALUES
   if (legacyData[proj] && legacyData[proj][session]) {
     return legacyData[proj][session];
   }
 
-  // 3. OTHERWISE, USE THE PARSED DYNAMIC DATA (May 2026 onwards)
+  // 2. OTHERWISE, USE THE PARSED DYNAMIC DATA (May 2026 onwards)
   if (window._chartMetrics && window._chartMetrics[proj] && window._chartMetrics[proj][session]) {
     return window._chartMetrics[proj][session];
   }
   
-  // 4. FALLBACK TO PREVENT BREAKING
-  return { inflow: null, balance: null };
+  // 3. FALLBACK TO PREVENT BREAKING
+  return { inflow: null, salesValue: null };
 }
   function buildChartData(proj) {
     let sessions = [...(availableSessions[proj] || [])].reverse();
-    let labels = [], inflowData = [], balanceData = [];
+    let labels = [], inflowData = [], salesValueData = [];
     let rawMetrics = sessions.map(s => getChartMetrics(proj, s));
     
+    // Look for the first valid numbers to start the lines
     let firstInf = rawMetrics.find(m => m.inflow !== null)?.inflow || 0;
-    let firstBal = rawMetrics.find(m => m.balance !== null)?.balance || 0;
+    let firstSales = rawMetrics.find(m => m.salesValue !== null)?.salesValue || 0;
     
     let lastInf = firstInf;
-    let lastBal = firstBal;
+    let lastSales = firstSales;
     
     rawMetrics.forEach((m, i) => {
       labels.push(formatSheetName(sessions[i]));
+      
+      // If the week has data, update the line. If blank, carry over the previous week's number
       if (m.inflow !== null) lastInf = m.inflow;
-      if (m.balance !== null) lastBal = m.balance;
+      if (m.salesValue !== null) lastSales = m.salesValue;
+      
       inflowData.push(lastInf);
-      balanceData.push(lastBal);
+      salesValueData.push(lastSales);
     });
-    return { labels, inflowData, balanceData };
+    return { labels, inflowData, salesValueData };
   }
 
   const gridC = 'rgba(0,0,0,0.06)', textC = '#999';
-  const baseOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { font: { size: 11, weight: '700', family: 'DM Sans' }, color: textC, boxWidth: 14, padding: 12 } } }, scales: { x: { ticks: { color: textC, font: { size: 10, weight: '600' }, maxRotation: 45, autoSkip: true, maxTicksLimit: 6 }, grid: { display: false } }, y: { ticks: { color: textC, font: { size: 10 } }, grid: { color: gridC } } } };
+  const baseOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { font: { size: 11, weight: '700', family: 'DM Sans' }, color: textC, boxWidth: 14, padding: 12 } } }, scales: { x: { ticks: { color: textC, font: { size: 10, weight: '600' }, maxRotation: 45, autoSkip: true, maxTicksLimit: 6 }, grid: { display: false } }, y: { ticks: { color: textC, font: { size: 10 }, callback: function(value) { return '₦' + value + 'M'; } }, grid: { color: gridC } } } };
 
+  // 1. RENDER ANNEXE CHART
   const annData = buildChartData('Annexe');
   const ctxAnnexe = document.getElementById('c1');
   if (ctxAnnexe && annData.labels.length) {
@@ -4673,13 +4788,14 @@ function renderDynamicCharts() {
     annexChartInstance = new Chart(ctxAnnexe, {
       type: 'line', 
       data: { labels: annData.labels, datasets: [ 
-        { label: 'Inflow (₦B)', data: annData.inflowData, borderColor: '#2e7d32', backgroundColor: 'rgba(46,125,50,0.08)', borderWidth: 2.5, pointRadius: 2.5, pointBackgroundColor: '#2e7d32', fill: true, tension: 0.4, yAxisID: 'y' }, 
-        { label: 'Balance (₦100M)', data: annData.balanceData, borderColor: '#1565c0', backgroundColor: 'rgba(21,101,192,0.05)', borderWidth: 2, pointRadius: 2.5, pointBackgroundColor: '#1565c0', fill: false, tension: 0.4, borderDash: [4, 3], yAxisID: 'y1' } 
+        { label: 'Inflow', data: annData.inflowData, borderColor: '#2e7d32', backgroundColor: 'rgba(46,125,50,0.08)', borderWidth: 2.5, pointRadius: 2.5, pointBackgroundColor: '#2e7d32', fill: true, tension: 0.4 }, 
+        { label: 'Value of Sales', data: annData.salesValueData, borderColor: '#1565c0', backgroundColor: 'rgba(21,101,192,0.05)', borderWidth: 2, pointRadius: 2.5, pointBackgroundColor: '#1565c0', fill: false, tension: 0.4, borderDash: [4, 3] } 
       ]},
-      options: { ...baseOpts, scales: { ...baseOpts.scales, y: { ...baseOpts.scales.y, position: 'left' }, y1: { ...baseOpts.scales.y, position: 'right', grid: { display: false } } } }
+      options: baseOpts
     });
   }
 
+  // 2. RENDER CROSSINGS CHART (Now with two lines!)
   const cxData = buildChartData('Crossings');
   const ctxCx = document.getElementById('c3');
   if (ctxCx && cxData.labels.length) {
@@ -4687,7 +4803,8 @@ function renderDynamicCharts() {
     cxChartInstance = new Chart(ctxCx, {
       type: 'line', 
       data: { labels: cxData.labels, datasets: [ 
-        { label: 'Inflow (₦B)', data: cxData.inflowData, borderColor: '#2e7d32', backgroundColor: 'rgba(46,125,50,0.08)', borderWidth: 2.5, pointRadius: 2.5, pointBackgroundColor: '#2e7d32', fill: true, tension: 0.4 } 
+        { label: 'Inflow', data: cxData.inflowData, borderColor: '#2e7d32', backgroundColor: 'rgba(46,125,50,0.08)', borderWidth: 2.5, pointRadius: 2.5, pointBackgroundColor: '#2e7d32', fill: true, tension: 0.4 },
+        { label: 'Value of Sales', data: cxData.salesValueData, borderColor: '#1565c0', backgroundColor: 'rgba(21,101,192,0.05)', borderWidth: 2, pointRadius: 2.5, pointBackgroundColor: '#1565c0', fill: false, tension: 0.4, borderDash: [4, 3] } 
       ]},
       options: baseOpts
     });
