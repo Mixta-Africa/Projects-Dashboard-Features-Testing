@@ -427,6 +427,10 @@ body.users-bar-visible .dept-sidebar {
 .team-updates-section h3 { font-size: 14px; font-weight: 800; margin-bottom: 14px; color: var(--text-primary); }
 .updates-list { max-height: 250px; overflow-y: auto; margin-bottom: 16px; display: flex; flex-direction: column; gap: 10px; }
 .update-item { background: var(--bg); padding: 12px; border-radius: var(--radius-sm); font-size: 13px; border-left: 3px solid var(--active-theme-color, var(--cx-color)); }
+.update-task-tag { display: inline-block; margin-left: 8px; background: var(--active-theme-color, var(--cx-color)); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; vertical-align: middle; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.update-task-select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12px; font-family: inherit; background: var(--white); color: var(--text-primary); margin-bottom: 8px; }
+.update-author-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+.update-author-row input { flex: 1; min-width: 0; }
 .update-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
 .update-input-group { display: flex; flex-direction: column; gap: 10px; }
 .update-input-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; resize: vertical; min-height: 70px; }
@@ -1344,12 +1348,14 @@ body.users-bar-visible .dept-sidebar {
           <h3 id="team-updates-heading">Team Updates & Pre-Meeting Notes</h3>
           <div id="updates-list" class="updates-list"></div>
           <div class="update-input-group">
-            <select id="new-update-task" style="width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 13px;">
-              <option value="">-- General Update (No Specific Task) --</option>
+            <select id="new-update-task-link" class="update-task-select">
+              <option value="">📌 Link to a task (optional)</option>
             </select>
-            
             <textarea id="new-update-text" placeholder="Type your pre-meeting update or note here..."></textarea>
-            <button onclick="submitTeamUpdate()">Submit Update</button>
+            <div class="update-author-row">
+              <input type="text" id="new-update-author" placeholder="Your Name (auto-filled if logged in)" readonly style="background:var(--bg);color:var(--text-muted);cursor:default;">
+              <button onclick="submitTeamUpdate()">Submit Update</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1615,6 +1621,10 @@ function initFirebase() {
               Object.entries(sessionsOrUpdates).forEach(([sessionKey, pushItems]) => {
                 const arr = Object.values(pushItems).sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
                 try { localStorage.setItem('fb_dept:' + proj + ':' + dept + ':' + sessionKey, JSON.stringify(arr)); } catch(e){}
+              // Live-refresh the updates panel if this is the currently viewed dept/project
+              if (proj === currentProject && dept === currentDept) {
+                renderUpdatesList();
+              }
               });
             }
           });
@@ -1645,6 +1655,8 @@ function initFirebase() {
         }
         // ── Activate presence now that we know the user ──
         if (!_presenceRef) _initPresence();
+        // ── Auto-fill author name now that we have user identity ──
+        autoFillAuthorName();
       };
 
       console.log('[Firebase DB] Listeners attached ✓');
@@ -2120,45 +2132,75 @@ function submitForgotPassword() {
   closeAdminModal();
 }
 
+function populateTaskLinkDropdown(tasks) {
+  const sel = document.getElementById('new-update-task-link');
+  if (!sel) return;
+  const prev = sel.value;
+  // Show ongoing (ontrack, delayed, onhold) tasks as options
+  const linkable = (tasks || []).filter(t => t.status !== 'achieved');
+  sel.innerHTML = '<option value="">📌 Link to a task (optional)</option>' +
+    linkable.map(t => {
+      const icon = t.status === 'delayed' ? '🔴' : t.status === 'onhold' ? '🟡' : '🟢';
+      const label = (t.action || '').substring(0, 70) + (t.action && t.action.length > 70 ? '…' : '');
+      const val = (t.action || '').substring(0, 100);
+      return `<option value="${val.replace(/"/g,'&quot;')}">${icon} ${label}</option>`;
+    }).join('');
+  // Restore previous selection if still valid
+  if (prev) sel.value = prev;
+}
+
+function autoFillAuthorName() {
+  const nameEl = document.getElementById('new-update-author');
+  if (!nameEl) return;
+  const user = _resolveUpdater();
+  if (user.name && user.name !== 'Unknown') {
+    nameEl.value = user.name;
+    nameEl.readOnly = true;
+    nameEl.style.background = 'var(--bg)';
+    nameEl.style.color = 'var(--text-muted)';
+  } else {
+    nameEl.readOnly = false;
+    nameEl.style.background = '';
+    nameEl.style.color = '';
+    nameEl.placeholder = 'Your Name (optional)';
+  }
+}
+
 function submitTeamUpdate() {
   const text = document.getElementById('new-update-text').value.trim();
-  const taskSelect = document.getElementById('new-update-task');
-  const mappedTask = taskSelect ? taskSelect.value : '';
-  
   if (!text) return;
 
-  // Auto-grab real name from Firebase Auth
-  const updater = _resolveUpdater();
-  const author = updater.name || 'Anonymous';
+  // Use logged-in user name; fall back to the name field; then 'Anonymous'
+  const resolvedUser = _resolveUpdater();
+  const nameField = document.getElementById('new-update-author');
+  const author = (resolvedUser.name && resolvedUser.name !== 'Unknown')
+    ? resolvedUser.name
+    : (nameField ? nameField.value.trim() || 'Anonymous' : 'Anonymous');
+
+  // Linked task (optional)
+  const taskLinkEl = document.getElementById('new-update-task-link');
+  const linkedTask = taskLinkEl ? taskLinkEl.value : '';
 
   // Determine the session key this update belongs to
   const sessionKey = (viewingSessionDate && viewingSessionDate !== 'current')
     ? viewingSessionDate
     : ((availableSessions[currentProject] && availableSessions[currentProject][0]) || 'current');
 
-  const update = { 
-    text: text, 
-    author: author, 
-    task: mappedTask, // Save the mapped task
-    timestamp: new Date().toISOString(), 
-    session: sessionKey 
-  };
+  const update = { text, author, timestamp: new Date().toISOString(), session: sessionKey, linkedTask };
 
-  // Push to Firebase (stacks chronologically)
   if (_fbReady && _fbDb) {
     _fbDb.ref('dept_updates/' + currentProject + '/' + currentDept + '/' + sessionKey).push(update)
       .catch(e => console.warn('[Firebase] dept update failed:', e));
   }
-  
-  // Update local UI instantly
+  // Also write locally so it's instant in this tab
   const key = 'deptupdate:' + currentProject + ':' + currentDept + ':' + sessionKey;
   let updates = JSON.parse(localStorage.getItem(key) || '[]');
   updates.push(update);
   localStorage.setItem(key, JSON.stringify(updates));
-  
-  // Clear inputs
+
+  // Clear only the text and task link; keep name field in case user submits multiple
   document.getElementById('new-update-text').value = '';
-  if (taskSelect) taskSelect.value = ''; 
+  if (taskLinkEl) taskLinkEl.value = '';
   renderUpdatesList();
 }
 function renderUpdatesList() {
@@ -2200,16 +2242,15 @@ function renderUpdatesList() {
     list.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">No pre-meeting updates recorded for this date yet.</div>';
     return;
   }
-  list.innerHTML = [...updates].reverse().map(u => {
-    // Generate a blue pill-badge if a task is mapped
-    const taskBadge = u.task ? `<div style="font-size: 10px; color: #1565c0; background: #e3f2fd; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-bottom: 8px; font-weight: 700; border: 1px solid #90caf9;">Linked Task: ${u.task}</div>` : '';
-    
-    return `<div class="update-item">
-      ${taskBadge}
-      <div class="update-meta"><strong>${u.author||'Anonymous'}</strong> \u2014 ${new Date(u.timestamp).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+  list.innerHTML = [...updates].reverse().map(u =>
+    `<div class="update-item">
+      <div class="update-meta">
+        <strong>${u.author||'Anonymous'}</strong> \u2014 ${new Date(u.timestamp).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}
+        ${u.linkedTask ? `<span class="update-task-tag">📌 ${u.linkedTask}</span>` : ''}
+      </div>
       <div style="white-space:pre-wrap;word-break:break-word;">${u.text}</div>
-    </div>`;
-  }).join('');
+    </div>`
+  ).join('');
 }
 
 async function syncWithGoogleSheet() {
@@ -2390,7 +2431,7 @@ function processSheet(rows, proj, sheetName, isLatest) {
   // Initialize a global chart metric store for this sheet
   window._chartMetrics = window._chartMetrics || {};
   window._chartMetrics[proj] = window._chartMetrics[proj] || {};
-  window._chartMetrics[proj][sheetName] = { inflow: null, balance: null };
+  window._chartMetrics[proj][sheetName] = { inflow: null, salesValue: null };
 
   for (let i = startRow; i < rows.length; i++) {
     const c = rows[i];
@@ -2666,7 +2707,7 @@ function renderCurrentDept() {
   // Note: achieved tasks are always visible so users can revert accidental status changes
   if (currentFilter !== 'all') filtered = filtered.filter(t => t.status === currentFilter);
   const list = document.getElementById('dynamic-tasks-list');
-  if (filtered.length === 0) { list.innerHTML = `<div class="empty-state"><h3>No tasks found</h3><p>Try changing your filter or hit "Sync" to fetch latest data.</p></div>`; renderUpdatesList(); return; }
+  if (filtered.length === 0) { list.innerHTML = `<div class="empty-state"><h3>No tasks found</h3><p>Try changing your filter or hit "Sync" to fetch latest data.</p></div>`; renderUpdatesList(); populateTaskLinkDropdown(tasks); autoFillAuthorName(); return; }
   const isHistory = viewingSessionDate !== 'current';
   const groupedByStatus = { ontrack: [], delayed: [], onhold: [], update: [], achieved: [] };
   filtered.forEach(t => { let s = t.status || 'ontrack'; if (!groupedByStatus[s]) s = 'ontrack'; groupedByStatus[s].push(t); });
@@ -2722,22 +2763,7 @@ function renderCurrentDept() {
     const expClass = cfg.expanded ? 'expanded' : '';
     finalHTML += `<div class="status-accordion ${expClass}"><div class="status-header" onclick="this.parentElement.classList.toggle('expanded')"><div style="display:flex; align-items:center; gap:8px;"><span>${cfg.title} Tasks</span><span class="nav-badge" style="background:var(--border-md); color:var(--text-primary);">${groupTasks.length}</span></div><span class="status-toggle-icon">▼</span></div><div class="status-tasks-wrapper">${tasksHTML}</div></div>`;
   });
-// --- NEW: Populate Task Dropdown ---
-  const taskSelect = document.getElementById('new-update-task');
-  if (taskSelect) {
-    taskSelect.innerHTML = '<option value="">-- General Update (No Specific Task) --</option>';
-    // Only grab tasks that are ongoing, delayed, or on hold
-    const activeTasks = filtered.filter(t => /ontrack|delayed|onhold/i.test(t.status));
-    activeTasks.forEach(t => {
-      const opt = document.createElement('option');
-      opt.value = t.action;
-      const label = t.action.length > 55 ? t.action.substring(0, 55) + '...' : t.action;
-      opt.textContent = `[${t.status.toUpperCase()}] ${label}`;
-      taskSelect.appendChild(opt);
-    });
-  }
-  // --- END NEW ---  
-  list.innerHTML = finalHTML; renderUpdatesList();
+  list.innerHTML = finalHTML; renderUpdatesList(); populateTaskLinkDropdown(tasks); autoFillAuthorName();
 }
 // ── Status change confirmation system ──
 let _pendingStatusId = null;
@@ -4800,8 +4826,8 @@ function renderDynamicCharts() {
     let rawMetrics = sessions.map(s => getChartMetrics(proj, s));
     
     // Look for the first valid numbers to start the lines
-    let firstInf = rawMetrics.find(m => m.inflow !== null)?.inflow || 0;
-    let firstSales = rawMetrics.find(m => m.salesValue !== null)?.salesValue || 0;
+    let firstInf = rawMetrics.find(m => m.inflow !== null && m.inflow > 0)?.inflow || 0;
+    let firstSales = rawMetrics.find(m => m.salesValue !== null && m.salesValue > 0)?.salesValue || 0;
     
     let lastInf = firstInf;
     let lastSales = firstSales;
@@ -4809,9 +4835,20 @@ function renderDynamicCharts() {
     rawMetrics.forEach((m, i) => {
       labels.push(formatSheetName(sessions[i]));
       
-      // If the week has data, update the line. If blank, carry over the previous week's number
-      if (m.inflow !== null) lastInf = m.inflow;
-      if (m.salesValue !== null) lastSales = m.salesValue;
+      // Carry-forward guard: only update if new value is >= 20% of last known value
+      // This prevents non-cumulative / partial figures from causing false cliff-drops
+      if (m.inflow !== null && m.inflow > 0) {
+        if (lastInf === 0 || m.inflow >= lastInf * 0.2) {
+          lastInf = m.inflow;
+        }
+        // If the dynamic value looks like a non-cumulative weekly figure (much lower than historical),
+        // carry forward the previous value and skip the anomalous data point
+      }
+      if (m.salesValue !== null && m.salesValue > 0) {
+        if (lastSales === 0 || m.salesValue >= lastSales * 0.2) {
+          lastSales = m.salesValue;
+        }
+      }
       
       inflowData.push(lastInf);
       salesValueData.push(lastSales);
