@@ -1344,8 +1344,11 @@ body.users-bar-visible .dept-sidebar {
           <h3 id="team-updates-heading">Team Updates & Pre-Meeting Notes</h3>
           <div id="updates-list" class="updates-list"></div>
           <div class="update-input-group">
+            <select id="new-update-task" style="width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 13px;">
+              <option value="">-- General Update (No Specific Task) --</option>
+            </select>
+            
             <textarea id="new-update-text" placeholder="Type your pre-meeting update or note here..."></textarea>
-            <input type="text" id="new-update-author" placeholder="Your Name (optional)">
             <button onclick="submitTeamUpdate()">Submit Update</button>
           </div>
         </div>
@@ -2119,26 +2122,43 @@ function submitForgotPassword() {
 
 function submitTeamUpdate() {
   const text = document.getElementById('new-update-text').value.trim();
-  const author = document.getElementById('new-update-author').value.trim() || 'Anonymous';
+  const taskSelect = document.getElementById('new-update-task');
+  const mappedTask = taskSelect ? taskSelect.value : '';
+  
   if (!text) return;
+
+  // Auto-grab real name from Firebase Auth
+  const updater = _resolveUpdater();
+  const author = updater.name || 'Anonymous';
 
   // Determine the session key this update belongs to
   const sessionKey = (viewingSessionDate && viewingSessionDate !== 'current')
     ? viewingSessionDate
     : ((availableSessions[currentProject] && availableSessions[currentProject][0]) || 'current');
 
-  const update = { text, author, timestamp: new Date().toISOString(), session: sessionKey };
+  const update = { 
+    text: text, 
+    author: author, 
+    task: mappedTask, // Save the mapped task
+    timestamp: new Date().toISOString(), 
+    session: sessionKey 
+  };
 
+  // Push to Firebase (stacks chronologically)
   if (_fbReady && _fbDb) {
     _fbDb.ref('dept_updates/' + currentProject + '/' + currentDept + '/' + sessionKey).push(update)
       .catch(e => console.warn('[Firebase] dept update failed:', e));
   }
-  // Also write locally so it's instant in this tab
+  
+  // Update local UI instantly
   const key = 'deptupdate:' + currentProject + ':' + currentDept + ':' + sessionKey;
   let updates = JSON.parse(localStorage.getItem(key) || '[]');
   updates.push(update);
   localStorage.setItem(key, JSON.stringify(updates));
+  
+  // Clear inputs
   document.getElementById('new-update-text').value = '';
+  if (taskSelect) taskSelect.value = ''; 
   renderUpdatesList();
 }
 function renderUpdatesList() {
@@ -2180,9 +2200,16 @@ function renderUpdatesList() {
     list.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">No pre-meeting updates recorded for this date yet.</div>';
     return;
   }
-  list.innerHTML = [...updates].reverse().map(u =>
-    `<div class="update-item"><div class="update-meta"><strong>${u.author||'Anonymous'}</strong> \u2014 ${new Date(u.timestamp).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</div><div style="white-space:pre-wrap;word-break:break-word;">${u.text}</div></div>`
-  ).join('');
+  list.innerHTML = [...updates].reverse().map(u => {
+    // Generate a blue pill-badge if a task is mapped
+    const taskBadge = u.task ? `<div style="font-size: 10px; color: #1565c0; background: #e3f2fd; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-bottom: 8px; font-weight: 700; border: 1px solid #90caf9;">Linked Task: ${u.task}</div>` : '';
+    
+    return `<div class="update-item">
+      ${taskBadge}
+      <div class="update-meta"><strong>${u.author||'Anonymous'}</strong> \u2014 ${new Date(u.timestamp).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+      <div style="white-space:pre-wrap;word-break:break-word;">${u.text}</div>
+    </div>`;
+  }).join('');
 }
 
 async function syncWithGoogleSheet() {
@@ -2695,6 +2722,21 @@ function renderCurrentDept() {
     const expClass = cfg.expanded ? 'expanded' : '';
     finalHTML += `<div class="status-accordion ${expClass}"><div class="status-header" onclick="this.parentElement.classList.toggle('expanded')"><div style="display:flex; align-items:center; gap:8px;"><span>${cfg.title} Tasks</span><span class="nav-badge" style="background:var(--border-md); color:var(--text-primary);">${groupTasks.length}</span></div><span class="status-toggle-icon">▼</span></div><div class="status-tasks-wrapper">${tasksHTML}</div></div>`;
   });
+// --- NEW: Populate Task Dropdown ---
+  const taskSelect = document.getElementById('new-update-task');
+  if (taskSelect) {
+    taskSelect.innerHTML = '<option value="">-- General Update (No Specific Task) --</option>';
+    // Only grab tasks that are ongoing, delayed, or on hold
+    const activeTasks = filtered.filter(t => /ontrack|delayed|onhold/i.test(t.status));
+    activeTasks.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.action;
+      const label = t.action.length > 55 ? t.action.substring(0, 55) + '...' : t.action;
+      opt.textContent = `[${t.status.toUpperCase()}] ${label}`;
+      taskSelect.appendChild(opt);
+    });
+  }
+  // --- END NEW ---  
   list.innerHTML = finalHTML; renderUpdatesList();
 }
 // ── Status change confirmation system ──
