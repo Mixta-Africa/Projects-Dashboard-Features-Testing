@@ -3222,12 +3222,15 @@ function renderMilestonesPanel(rows, job) {
   html += `</div>`;
 
   // 3. DETAILED MILESTONE TABLE GENERATION
-  const milestones = [];
-  
-  // Auto-detect columns based on the header row in the sheet
+const milestones = [];
+
+if (job.proj === 'Crossings') {
+  // ---------------------------------------------------------
+  // CROSSINGS: VERTICAL PARSING (Works as intended)
+  // ---------------------------------------------------------
   let colName = 1, colProj = 4, colAct = 5, colDate = 3, colStatus = 2;
   const headerRow = rows.find(r => r && r.some && r.some(c => /Activity|Milestone/i.test(String(c))));
-  
+
   if (headerRow) {
     colName = headerRow.findIndex(c => /Activity|Milestone|Description/i.test(String(c)));
     colProj = headerRow.findIndex(c => /Projected|Plan/i.test(String(c)));
@@ -3253,6 +3256,34 @@ function renderMilestonesPanel(rows, job) {
     if (projPct === null && actPct === null && !status) continue;
     milestones.push({ name, dateStr, projPct, actPct, status });
   }
+} else if (job.proj === 'Annexe') {
+  // ---------------------------------------------------------
+  // ANNEXE: HORIZONTAL GANTT PARSING
+  // ---------------------------------------------------------
+  // Because the Gantt chart is visually horizontal but split into two tables 
+  // (ALMOG vs BAFF), we map the specific standard columns.
+  // Typically: col 1 = ID, col 2 = Task, col 3 = Duration, col 4 = Start, col 5 = Finish
+
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r];
+    if (!row || row.length < 5) continue;
+
+    const taskName = String(row[2] || '').trim(); // Adjust column index if Task is elsewhere
+    if (!taskName || /^(Task|Description|ALMOG|BAFF)/i.test(taskName)) continue;
+
+    const duration = String(row[3] || '').trim();
+    const finishDate = formatMilestoneDate(row[5] || null);
+
+    // Push to milestones array using Gantt data to fit the table structure safely
+    milestones.push({ 
+      name: taskName, 
+      dateStr: finishDate, 
+      projPct: null, // Gantt doesn't have percentages inherently
+      actPct: null, 
+      status: duration ? duration + ' Days' : 'Pending'
+    });
+  }
+}
 
   // Inject Table HTML if tasks are found
   if (milestones.length > 0) {
@@ -4857,7 +4888,7 @@ function renderDynamicCharts() {
   }
 
   const gridC = 'rgba(0,0,0,0.06)', textC = '#999';
-  const baseOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { font: { size: 11, weight: '700', family: 'DM Sans' }, color: textC, boxWidth: 14, padding: 12 } } }, scales: { x: { ticks: { color: textC, font: { size: 10, weight: '600' }, maxRotation: 45, autoSkip: true, maxTicksLimit: 6 }, grid: { display: false } }, y: { ticks: { color: textC, font: { size: 10 }, callback: function(value) { return '₦' + value + 'M'; } }, grid: { color: gridC } } } };
+  const baseOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { font: { size: 11, weight: '700', family: 'DM Sans' }, color: textC, boxWidth: 14, padding: 12 } } }, scales: { x: { ticks: { color: textC, font: { size: 10, weight: '600' }, maxRotation: 45, autoSkip: true, maxTicksLimit: 6 }, grid: { display: false } }, y: { ticks: { color: textC, font: { size: 10 }, callback: function(value) { return '₦' + (value / 1000).toFixed(1) + 'Bn'; } }, grid: { color: gridC } } } };
 
   // 1. RENDER ANNEXE CHART
   const annData = buildChartData('Annexe');
@@ -5050,13 +5081,10 @@ window.onload = function () {
           const meta = chart.getDatasetMeta(i); if (meta.hidden) return; const lastIdx = ds.data.length - 1; if (lastIdx < 0) return;
           const pt = meta.data[lastIdx]; const val = ds.data[lastIdx]; if (val == null) return;
           
-          let label; 
-          if (ds.label && (ds.label.includes('Inflow') || ds.label.includes('₦B'))) { 
-            label = '₦' + val.toFixed(2) + 'B'; 
-          } else { 
-            let bVal = (val * 100).toFixed(1);
-            label = '₦' + (bVal.endsWith('.0') ? bVal.slice(0, -2) : bVal) + 'M'; 
-          }
+          let label;
+// Divide the raw millions value by 1000 to get billions
+let bVal = (val / 1000).toFixed(2);
+label = '₦' + (bVal.endsWith('.00') ? bVal.slice(0, -3) : bVal) + 'Bn';
           
           ctx.save(); 
           ctx.font = 'bold 10px DM Mono, monospace'; 
