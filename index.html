@@ -2488,7 +2488,7 @@ if (/operations|fincon/i.test(lastDept)) {
   for (const pat of labelPatterns) {
     // This upgraded Regex allows for intermediate words (like "to date") and ignores missing spaces/dashes
     // e.g., it will catch "Total Inflow to Date - 500m" or "TVS683m" 
-    const rx = new RegExp(pat + '(?:[\\s\\w]*?)[:\\s\\-]*([₦N]?\\s*[\\d,]+\\.?\\d*\\s*[BMKbmk]?(?:mn|MN|Mn)?)\\b', 'i');
+    const rx = new RegExp(pat + '(?:[\\s\\w]*?)[:\\s\\-]*([₦N]?\\s*[\\d,]+\\.?\\d*\\s*[BMKbmk]?(?:n|N|mn|MN|Mn)?)\\b', 'i');
     const m = text.match(rx);
     if (m) {
       let raw = m[1].trim().replace(/,/g,'').toUpperCase().replace(/MN$/,'M');
