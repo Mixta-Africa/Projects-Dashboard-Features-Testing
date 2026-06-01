@@ -2412,59 +2412,60 @@ function processSheet(rows, proj, sheetName, isLatest) {
     }
 
     // ── METRIC EXTRACTION FROM OPERATIONS ──
-    if (isLatest && /operations|fincon/i.test(lastDept)) {
-        const actionText = action + ' ' + explanationText;
-        
-        function extractLabeled(text, labelPatterns) {
-          for (const pat of labelPatterns) {
-            const rx = new RegExp(pat + '[:\\s\\-]+([₦N]?\\s*[\\d,]+\\.?\\d*\\s*[BMKbmk]?(?:mn|MN|Mn)?)', 'i');
-            const m = text.match(rx);
-            if (m) {
-              let raw = m[1].trim().replace(/,/g,'').toUpperCase().replace(/MN$/,'M');
-              if (!raw.startsWith('₦')) raw = raw.replace(/^N(?=\d)/, '₦');
-              if (!raw.startsWith('₦')) raw = '₦' + raw;
-              return raw;
-            }
-          }
-          return null;
+    // ── METRIC EXTRACTION FROM OPERATIONS ──
+if (/operations|fincon/i.test(lastDept)) {
+    const actionText = action + ' ' + explanationText;
+    
+    function extractLabeled(text, labelPatterns) {
+      for (const pat of labelPatterns) {
+        const rx = new RegExp(pat + '[:\\s\\-]+([₦N]?\\s*[\\d,]+\\.?\\d*\\s*[BMKbmk]?(?:mn|MN|Mn)?)', 'i');
+        const m = text.match(rx);
+        if (m) {
+          let raw = m[1].trim().replace(/,/g,'').toUpperCase().replace(/MN$/,'M');
+          if (!raw.startsWith('₦')) raw = raw.replace(/^N(?=\d)/, '₦');
+          if (!raw.startsWith('₦')) raw = '₦' + raw;
+          return raw;
         }
-
-        function extractLabeledCount(text, labelPatterns) {
-          for (const pat of labelPatterns) {
-            let m = text.match(new RegExp(pat + '[:\\s\\-]+(\\d{1,4})\\b', 'i'));
-            if (m) return m[1];
-            m = text.match(new RegExp('(\\d{1,4})\\s+' + pat, 'i'));
-            if (m) return m[1];
-          }
-          return null;
-        }
-
-        const hasMetricData = /[₦N][\d,]+|\bsales[-:\s]+\d|\d+\s*units|\d+\s*offer/i.test(actionText);
-
-        if (hasMetricData) {
-          const inflow = extractLabeled(actionText, ['inflow', 'total inflow']);
-          if (inflow) setMetric(proj === 'Crossings' ? 'val-cx-inflow' : 'val-annex-inflow', inflow);
-
-          const units = extractLabeledCount(actionText, ['sales', 'units sold', 'no\\.?\\s*of\\s*sales']);
-          if (units) setMetric(proj === 'Crossings' ? 'val-cx-units' : 'val-annex-units', units);
-
-          const salesVal = extractLabeled(actionText, ['value of sales', 'tvs']);
-          if (salesVal) setMetric(proj === 'Crossings' ? 'val-cx-sales' : 'val-annex-sales', salesVal);
-
-          const balance = extractLabeled(actionText, ['account balance', 'account bal', 'bal(?!lard|lot|c)']);
-          if (balance) setMetric(proj === 'Crossings' ? 'val-cx-balance' : 'val-annex-balance', balance);
-
-          if (!operationsOfferFound) {
-            const offers = extractLabeledCount(actionText, ['offer letters?', 'active offer', 'offer letter']);
-            if (offers !== null) { setMetric(proj==='Crossings'?'val-cx-offers':'val-annex-offers', offers); operationsOfferFound = true; }
-          }
-
-          // ── POPULATE _chartMetrics FOR HISTORICAL CHARTS ──
-          // Placed here (inside the Operations block) so action/explanationText are guaranteed defined
-          if (inflow) window._chartMetrics[proj][sheetName].inflow = parseNairaToM(inflow) / 1000;
-          if (balance) window._chartMetrics[proj][sheetName].balance = parseNairaToM(balance) / 100;
-        }
+      }
+      return null;
     }
+
+    function extractLabeledCount(text, labelPatterns) {
+      for (const pat of labelPatterns) {
+        let m = text.match(new RegExp(pat + '[:\\s\\-]+(\\d{1,4})\\b', 'i'));
+        if (m) return m[1];
+        m = text.match(new RegExp('(\\d{1,4})\\s+' + pat, 'i'));
+        if (m) return m[1];
+      }
+      return null;
+    }
+
+    const hasMetricData = /[₦N][\d,]+|\bsales[-:\s]+\d|\d+\s*units|\d+\s*offer/i.test(actionText);
+
+    if (hasMetricData) {
+      const inflow = extractLabeled(actionText, ['inflow', 'total inflow']);
+      const units = extractLabeledCount(actionText, ['sales', 'units sold', 'no\\.?\\s*of\\s*sales']);
+      const salesVal = extractLabeled(actionText, ['value of sales', 'tvs']);
+      const balance = extractLabeled(actionText, ['account balance', 'account bal', 'bal(?!lard|lot|c)']);
+      const offers = extractLabeledCount(actionText, ['offer letters?', 'active offer', 'offer letter']);
+
+      // 1. UPDATE DOM UI ONLY IF IT IS THE LATEST SHEET
+      if (isLatest) {
+        if (inflow) setMetric(proj === 'Crossings' ? 'val-cx-inflow' : 'val-annex-inflow', inflow);
+        if (units) setMetric(proj === 'Crossings' ? 'val-cx-units' : 'val-annex-units', units);
+        if (salesVal) setMetric(proj === 'Crossings' ? 'val-cx-sales' : 'val-annex-sales', salesVal);
+        if (balance) setMetric(proj === 'Crossings' ? 'val-cx-balance' : 'val-annex-balance', balance);
+        if (!operationsOfferFound && offers !== null) { 
+            setMetric(proj==='Crossings'?'val-cx-offers':'val-annex-offers', offers); 
+            operationsOfferFound = true; 
+        }
+      }
+
+      // 2. POPULATE CHART METRICS FOR ALL SHEETS (Dynamic Data)
+      if (inflow) window._chartMetrics[proj][sheetName].inflow = parseNairaToM(inflow) / 1000;
+      if (balance) window._chartMetrics[proj][sheetName].balance = parseNairaToM(balance) / 100;
+    }
+}
     
     // ── TASK VERIFICATION ──
     if (!action || action.length < 4) continue;
@@ -4611,12 +4612,36 @@ function renderDynamicCharts() {
   if (typeof Chart === 'undefined') return;
 
   function getChartMetrics(proj, session) {
-    if (window._chartMetrics && window._chartMetrics[proj] && window._chartMetrics[proj][session]) {
-      return window._chartMetrics[proj][session];
+  // 1. THE HYBRID OVERRIDE (Pre-May 2026 Legacy Data)
+  // Hardcode the sheet names exactly as they appear in the dashboard tabs
+  const legacyData = {
+    'Crossings': {
+      'Sept 29': { inflow: 0.38, balance: 0.84 },
+      'Oct 6': { inflow: 0.45, balance: 0.90 },
+      // ... Add all the unreadable legacy sheet dates and values here
+      'Apr 27': { inflow: 1.72, balance: 0.40 } 
+    },
+    'Annexe': {
+      'Sept 2': { inflow: 4.5, balance: 1.1 },
+      'Sept 8': { inflow: 4.6, balance: 1.0 },
+      // ... Add all the unreadable legacy sheet dates and values here
+      'Apr 27': { inflow: 6.27, balance: 1.8 }
     }
-    return { inflow: null, balance: null };
+  };
+
+  // 2. IF THIS DATE IS IN OUR LEGACY DICTIONARY, USE HARDCODED VALUES
+  if (legacyData[proj] && legacyData[proj][session]) {
+    return legacyData[proj][session];
   }
 
+  // 3. OTHERWISE, USE THE PARSED DYNAMIC DATA (May 2026 onwards)
+  if (window._chartMetrics && window._chartMetrics[proj] && window._chartMetrics[proj][session]) {
+    return window._chartMetrics[proj][session];
+  }
+  
+  // 4. FALLBACK TO PREVENT BREAKING
+  return { inflow: null, balance: null };
+}
   function buildChartData(proj) {
     let sessions = [...(availableSessions[proj] || [])].reverse();
     let labels = [], inflowData = [], balanceData = [];
