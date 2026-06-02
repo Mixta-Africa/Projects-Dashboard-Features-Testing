@@ -2431,7 +2431,7 @@ function processSheet(rows, proj, sheetName, isLatest) {
   // Initialize a global chart metric store for this sheet
   window._chartMetrics = window._chartMetrics || {};
   window._chartMetrics[proj] = window._chartMetrics[proj] || {};
-  window._chartMetrics[proj][sheetName] = { inflow: null, salesValue: null };
+  window._chartMetrics[proj][sheetName] = { inflow: null, salesValue: null, balance: null };
 
   for (let i = startRow; i < rows.length; i++) {
     const c = rows[i];
@@ -2542,6 +2542,7 @@ if (/operations|fincon/i.test(lastDept)) {
       // Notice below: We kept inflow, but we deleted 'balance' and replaced it with 'salesVal'
       if (inflow) window._chartMetrics[proj][sheetName].inflow = parseNairaToM(inflow);
       if (salesVal) window._chartMetrics[proj][sheetName].salesValue = parseNairaToM(salesVal);
+      if (balance) window._chartMetrics[proj][sheetName].balance = parseNairaToM(balance);
     }
 }
     
@@ -4616,6 +4617,19 @@ function refreshDashboardForSession() {
 
   function extractSessionMetrics(targetSession) {
     let m = {};
+    // Validation for debugging metrics extraction
+    const relevantTasks = taskDatabase.filter(t => 
+      t.project === proj && 
+      t.session === targetSession && 
+      /operations|fincon/i.test(t.dept)
+    );
+    
+    if (relevantTasks.length === 0) {
+      console.warn(`⚠️ extractSessionMetrics: No Operations/Fincon tasks found for ${proj} / ${targetSession}`);
+      console.warn(`Available depts:`, [...new Set(taskDatabase.filter(t => t.project === proj && t.session === targetSession).map(t => t.dept))]);
+    } else {
+      console.debug(`✓ Found ${relevantTasks.length} Operations/Fincon tasks for ${proj} / ${targetSession}`);
+    }
     let offerFound = false;
     taskDatabase.filter(t => t.project === proj && t.session === targetSession && /operations|fincon/i.test(t.dept)).forEach(t => {
       const txt = (t.action||'') + ' ' + (t.explanation||'') + ' ' + (t.resultToAchieve||'');
@@ -4655,6 +4669,32 @@ function refreshDashboardForSession() {
   document.getElementById(pfx?'val-cx-inflow':'val-annex-inflow').textContent = finalInflow;
   document.getElementById(pfx?'val-cx-units':'val-annex-units').textContent = finalUnits;
   document.getElementById(pfx?'val-cx-sales':'val-annex-sales').textContent = finalSales;
+
+  // ── Unit Conversion Helper for Balance Comparison ──
+  function normalizeBalanceToMillions(balanceStr) {
+    // Converts balance strings to millions for threshold comparison
+    // Input examples: "₦614K" (Crossings), "₦29.468M" (Annexe), "₦1.76B"
+    // Output: numeric value in millions
+    
+    if (!balanceStr || balanceStr.includes('...') || balanceStr === '') return 0;
+    
+    const match = balanceStr.match(/([\d,]+\.?\d*)/);
+    if (!match) return 0;
+    
+    let value = parseFloat(match[0].replace(/,/g, ''));
+    
+    // Detect unit and convert
+    if (/K$/i.test(balanceStr)) {
+      return value / 1000;  // 614K → 0.614M
+    } else if (/M$/i.test(balanceStr)) {
+      return value;  // 29.468M → 29.468M (already in millions)
+    } else if (/B(?:n)?$/i.test(balanceStr)) {
+      return value * 1000;  // 1.76Bn → 1760M
+    }
+    
+    return value;  // fallback
+  }
+
   document.getElementById(pfx?'val-cx-balance':'val-annex-balance').textContent = finalBalance;
   document.getElementById(pfx?'val-cx-offers':'val-annex-offers').textContent = finalOffers;
 
