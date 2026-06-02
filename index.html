@@ -427,10 +427,6 @@ body.users-bar-visible .dept-sidebar {
 .team-updates-section h3 { font-size: 14px; font-weight: 800; margin-bottom: 14px; color: var(--text-primary); }
 .updates-list { max-height: 250px; overflow-y: auto; margin-bottom: 16px; display: flex; flex-direction: column; gap: 10px; }
 .update-item { background: var(--bg); padding: 12px; border-radius: var(--radius-sm); font-size: 13px; border-left: 3px solid var(--active-theme-color, var(--cx-color)); }
-.update-task-tag { display: inline-block; margin-left: 8px; background: var(--active-theme-color, var(--cx-color)); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; vertical-align: middle; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.update-task-select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12px; font-family: inherit; background: var(--white); color: var(--text-primary); margin-bottom: 8px; }
-.update-author-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
-.update-author-row input { flex: 1; min-width: 0; }
 .update-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
 .update-input-group { display: flex; flex-direction: column; gap: 10px; }
 .update-input-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; resize: vertical; min-height: 70px; }
@@ -1348,14 +1344,9 @@ body.users-bar-visible .dept-sidebar {
           <h3 id="team-updates-heading">Team Updates & Pre-Meeting Notes</h3>
           <div id="updates-list" class="updates-list"></div>
           <div class="update-input-group">
-            <select id="new-update-task-link" class="update-task-select">
-              <option value="">📌 Link to a task (optional)</option>
-            </select>
             <textarea id="new-update-text" placeholder="Type your pre-meeting update or note here..."></textarea>
-            <div class="update-author-row">
-              <input type="text" id="new-update-author" placeholder="Your Name (auto-filled if logged in)" readonly style="background:var(--bg);color:var(--text-muted);cursor:default;">
-              <button onclick="submitTeamUpdate()">Submit Update</button>
-            </div>
+            <input type="text" id="new-update-author" placeholder="Your Name (optional)">
+            <button onclick="submitTeamUpdate()">Submit Update</button>
           </div>
         </div>
       </div>
@@ -1621,10 +1612,6 @@ function initFirebase() {
               Object.entries(sessionsOrUpdates).forEach(([sessionKey, pushItems]) => {
                 const arr = Object.values(pushItems).sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
                 try { localStorage.setItem('fb_dept:' + proj + ':' + dept + ':' + sessionKey, JSON.stringify(arr)); } catch(e){}
-              // Live-refresh the updates panel if this is the currently viewed dept/project
-              if (proj === currentProject && dept === currentDept) {
-                renderUpdatesList();
-              }
               });
             }
           });
@@ -1655,8 +1642,6 @@ function initFirebase() {
         }
         // ── Activate presence now that we know the user ──
         if (!_presenceRef) _initPresence();
-        // ── Auto-fill author name now that we have user identity ──
-        autoFillAuthorName();
       };
 
       console.log('[Firebase DB] Listeners attached ✓');
@@ -1987,7 +1972,7 @@ function loadSeedData() {
       const latest = availableSessions[proj]?.[0]; if (!latest) return;
       const pfx = proj==='Crossings'; let offerFound=false;
       taskDatabase.filter(t=>t.project===proj&&t.session===latest&&/operations|fincon/i.test(t.dept)).forEach(t=>{
-        const txt=(t.action||'')+' '+(t.explanation||'');
+        const txt=(t.action||'')+' '+(t.explanation||'')+' '+(t.resultToAchieve||'');
         if (!/[₦N][\d,]+|sales[-:\s]+\d|\d+\s*units|offer letter/i.test(txt)) return;
         let m;
         m=txt.match(/inflow[:\s\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?(?:mn|MN)?)/i);
@@ -2132,61 +2117,17 @@ function submitForgotPassword() {
   closeAdminModal();
 }
 
-function populateTaskLinkDropdown(tasks) {
-  const sel = document.getElementById('new-update-task-link');
-  if (!sel) return;
-  const prev = sel.value;
-  // Show ongoing (ontrack, delayed, onhold) tasks as options
-  const linkable = (tasks || []).filter(t => t.status !== 'achieved');
-  sel.innerHTML = '<option value="">📌 Link to a task (optional)</option>' +
-    linkable.map(t => {
-      const icon = t.status === 'delayed' ? '🔴' : t.status === 'onhold' ? '🟡' : '🟢';
-      const label = (t.action || '').substring(0, 70) + (t.action && t.action.length > 70 ? '…' : '');
-      const val = (t.action || '').substring(0, 100);
-      return `<option value="${val.replace(/"/g,'&quot;')}">${icon} ${label}</option>`;
-    }).join('');
-  // Restore previous selection if still valid
-  if (prev) sel.value = prev;
-}
-
-function autoFillAuthorName() {
-  const nameEl = document.getElementById('new-update-author');
-  if (!nameEl) return;
-  const user = _resolveUpdater();
-  if (user.name && user.name !== 'Unknown') {
-    nameEl.value = user.name;
-    nameEl.readOnly = true;
-    nameEl.style.background = 'var(--bg)';
-    nameEl.style.color = 'var(--text-muted)';
-  } else {
-    nameEl.readOnly = false;
-    nameEl.style.background = '';
-    nameEl.style.color = '';
-    nameEl.placeholder = 'Your Name (optional)';
-  }
-}
-
 function submitTeamUpdate() {
   const text = document.getElementById('new-update-text').value.trim();
+  const author = document.getElementById('new-update-author').value.trim() || 'Anonymous';
   if (!text) return;
-
-  // Use logged-in user name; fall back to the name field; then 'Anonymous'
-  const resolvedUser = _resolveUpdater();
-  const nameField = document.getElementById('new-update-author');
-  const author = (resolvedUser.name && resolvedUser.name !== 'Unknown')
-    ? resolvedUser.name
-    : (nameField ? nameField.value.trim() || 'Anonymous' : 'Anonymous');
-
-  // Linked task (optional)
-  const taskLinkEl = document.getElementById('new-update-task-link');
-  const linkedTask = taskLinkEl ? taskLinkEl.value : '';
 
   // Determine the session key this update belongs to
   const sessionKey = (viewingSessionDate && viewingSessionDate !== 'current')
     ? viewingSessionDate
     : ((availableSessions[currentProject] && availableSessions[currentProject][0]) || 'current');
 
-  const update = { text, author, timestamp: new Date().toISOString(), session: sessionKey, linkedTask };
+  const update = { text, author, timestamp: new Date().toISOString(), session: sessionKey };
 
   if (_fbReady && _fbDb) {
     _fbDb.ref('dept_updates/' + currentProject + '/' + currentDept + '/' + sessionKey).push(update)
@@ -2197,10 +2138,7 @@ function submitTeamUpdate() {
   let updates = JSON.parse(localStorage.getItem(key) || '[]');
   updates.push(update);
   localStorage.setItem(key, JSON.stringify(updates));
-
-  // Clear only the text and task link; keep name field in case user submits multiple
   document.getElementById('new-update-text').value = '';
-  if (taskLinkEl) taskLinkEl.value = '';
   renderUpdatesList();
 }
 function renderUpdatesList() {
@@ -2243,13 +2181,7 @@ function renderUpdatesList() {
     return;
   }
   list.innerHTML = [...updates].reverse().map(u =>
-    `<div class="update-item">
-      <div class="update-meta">
-        <strong>${u.author||'Anonymous'}</strong> \u2014 ${new Date(u.timestamp).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}
-        ${u.linkedTask ? `<span class="update-task-tag">📌 ${u.linkedTask}</span>` : ''}
-      </div>
-      <div style="white-space:pre-wrap;word-break:break-word;">${u.text}</div>
-    </div>`
+    `<div class="update-item"><div class="update-meta"><strong>${u.author||'Anonymous'}</strong> \u2014 ${new Date(u.timestamp).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</div><div style="white-space:pre-wrap;word-break:break-word;">${u.text}</div></div>`
   ).join('');
 }
 
@@ -2480,25 +2412,29 @@ function processSheet(rows, proj, sheetName, isLatest) {
     }
 
     // ── METRIC EXTRACTION FROM OPERATIONS ──
-    // ── METRIC EXTRACTION FROM OPERATIONS ──
 if (/operations|fincon/i.test(lastDept)) {
-    const actionText = action + ' ' + explanationText;
-    
+    // CROSSINGS: all metrics are packed into the action text as one sentence.
+    // ANNEXE: metrics appear as sub-rows with empty action; the value is in the
+    //         resultToAchieve (Result) column, e.g. "Total Inflow - ₦6.45Bn".
+    //         We therefore always include the result column so both projects work.
+    const resultText = String(c[colMap.result] || '').trim();
+    const actionText = action + ' ' + explanationText + ' ' + resultText;
+
     function extractLabeled(text, labelPatterns) {
-  for (const pat of labelPatterns) {
-    // This upgraded Regex allows for intermediate words (like "to date") and ignores missing spaces/dashes
-    // e.g., it will catch "Total Inflow to Date - 500m" or "TVS683m" 
-    const rx = new RegExp(pat + '(?:[\\s\\w]*?)[:\\s\\-]*([₦N]?\\s*[\\d,]+\\.?\\d*\\s*[BMKbmk]?(?:n|N|mn|MN|Mn)?)\\b', 'i');
-    const m = text.match(rx);
-    if (m) {
-      let raw = m[1].trim().replace(/,/g,'').toUpperCase().replace(/MN$/,'M');
-      if (!raw.startsWith('₦')) raw = raw.replace(/^N(?=\d)/, '₦');
-      if (!raw.startsWith('₦')) raw = '₦' + raw;
-      return raw;
+      for (const pat of labelPatterns) {
+        const rx = new RegExp(pat + '(?:[\\s\\w]*?)[:\\s\\-]*([₦N]?\\s*[\\d,]+\\.?\\d*\\s*[BMKbmk]?(?:n|mn|MN|Mn)?)\\b', 'i');
+        const m = text.match(rx);
+        if (m) {
+          let raw = m[1].trim().replace(/,/g,'').toUpperCase();
+          // Normalise "BN" → "B", "MN" → "M" suffix
+          raw = raw.replace(/BN$/, 'B').replace(/MN$/, 'M');
+          if (!raw.startsWith('₦')) raw = raw.replace(/^N(?=\d)/, '₦');
+          if (!raw.startsWith('₦')) raw = '₦' + raw;
+          return raw;
+        }
+      }
+      return null;
     }
-  }
-  return null;
-}
 
     function extractLabeledCount(text, labelPatterns) {
       for (const pat of labelPatterns) {
@@ -2510,31 +2446,29 @@ if (/operations|fincon/i.test(lastDept)) {
       return null;
     }
 
+    // For Annexe sub-rows the action is empty but resultText has the value —
+    // so we test the full combined text, not just action alone.
     const hasMetricData = /[₦N][\d,]+|\bsales[-:\s]+\d|\d+\s*units|\d+\s*offer/i.test(actionText);
 
     if (hasMetricData) {
-      // 1. THE FLEXIBILITY RULES
-      // We added more keywords here so it catches variations like "Total Inflow to Date"
-      const inflow = extractLabeled(actionText, ['total inflow to date', 'total inflow', 'sales inflow', 'inflow']);
-      const units = extractLabeledCount(actionText, ['sales', 'units sold', 'no\\.?\\s*of\\s*sales']);
+      const inflow  = extractLabeled(actionText, ['total inflow to date', 'total inflow', 'sales inflow', 'inflow']);
+      const units   = extractLabeledCount(actionText, ['sales', 'units sold', 'no\\.?\\s*of\\s*sales']);
       const salesVal = extractLabeled(actionText, ['total value of sales', 'value of sales', 'tvs']);
       const balance = extractLabeled(actionText, ['account balance', 'account bal', 'bal(?!lard|lot|c)']);
-      const offers = extractLabeledCount(actionText, ['offer letters?', 'active offer', 'offer letter']);
+      const offers  = extractLabeledCount(actionText, ['offer letters?', 'active offer', 'offer letter']);
 
       if (isLatest) {
-        if (inflow) setMetric(proj === 'Crossings' ? 'val-cx-inflow' : 'val-annex-inflow', inflow);
-        if (units) setMetric(proj === 'Crossings' ? 'val-cx-units' : 'val-annex-units', units);
-        if (salesVal) setMetric(proj === 'Crossings' ? 'val-cx-sales' : 'val-annex-sales', salesVal);
-        if (balance) setMetric(proj === 'Crossings' ? 'val-cx-balance' : 'val-annex-balance', balance);
-        if (!operationsOfferFound && offers !== null) { 
-            setMetric(proj==='Crossings'?'val-cx-offers':'val-annex-offers', offers); 
-            operationsOfferFound = true; 
+        if (inflow)   setMetric(proj === 'Crossings' ? 'val-cx-inflow'   : 'val-annex-inflow',   inflow);
+        if (units)    setMetric(proj === 'Crossings' ? 'val-cx-units'    : 'val-annex-units',    units);
+        if (salesVal) setMetric(proj === 'Crossings' ? 'val-cx-sales'    : 'val-annex-sales',    salesVal);
+        if (balance)  setMetric(proj === 'Crossings' ? 'val-cx-balance'  : 'val-annex-balance',  balance);
+        if (!operationsOfferFound && offers !== null) {
+          setMetric(proj === 'Crossings' ? 'val-cx-offers' : 'val-annex-offers', offers);
+          operationsOfferFound = true;
         }
       }
 
-      // 2. THE CHART SWAP
-      // Notice below: We kept inflow, but we deleted 'balance' and replaced it with 'salesVal'
-      if (inflow) window._chartMetrics[proj][sheetName].inflow = parseNairaToM(inflow);
+      if (inflow)   window._chartMetrics[proj][sheetName].inflow     = parseNairaToM(inflow);
       if (salesVal) window._chartMetrics[proj][sheetName].salesValue = parseNairaToM(salesVal);
     }
 }
@@ -2707,7 +2641,7 @@ function renderCurrentDept() {
   // Note: achieved tasks are always visible so users can revert accidental status changes
   if (currentFilter !== 'all') filtered = filtered.filter(t => t.status === currentFilter);
   const list = document.getElementById('dynamic-tasks-list');
-  if (filtered.length === 0) { list.innerHTML = `<div class="empty-state"><h3>No tasks found</h3><p>Try changing your filter or hit "Sync" to fetch latest data.</p></div>`; renderUpdatesList(); populateTaskLinkDropdown(tasks); autoFillAuthorName(); return; }
+  if (filtered.length === 0) { list.innerHTML = `<div class="empty-state"><h3>No tasks found</h3><p>Try changing your filter or hit "Sync" to fetch latest data.</p></div>`; renderUpdatesList(); return; }
   const isHistory = viewingSessionDate !== 'current';
   const groupedByStatus = { ontrack: [], delayed: [], onhold: [], update: [], achieved: [] };
   filtered.forEach(t => { let s = t.status || 'ontrack'; if (!groupedByStatus[s]) s = 'ontrack'; groupedByStatus[s].push(t); });
@@ -2763,7 +2697,7 @@ function renderCurrentDept() {
     const expClass = cfg.expanded ? 'expanded' : '';
     finalHTML += `<div class="status-accordion ${expClass}"><div class="status-header" onclick="this.parentElement.classList.toggle('expanded')"><div style="display:flex; align-items:center; gap:8px;"><span>${cfg.title} Tasks</span><span class="nav-badge" style="background:var(--border-md); color:var(--text-primary);">${groupTasks.length}</span></div><span class="status-toggle-icon">▼</span></div><div class="status-tasks-wrapper">${tasksHTML}</div></div>`;
   });
-  list.innerHTML = finalHTML; renderUpdatesList(); populateTaskLinkDropdown(tasks); autoFillAuthorName();
+  list.innerHTML = finalHTML; renderUpdatesList();
 }
 // ── Status change confirmation system ──
 let _pendingStatusId = null;
@@ -3222,15 +3156,12 @@ function renderMilestonesPanel(rows, job) {
   html += `</div>`;
 
   // 3. DETAILED MILESTONE TABLE GENERATION
-const milestones = [];
-
-if (job.proj === 'Crossings') {
-  // ---------------------------------------------------------
-  // CROSSINGS: VERTICAL PARSING (Works as intended)
-  // ---------------------------------------------------------
+  const milestones = [];
+  
+  // Auto-detect columns based on the header row in the sheet
   let colName = 1, colProj = 4, colAct = 5, colDate = 3, colStatus = 2;
   const headerRow = rows.find(r => r && r.some && r.some(c => /Activity|Milestone/i.test(String(c))));
-
+  
   if (headerRow) {
     colName = headerRow.findIndex(c => /Activity|Milestone|Description/i.test(String(c)));
     colProj = headerRow.findIndex(c => /Projected|Plan/i.test(String(c)));
@@ -3256,34 +3187,6 @@ if (job.proj === 'Crossings') {
     if (projPct === null && actPct === null && !status) continue;
     milestones.push({ name, dateStr, projPct, actPct, status });
   }
-} else if (job.proj === 'Annexe') {
-  // ---------------------------------------------------------
-  // ANNEXE: HORIZONTAL GANTT PARSING
-  // ---------------------------------------------------------
-  // Because the Gantt chart is visually horizontal but split into two tables 
-  // (ALMOG vs BAFF), we map the specific standard columns.
-  // Typically: col 1 = ID, col 2 = Task, col 3 = Duration, col 4 = Start, col 5 = Finish
-
-  for (let r = 0; r < rows.length; r++) {
-    const row = rows[r];
-    if (!row || row.length < 5) continue;
-
-    const taskName = String(row[2] || '').trim(); // Adjust column index if Task is elsewhere
-    if (!taskName || /^(Task|Description|ALMOG|BAFF)/i.test(taskName)) continue;
-
-    const duration = String(row[3] || '').trim();
-    const finishDate = formatMilestoneDate(row[5] || null);
-
-    // Push to milestones array using Gantt data to fit the table structure safely
-    milestones.push({ 
-      name: taskName, 
-      dateStr: finishDate, 
-      projPct: null, // Gantt doesn't have percentages inherently
-      actPct: null, 
-      status: duration ? duration + ' Days' : 'Pending'
-    });
-  }
-}
 
   // Inject Table HTML if tasks are found
   if (milestones.length > 0) {
@@ -4612,7 +4515,7 @@ function refreshDashboardForSession() {
     let m = {};
     let offerFound = false;
     taskDatabase.filter(t => t.project === proj && t.session === targetSession && /operations|fincon/i.test(t.dept)).forEach(t => {
-      const txt = (t.action||'') + ' ' + (t.explanation||'');
+      const txt = (t.action||'') + ' ' + (t.explanation||'') + ' ' + (t.resultToAchieve||'');
       if (!/[₦N][\d,]+|\bsales[-:\s]+\d|\d+\s*units|offer letter/i.test(txt)) return;
       
       let match;
@@ -4857,8 +4760,8 @@ function renderDynamicCharts() {
     let rawMetrics = sessions.map(s => getChartMetrics(proj, s));
     
     // Look for the first valid numbers to start the lines
-    let firstInf = rawMetrics.find(m => m.inflow !== null && m.inflow > 0)?.inflow || 0;
-    let firstSales = rawMetrics.find(m => m.salesValue !== null && m.salesValue > 0)?.salesValue || 0;
+    let firstInf = rawMetrics.find(m => m.inflow !== null)?.inflow || 0;
+    let firstSales = rawMetrics.find(m => m.salesValue !== null)?.salesValue || 0;
     
     let lastInf = firstInf;
     let lastSales = firstSales;
@@ -4866,20 +4769,9 @@ function renderDynamicCharts() {
     rawMetrics.forEach((m, i) => {
       labels.push(formatSheetName(sessions[i]));
       
-      // Carry-forward guard: only update if new value is >= 20% of last known value
-      // This prevents non-cumulative / partial figures from causing false cliff-drops
-      if (m.inflow !== null && m.inflow > 0) {
-        if (lastInf === 0 || m.inflow >= lastInf * 0.2) {
-          lastInf = m.inflow;
-        }
-        // If the dynamic value looks like a non-cumulative weekly figure (much lower than historical),
-        // carry forward the previous value and skip the anomalous data point
-      }
-      if (m.salesValue !== null && m.salesValue > 0) {
-        if (lastSales === 0 || m.salesValue >= lastSales * 0.2) {
-          lastSales = m.salesValue;
-        }
-      }
+      // If the week has data, update the line. If blank, carry over the previous week's number
+      if (m.inflow !== null) lastInf = m.inflow;
+      if (m.salesValue !== null) lastSales = m.salesValue;
       
       inflowData.push(lastInf);
       salesValueData.push(lastSales);
@@ -4888,7 +4780,7 @@ function renderDynamicCharts() {
   }
 
   const gridC = 'rgba(0,0,0,0.06)', textC = '#999';
-  const baseOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { font: { size: 11, weight: '700', family: 'DM Sans' }, color: textC, boxWidth: 14, padding: 12 } } }, scales: { x: { ticks: { color: textC, font: { size: 10, weight: '600' }, maxRotation: 45, autoSkip: true, maxTicksLimit: 6 }, grid: { display: false } }, y: { ticks: { color: textC, font: { size: 10 }, callback: function(value) { return '₦' + (value / 1000).toFixed(1) + 'Bn'; } }, grid: { color: gridC } } } };
+  const baseOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { font: { size: 11, weight: '700', family: 'DM Sans' }, color: textC, boxWidth: 14, padding: 12 } } }, scales: { x: { ticks: { color: textC, font: { size: 10, weight: '600' }, maxRotation: 45, autoSkip: true, maxTicksLimit: 6 }, grid: { display: false } }, y: { ticks: { color: textC, font: { size: 10 }, callback: function(value) { if (value >= 1000) { const b = value / 1000; return '₦' + (Number.isInteger(b) ? b : b.toFixed(1)) + 'Bn'; } return '₦' + value + 'M'; } }, grid: { color: gridC } } } };
 
   // 1. RENDER ANNEXE CHART
   const annData = buildChartData('Annexe');
@@ -5082,9 +4974,19 @@ window.onload = function () {
           const pt = meta.data[lastIdx]; const val = ds.data[lastIdx]; if (val == null) return;
           
           let label;
-// Divide the raw millions value by 1000 to get billions
-let bVal = (val / 1000).toFixed(2);
-label = '₦' + (bVal.endsWith('.00') ? bVal.slice(0, -3) : bVal) + 'Bn';
+          if (ds.label && (ds.label.includes('Inflow') || ds.label.includes('₦B'))) {
+            // val is in millions → convert to Bn for display
+            const b = val / 1000;
+            label = '₦' + (Number.isInteger(b) ? b : b.toFixed(2)) + 'Bn';
+          } else {
+            // val is in millions
+            if (val >= 1000) {
+              const b = val / 1000;
+              label = '₦' + (Number.isInteger(b) ? b : b.toFixed(2)) + 'Bn';
+            } else {
+              label = '₦' + Math.round(val) + 'M';
+            }
+          }
           
           ctx.save(); 
           ctx.font = 'bold 10px DM Mono, monospace'; 
