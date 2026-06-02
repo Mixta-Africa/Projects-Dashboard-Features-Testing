@@ -338,16 +338,20 @@
       return;
     }
 
-    // Gate 2: email must be in the exact allowlist
-    const access = ALLOWED[email];
-    if (!access) {
-      deny(email);
-      return;
-    }
+    // Gate 2: Verify email against Firebase dynamic list OR the hardcoded fallback list
+    const safeEmailKey = email.replace(/\./g, ',');
+    firebase.database().ref('allowed_users/' + safeEmailKey).once('value').then(snap => {
+      const dbAccess = snap.val();
+      const access = dbAccess || ALLOWED[email]; // Falls back to your hardcoded list if DB is empty
 
-    // Both gates passed — unlock
-    unlock(user, access);
-  }
+      if (!access) {
+        deny(email);
+        return;
+      }
+      unlock(user, access);
+    }).catch(err => {
+      setMsg('Database authorization error. Please try again.', false);
+    });
 
   // ── SIGN IN ───────────────────────────────────────────────────────────────
   function signIn() {
