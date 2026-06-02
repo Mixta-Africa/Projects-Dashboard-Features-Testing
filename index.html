@@ -1380,6 +1380,10 @@ body.users-bar-visible .dept-sidebar {
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         <span class="tool-nav-label">Report</span>
       </button>
+      <button class="tool-nav-btn" onclick="openAdminPanel()" title="Manage User Access & Moderate Updates" style="padding:8px 12px; font-size:12px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        <span class="tool-nav-label">Access</span>
+      </button>
       <button class="diag-minimize-btn" onclick="minimizeDiagPanel()" title="Minimize" style="padding:8px 12px; font-size:12px; background:none; border:none; color:inherit; cursor:pointer;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
       </button>
@@ -2490,7 +2494,8 @@ if (/operations|fincon/i.test(lastDept)) {
 
     function extractLabeled(text, labelPatterns) {
       for (const pat of labelPatterns) {
-        const rx = new RegExp(pat + '(?:[\\s\\w]*?)[:\\s\\-]*([₦N]?\\s*[\\d,]+\\.?\\d*\\s*[BMKbmk]?(?:n|mn|MN|Mn)?)\\b', 'i');
+        // Added tolerance for dashes, spaces, and missing currency symbols before the number
+        const rx = new RegExp(pat + '(?:[\\s\\w]*?)[:\\s\\-]*([₦N]?\\s*[-]?\\s*[\\d,]+\\.?\\d*\\s*[BMKbmk]?(?:n|mn|MN|Mn)?)\\b', 'i');
         const m = text.match(rx);
         if (m) {
           let raw = m[1].trim().replace(/,/g,'').toUpperCase();
@@ -4534,6 +4539,95 @@ ${body}
 <div style="margin-top:30pt; padding-top:12pt; border-top:2px solid ${projectColor}; text-align:center;">
   <p style="font-family:Arial; font-size:9pt; color:#888;">Mixta Africa &nbsp;|&nbsp; ${esc(projLabel)} &nbsp;|&nbsp; ${esc(month)} Performance Report &nbsp;|&nbsp; Generated: ${esc(dateStr)}</p>
 </div>
+<div id="admin-panel-container" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:99999; overflow-y:auto; backdrop-filter: blur(4px);">
+  <div style="background:white; width:90%; max-width:600px; margin:40px auto; padding:30px; border-radius:12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+    <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 5px;">🔐 Admin Control Panel</h2>
+    
+    <fieldset style="margin:20px 0; padding:15px; border:1px solid #e5e7eb; border-radius:8px;">
+      <legend style="font-weight: bold; padding: 0 5px;">➕ Add Approved User</legend>
+      <input type="email" id="new-user-email" placeholder="user@mixtafrica.com" style="width:100%; padding:10px; margin:5px 0; border: 1px solid #ccc; border-radius: 4px;">
+      <select id="new-user-project" style="width:100%; padding:10px; margin:5px 0; border: 1px solid #ccc; border-radius: 4px;">
+        <option value="Both">Access: Both Projects</option>
+        <option value="Crossings">Access: Lakowe Crossings Only</option>
+        <option value="Annexe">Access: Lakowe Annexe Only</option>
+      </select>
+      <button onclick="adminAddEmail()" style="width:100%; padding:10px; background:#1b5e20; color:white; border:none; border-radius:6px; cursor:pointer; margin-top:10px; font-weight: bold;">Authorize Email</button>
+    </fieldset>
+
+    <fieldset style="margin:20px 0; padding:15px; border:1px solid #e5e7eb; border-radius:8px;">
+      <legend style="font-weight: bold; padding: 0 5px;">🗑️ Delete Team Updates</legend>
+      <select id="update-to-delete" style="width:100%; padding:10px; margin:5px 0; border: 1px solid #ccc; border-radius: 4px;">
+        <option value="">Loading updates...</option>
+      </select>
+      <button onclick="adminDeleteUpdate()" style="width:100%; padding:10px; background:#D32F2F; color:white; border:none; border-radius:6px; cursor:pointer; margin-top:10px; font-weight: bold;">Delete Selected Update</button>
+    </fieldset>
+
+    <button onclick="closeAdminPanel()" style="width:100%; padding:12px; background:#f3f4f6; color:#333; border:1px solid #ccc; border-radius:6px; cursor:pointer; margin-top:20px; font-weight: bold;">Close Panel</button>
+  </div>
+</div>
+
+<script>
+function openAdminPanel() {
+  if (!window.currentUserRole || window.currentUserRole.role !== 'admin') {
+    return alert('Only Commercial Strategy admins can access this panel.');
+  }
+  document.getElementById('admin-panel-container').style.display = 'flex';
+  adminLoadUpdates();
+}
+
+function closeAdminPanel() {
+  document.getElementById('admin-panel-container').style.display = 'none';
+}
+
+function adminAddEmail() {
+  const email = document.getElementById('new-user-email').value.trim().toLowerCase();
+  const project = document.getElementById('new-user-project').value;
+  if (!email.endsWith('@mixtafrica.com')) return alert('Email must end with @mixtafrica.com');
+  
+  // Convert dot to comma for Firebase keys
+  const safeEmailKey = email.replace(/\./g, ',');
+  
+  firebase.database().ref('allowed_users/' + safeEmailKey).set(project)
+    .then(() => {
+      document.getElementById('new-user-email').value = '';
+      alert('User authorized globally.');
+    }).catch(e => alert('Database Error: ' + e.message));
+}
+
+function adminLoadUpdates() {
+  const select = document.getElementById('update-to-delete');
+  select.innerHTML = '<option value="">Select an update to delete...</option>';
+  
+  firebase.database().ref('dept_updates').once('value').then(snap => {
+    const data = snap.val() || {};
+    Object.keys(data).forEach(proj => {
+      Object.keys(data[proj]).forEach(dept => {
+        Object.keys(data[proj][dept]).forEach(session => {
+          Object.keys(data[proj][dept][session]).forEach(pushId => {
+            const update = data[proj][dept][session][pushId];
+            const textPreview = update.text ? update.text.substring(0, 40) + '...' : '';
+            // Store the exact path in the value attribute so we can delete it
+            const path = `dept_updates/${proj}/${dept}/${session}/${pushId}`;
+            select.innerHTML += `<option value="${path}">[${proj} - ${dept}] ${update.author}: ${textPreview}</option>`;
+          });
+        });
+      });
+    });
+  });
+}
+
+function adminDeleteUpdate() {
+  const path = document.getElementById('update-to-delete').value;
+  if (!path) return alert('Select an update first.');
+  if (!confirm('Permanently delete this update across all devices?')) return;
+  
+  firebase.database().ref(path).remove()
+    .then(() => {
+      adminLoadUpdates();
+      alert('Update deleted successfully.');
+    }).catch(e => alert('Database Error: ' + e.message));
+}
+</script>
 
 </body>
 </html>`;
