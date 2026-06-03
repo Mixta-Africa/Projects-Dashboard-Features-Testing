@@ -509,7 +509,7 @@ body.users-bar-visible .dept-sidebar {
   .pi-metrics-row { grid-template-columns: repeat(2, 1fr); }
   .pi-forecast-grid { grid-template-columns: 1fr; }
 }
-@media (max-width: 400px) { .metrics-grid { grid-template-columns: 1fr; } }
+@media (max-width: 400px) { .metrics-grid { grid-template-columns: repeat(2, 1fr); } }
 /* ══════════════════════════════════════════════════════
    PREDICTIVE INTELLIGENCE PANEL — Executive Analytics UX
    Expert data-ink ratio, high signal-to-noise, linear layout
@@ -965,11 +965,12 @@ body.users-bar-visible .dept-sidebar {
   .nav-tabs { order: 3; width: 100%; justify-content: flex-start; overflow-x: auto; padding-bottom: 6px; }
   .page { margin-top: 110px; padding-top: 12px; }
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
-  .nav-right { gap: 6px; max-width: calc(100vw - 110px); overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; }
+  .nav-right { gap: 6px; flex-wrap: nowrap; overflow-x: auto; max-width: none; }
   .nav-right::-webkit-scrollbar { display: none; }
-  .nav-badge-group, .admin-btn { flex-shrink: 0; }
+  .nav-badge-group, .admin-btn, .auth-action-btn { flex-shrink: 0; }
   .admin-btn { padding: 6px 10px; }
   .admin-btn span:not(.diag-badge-count) { display: none; }
+  .nav-date { display: none; }
   .tool-modal { max-width: 100%; border-radius: 0; max-height: 100vh; height: 100vh; }
   .report-type-grid { grid-template-columns: 1fr; }
   .tool-nav-btn .tool-nav-label { display: none; }
