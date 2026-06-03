@@ -2005,7 +2005,7 @@ const SEED_TASKS = [
 function loadSeedData() {
   // Only load seed data if Google Sheet hasn't already populated the DB
   if (taskDatabase.length > 0) return;
-  
+
   // Normalize dept names using the dashboard normalization map
   const normalizeSeedDept = (raw) => {
     if (!raw) return 'General';
@@ -2029,12 +2029,6 @@ function loadSeedData() {
   availableSessions.Annexe = SEED_ANNEXE_SESSIONS;
   availableSessions.Crossings = SEED_CX_SESSIONS;
 
-  // Extract metrics immediately from seed Operations rows
-  (function() {
-    ['Crossings','Annexe'].forEach(proj => {
-      
-    });
-  })();
   // Update UI
   const now = new Date().toLocaleDateString('en-NG',{day:'2-digit',month:'short',year:'numeric'});
   document.getElementById('last-updated-text').textContent = 'Seed Data: ' + now + ' (syncing...)';
@@ -2046,7 +2040,6 @@ function loadSeedData() {
   updateLandingPageMetrics();
   if (currentDept) renderCurrentDept();
 }
-
 
 const STATUS_KEY = 'lakowe_status_v5';
 
@@ -4656,7 +4649,7 @@ function refreshDashboardForSession() {
   const pfx = proj === 'Crossings';
 
   const latestSession = availableSessions[proj][0];
-  
+
   // Pull directly from our Firebase cache safely
   const selectedMetrics = (window._firebaseMetrics && window._firebaseMetrics[proj]) ? window._firebaseMetrics[proj][session] || {} : {};
   const latestMetrics = (window._firebaseMetrics && window._firebaseMetrics[proj]) ? window._firebaseMetrics[proj][latestSession] || {} : {};
