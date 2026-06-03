@@ -4711,10 +4711,9 @@ let cxChartInstance = null;
 function renderDynamicCharts() {
   if (typeof Chart === 'undefined') return;
 
-  function getChartMetrics(proj, session) {
   // THE HYBRID OVERRIDE: Tracking Inflow vs Value of Sales (Gap in Receivables)
-  // All values are mapped in Millions (e.g., 1.3B = 1300)
-  
+  // Hoisted to renderDynamicCharts scope so both getChartMetrics AND buildChartData can see it.
+  // All values are in Millions (e.g., 1.3B = 1300)
   const legacyData = {
     'Crossings': {
       'Sept 29':  { inflow: 380, salesValue: 683 },
@@ -4851,6 +4850,7 @@ function renderDynamicCharts() {
     }
   };
 
+  function getChartMetrics(proj, session) {
     if (legacyData[proj] && legacyData[proj][session]) {
       return legacyData[proj][session];
     }
@@ -4936,6 +4936,8 @@ function renderDynamicCharts() {
       options: baseOpts
     });
   }
+
+} // end renderDynamicCharts
 
 // ═══════════════════════════════════════════════════════
 // AI PROJECT CHATBOT
