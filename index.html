@@ -3405,15 +3405,46 @@ function buildPISnapshot(proj) {
     deptMap[t.dept][t.status] = (deptMap[t.dept][t.status]||0)+1;
   });
 
+  // ── SENIOR PM CROSS-SESSION TREND ANALYZER ──
+  // Scans the last 4 weeks of sheets to find tasks that are chronically repeated or stalled
+  const sessions = availableSessions[proj] || [];
+  const recentSessions = sessions.slice(0, 4); 
+  let chronicTasks = [];
+  
+  if (recentSessions.length > 1) {
+    allTasks.forEach(lt => {
+      if (lt.status === 'achieved') return;
+      let appearanceCount = 1;
+      
+      // Look back through previous sessions for the exact same task
+      for (let i = 1; i < recentSessions.length; i++) {
+        const prevMatch = taskDatabase.find(t => 
+          t.project === proj && 
+          t.session === recentSessions[i] && 
+          t.dept === lt.dept && 
+          t.action.toLowerCase().trim() === lt.action.toLowerCase().trim()
+        );
+        if (prevMatch && prevMatch.status !== 'achieved') {
+          appearanceCount++;
+        } else {
+          break; // Task wasn't in the previous sheet, so chain is broken
+        }
+      }
+      
+      if (appearanceCount >= 3) {
+        chronicTasks.push(`[${lt.dept}] Stalled for ${appearanceCount} consecutive reporting periods: ${lt.action}`);
+      }
+    });
+  }
+
   const inflow  = document.getElementById(proj==='Annexe'?'val-annex-inflow':'val-cx-inflow').textContent;
   const units   = document.getElementById(proj==='Annexe'?'val-annex-units':'val-cx-units').textContent;
   const balance = document.getElementById(proj==='Annexe'?'val-annex-balance':'val-cx-balance').textContent;
   const sales   = document.getElementById(proj==='Annexe'?'val-annex-sales':'val-cx-sales').textContent;
   const offers  = document.getElementById(proj==='Annexe'?'val-annex-offers':'val-cx-offers').textContent;
 
-  // Parse balance for runway calc
   const balNum = parseNairaToM(balance);
-  const burnRate = proj === 'Annexe' ? 35 : 18; // ₦M/week
+  const burnRate = proj === 'Annexe' ? 35 : 18; 
   const runwayWks = balNum > 0 ? (balNum / burnRate).toFixed(1) : '< 1';
 
   const topDelayed = byStatus.delayed.slice(0,8).map(t=>`[${t.dept}] ${t.action}${isOverdue(t)?' ⚠OVERDUE':''}`).join('\n');
@@ -3426,7 +3457,8 @@ function buildPISnapshot(proj) {
     ontrack: byStatus.ontrack.length, delayed: byStatus.delayed.length,
     onhold: byStatus.onhold.length, achieved: byStatus.achieved.length,
     overdue: overdueTasks.length,
-    topDelayed, topAchieved, deptSummary
+    topDelayed, topAchieved, deptSummary,
+    chronicTasks: chronicTasks.join('\n')
   };
 }
 
@@ -3449,21 +3481,20 @@ async function generateDynamicPI(proj) {
   const footTxt  = document.getElementById(proj==='Crossings'?'pi-cx-footer-text':'pi-ann-footer-text');
   if (!dynEl) return;
 
-  // Show loading
   if (loadEl) { loadEl.style.display='flex'; }
   dynEl.style.display = 'none';
   if (footerEl) footerEl.style.display = 'none';
 
   const snap = buildPISnapshot(proj);
-  const accentColor = proj === 'Crossings' ? '#1b5e20' : '#D32F2F';
+  const accentColor = proj === 'Crossings' ? '#C0392B' : '#C0392B';
   const projLabel   = 'Lakowe ' + proj;
 
   const projContext = proj === 'Annexe'
-    ? `ANNEXE-SPECIFIC CONTEXT:\n- Overall construction: 35.3% actual vs 40.7% projected (5.4pp shortfall)\n- Internal roads: 42.7% actual vs 47.5% projected\n- MEP/utilities (ALMOG): ~1% started — barely mobilised\n- Streets not yet cleared: Segun Odegbami, Tobi Amusan\n- Rainy season begins May — drainage & compaction at serious risk of stalling\n- Layout provisional approval: 40+ weeks overdue (Commissioner signature pending)\n- No active ad campaign or offer letters as of latest session\n- ₦100M still owed to Elms Gardens (cross-project liability)\n- QS onboarding recently closed — critical for contractor payment sign-off`
-    : `CROSSINGS-SPECIFIC CONTEXT:\n- Overall programme: 27.8% actual vs 30.6% projected (2.8pp shortfall)\n- Phase 1 sandfill: 44% complete; road clearing: 56.5% complete\n- Main civil works: NOT STARTED — gated on ₦800M cumulative inflow milestone\n- Currently ₦${Math.round(800-(parseNairaToM(snap.inflow)))}M short of the ₦800M civil mobilisation trigger\n- Account down ~81% over 6 weeks — zero new inflow since January 2026\n- BAFF vs FUNKUS civil contractor decision still unresolved at DA level\n- Hospitality site redesigned CX9→CX10 — adds 6 commercial + 68 residential units\n- Renders and "coming soon" billboard blocked pending design freeze\n- Rainy season puts Phase 1 clearing and sandfill at risk`;
+    ? `ANNEXE-SPECIFIC CONTEXT:\n- Overall construction: 35.3% actual vs 40.7% projected (5.4pp shortfall)\n- Internal roads: 42.7% actual vs 47.5% projected\n- Layout provisional approval: 40+ weeks overdue (Commissioner signature pending)`
+    : `CROSSINGS-SPECIFIC CONTEXT:\n- Overall programme: 27.8% actual vs 30.6% projected (2.8pp shortfall)\n- Phase 1 sandfill: 44% complete; road clearing: 56.5% complete\n- Main civil works: NOT STARTED — gated on ₦800M cumulative inflow milestone`;
 
-  const prompt = `You are a Senior Business Strategy Associate advising Mixta Africa's executive board. 
-Your objective is to analyze the provided live dashboard metrics for ${projLabel} and deliver a 'Predictive Intelligence' brief.
+  const prompt = `You are a strict, highly experienced Senior Project Manager advising Mixta Africa's executive board. 
+Your objective is to spot trends across reporting periods, flag chronic delays, and deliver predictive intelligence for ${projLabel}.
 
 LIVE CONTEXT:
 - Cash Liquidity: ${snap.balance}
@@ -3471,19 +3502,21 @@ LIVE CONTEXT:
 - Sales Pipeline: ${snap.offers} Active Offer Letters
 - Critical Bottlenecks: ${snap.delayed} Delayed Tasks (${snap.overdue} Overdue).
 
+CHRONICALLY STALLED TASKS (Repeated across multiple reporting periods):
+${snap.chronicTasks || "No chronic tasks flagged."}
+
 ${projContext}
 
 CRITICAL INSTRUCTIONS:
-1. NO ACADEMIC OR THEORETICAL FLUFF. Speak strictly in terms of cash flow, contractor mobilization, and real estate execution.
-2. Focus on the "So What?": If account balances are low and offers are stagnant, explicitly state that contractor payments for the next phase are at severe risk.
-3. Be candid, sharp, and action-oriented. Do not soften the blow.
+1. NO ACADEMIC FLUFF. Speak strictly in terms of cash flow, contractor mobilization, and real estate execution.
+2. If there are "CHRONICALLY STALLED TASKS" listed above, you MUST call them out by name and reprimand the department responsible. A task delayed for 3+ weeks is a severe management failure.
+3. Output EXACTLY these HTML blocks (using the exact class names provided) to inject into the dashboard.
 
-YOUR TASK:
-Output EXACTLY these HTML blocks (using the exact class names provided) to inject into the dashboard:
+YOUR HTML OUTPUT FORMAT:
 
 <div class="pi-insight-block" style="border-top:3px solid ${accentColor};margin-top:0">
-  <div class="pi-insight-headline">📍 Liquidity & Sales Correlation</div>
-  <div class="pi-insight-text">[1-2 punchy sentences. How does the current cash liquidity and offer letter pipeline directly impact our immediate construction ability?]</div>
+  <div class="pi-insight-headline">📍 Liquidity & Pipeline Correlation</div>
+  <div class="pi-insight-text">[1-2 punchy sentences on how current cash and offers impact construction ability.]</div>
 </div>
 
 <div class="pi-metrics-row">
@@ -3494,18 +3527,17 @@ Output EXACTLY these HTML blocks (using the exact class names provided) to injec
 </div>
 
 <div class="pi-insight-block">
-  <div class="pi-insight-headline">🔥 Milestone Delivery Risks</div>
-  <div class="pi-insight-text">[1-2 sentences identifying exactly what milestone is at risk right now due to the bottlenecks or cash position.]</div>
+  <div class="pi-insight-headline">🚨 Senior PM Trend Alert: Chronic Delays</div>
+  <div class="pi-insight-text">[Analyze the "CHRONICALLY STALLED TASKS". Call out the departments. Explain the downstream impact of these recurring failures.]</div>
 </div>
 
 <div class="pi-insight-block">
   <div class="pi-insight-headline">🎯 Immediate Required Executive Action</div>
-  <div class="pi-insight-text">[1-2 sentences. What exact decision must the board make THIS WEEK to unblock the project? Name it clearly.]</div>
+  <div class="pi-insight-text">[1-2 sentences. What exact decision must the board make THIS WEEK to unblock the project?]</div>
 </div>
 
 Output ONLY the HTML, nothing else before or after it.`;
 
-  // ── Use Groq (CORS-friendly, fast) ──
   const GROQ_KEY = window.GROQ_API_KEY || localStorage.getItem('GROQ_API_KEY');
   if (!GROQ_KEY) {
     if (loadEl) loadEl.innerHTML = '<span style="color:var(--status-orange);font-size:12px">⚠ GROQ_API_KEY not configured as environment secret.</span>';
@@ -3520,7 +3552,7 @@ Output ONLY the HTML, nothing else before or after it.`;
         max_tokens: 1400,
         temperature: 0.3,
         messages: [
-          { role: 'system', content: 'You are a sharp business strategy associate at a real estate development firm. Write punchy, direct executive intelligence. Output only valid HTML using the exact class names given. No markdown, no preamble.' },
+          { role: 'system', content: 'You are a strict, senior real estate project manager. Write punchy, direct executive intelligence. Output only valid HTML using the exact class names given. No markdown, no preamble.' },
           { role: 'user', content: prompt }
         ]
       })
@@ -3530,14 +3562,13 @@ Output ONLY the HTML, nothing else before or after it.`;
       ? data.choices[0].message.content.trim() : '';
     if (!text) throw new Error('Empty response from Groq');
 
-    // Strip any accidental markdown fences
     const clean = text.replace(/^```html?\n?/i,'').replace(/\n?```$/,'').trim();
 
     dynEl.innerHTML = clean;
     dynEl.style.display = 'block';
     if (loadEl) loadEl.style.display = 'none';
     if (footerEl) footerEl.style.display = 'flex';
-    if (footTxt) footTxt.textContent = `Strategic intelligence generated from live data · ${new Date().toLocaleDateString('en-NG',{day:'2-digit',month:'short',year:'numeric'})} ${new Date().toLocaleTimeString('en-NG',{hour:'2-digit',minute:'2-digit'})} · Refreshes on every sync`;
+    if (footTxt) footTxt.textContent = `Strategic intelligence generated by Cross-Session Analysis Engine · ${new Date().toLocaleDateString('en-NG',{day:'2-digit',month:'short',year:'numeric'})} ${new Date().toLocaleTimeString('en-NG',{hour:'2-digit',minute:'2-digit'})}`;
     _piGenerated[proj] = true;
     _piCache[proj] = clean;
   } catch(err) {
