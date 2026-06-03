@@ -1,0 +1,61 @@
+name: Send Task Reminder Email
+
+on:
+  workflow_dispatch:
+    inputs:
+      to:
+        description: 'Recipient email(s) as JSON array string'
+        required: true
+      subject:
+        description: 'Email subject line'
+        required: true
+      html:
+        description: 'Full HTML email body'
+        required: true
+      dept:
+        description: 'Department name (for logging)'
+        required: true
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send email via Resend
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          # Parse recipients — input is a JSON array string e.g. ["a@b.com","c@d.com"]
+          TO='${{ inputs.to }}'
+          SUBJECT='${{ inputs.subject }}'
+          DEPT='${{ inputs.dept }}'
+
+          echo "Sending reminder to $DEPT department..."
+
+          # Build the JSON payload
+          PAYLOAD=$(jq -n \
+            --arg from "Mixta Africa Projects <onboarding@resend.dev>" \
+            --argjson to "$TO" \
+            --arg subject "$SUBJECT" \
+            --arg html '${{ inputs.html }}' \
+            --arg reply_to "o.olasunkanmi@mixtafrica.com" \
+            '{from: $from, to: $to, subject: $subject, html: $html, reply_to: $reply_to}')
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST https://api.resend.com/emails \
+            -H "Authorization: Bearer $RESEND_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+
+          echo "Response: $BODY"
+          echo "HTTP Status: $HTTP_CODE"
+
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "✓ Email sent successfully to $DEPT"
+          else
+            echo "✗ Failed to send email to $DEPT"
+            exit 1
+          fi
