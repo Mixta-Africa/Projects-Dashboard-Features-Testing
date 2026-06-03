@@ -4900,25 +4900,29 @@ function renderDynamicCharts() {
     }
   };
 
-  // 1. IF THIS DATE IS IN OUR LEGACY DICTIONARY, USE THE HARDCODED VALUES
-  if (legacyData[proj] && legacyData[proj][session]) {
-    return legacyData[proj][session];
+    if (legacyData[proj] && legacyData[proj][session]) {
+      return legacyData[proj][session];
+    }
+    if (window._chartMetrics && window._chartMetrics[proj] && window._chartMetrics[proj][session]) {
+      return window._chartMetrics[proj][session];
+    }
+    return { inflow: null, salesValue: null };
   }
 
-  // 2. OTHERWISE, USE THE PARSED DYNAMIC DATA (May 2026 onwards)
-  if (window._chartMetrics && window._chartMetrics[proj] && window._chartMetrics[proj][session]) {
-    return window._chartMetrics[proj][session];
-  }
-  
-  // 3. FALLBACK TO PREVENT BREAKING
-  return { inflow: null, salesValue: null, balance: null };
-}
   function buildChartData(proj) {
-    let sessions = [...(availableSessions[proj] || [])].reverse();
-    let labels = [], inflowData = [], salesValueData = [];
-    let rawMetrics = sessions.map(s => getChartMetrics(proj, s));
+    let liveSessions = [...(availableSessions[proj] || [])].reverse();
     
-    // Look for the first valid numbers to start the lines
+    // Merge legacy dates that aren't in the live sheets
+    let legacyKeys = Object.keys(legacyData[proj] || {});
+    let fullSessions = [];
+    legacyKeys.forEach(k => {
+      if (!liveSessions.includes(k)) fullSessions.push(k);
+    });
+    fullSessions = fullSessions.concat(liveSessions);
+
+    let labels = [], inflowData = [], salesValueData = [];
+    let rawMetrics = fullSessions.map(s => getChartMetrics(proj, s));
+    
     let firstInf = rawMetrics.find(m => m.inflow !== null && m.inflow > 0)?.inflow || 0;
     let firstSales = rawMetrics.find(m => m.salesValue !== null && m.salesValue > 0)?.salesValue || 0;
     
@@ -4926,16 +4930,12 @@ function renderDynamicCharts() {
     let lastSales = firstSales;
     
     rawMetrics.forEach((m, i) => {
-      labels.push(formatSheetName(sessions[i]));
+      labels.push(formatSheetName(fullSessions[i]));
       
-      // Carry-forward guard: only update if new value is >= 20% of last known value
-      // This prevents non-cumulative / partial figures from causing false cliff-drops
       if (m.inflow !== null && m.inflow > 0) {
         if (lastInf === 0 || m.inflow >= lastInf * 0.2) {
           lastInf = m.inflow;
         }
-        // If the dynamic value looks like a non-cumulative weekly figure (much lower than historical),
-        // carry forward the previous value and skip the anomalous data point
       }
       if (m.salesValue !== null && m.salesValue > 0) {
         if (lastSales === 0 || m.salesValue >= lastSales * 0.2) {
@@ -4952,36 +4952,39 @@ function renderDynamicCharts() {
   const gridC = 'rgba(0,0,0,0.06)', textC = '#999';
   const baseOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { font: { size: 11, weight: '700', family: 'DM Sans' }, color: textC, boxWidth: 14, padding: 12 } } }, scales: { x: { ticks: { color: textC, font: { size: 10, weight: '600' }, maxRotation: 45, autoSkip: true, maxTicksLimit: 6 }, grid: { display: false } }, y: { ticks: { color: textC, font: { size: 10 }, callback: function(value) { return '₦' + (value / 1000).toFixed(1) + 'Bn'; } }, grid: { color: gridC } } } };
 
-  // 1. RENDER ANNEXE CHART
+  // RENDER ANNEXE CHART
   const annData = buildChartData('Annexe');
+  const annRadius = annData.labels.length > 40 ? 0 : (annData.labels.length > 20 ? 1 : 2.5);
+
   const ctxAnnexe = document.getElementById('c1');
   if (ctxAnnexe && annData.labels.length) {
     if (annexChartInstance) annexChartInstance.destroy();
     annexChartInstance = new Chart(ctxAnnexe, {
       type: 'line', 
       data: { labels: annData.labels, datasets: [ 
-        { label: 'Inflow', data: annData.inflowData, borderColor: '#2e7d32', backgroundColor: 'rgba(46,125,50,0.08)', borderWidth: 2.5, pointRadius: 2.5, pointBackgroundColor: '#2e7d32', fill: true, tension: 0.4 }, 
-        { label: 'Value of Sales', data: annData.salesValueData, borderColor: '#1565c0', backgroundColor: 'rgba(21,101,192,0.05)', borderWidth: 2, pointRadius: 2.5, pointBackgroundColor: '#1565c0', fill: false, tension: 0.4, borderDash: [4, 3] } 
+        { label: 'Inflow', data: annData.inflowData, borderColor: '#2e7d32', backgroundColor: 'rgba(46,125,50,0.08)', borderWidth: 2.5, pointRadius: annRadius, pointBackgroundColor: '#2e7d32', fill: true, tension: 0.4 }, 
+        { label: 'Value of Sales', data: annData.salesValueData, borderColor: '#1565c0', backgroundColor: 'rgba(21,101,192,0.05)', borderWidth: 2, pointRadius: annRadius, pointBackgroundColor: '#1565c0', fill: false, tension: 0.4, borderDash: [4, 3] } 
       ]},
       options: baseOpts
     });
   }
 
-  // 2. RENDER CROSSINGS CHART (Now with two lines!)
+  // RENDER CROSSINGS CHART
   const cxData = buildChartData('Crossings');
+  const cxRadius = cxData.labels.length > 40 ? 0 : (cxData.labels.length > 20 ? 1 : 2.5);
+
   const ctxCx = document.getElementById('c3');
   if (ctxCx && cxData.labels.length) {
     if (cxChartInstance) cxChartInstance.destroy();
     cxChartInstance = new Chart(ctxCx, {
       type: 'line', 
       data: { labels: cxData.labels, datasets: [ 
-        { label: 'Inflow', data: cxData.inflowData, borderColor: '#2e7d32', backgroundColor: 'rgba(46,125,50,0.08)', borderWidth: 2.5, pointRadius: 2.5, pointBackgroundColor: '#2e7d32', fill: true, tension: 0.4 },
-        { label: 'Value of Sales', data: cxData.salesValueData, borderColor: '#1565c0', backgroundColor: 'rgba(21,101,192,0.05)', borderWidth: 2, pointRadius: 2.5, pointBackgroundColor: '#1565c0', fill: false, tension: 0.4, borderDash: [4, 3] } 
+        { label: 'Inflow', data: cxData.inflowData, borderColor: '#2e7d32', backgroundColor: 'rgba(46,125,50,0.08)', borderWidth: 2.5, pointRadius: cxRadius, pointBackgroundColor: '#2e7d32', fill: true, tension: 0.4 },
+        { label: 'Value of Sales', data: cxData.salesValueData, borderColor: '#1565c0', backgroundColor: 'rgba(21,101,192,0.05)', borderWidth: 2, pointRadius: cxRadius, pointBackgroundColor: '#1565c0', fill: false, tension: 0.4, borderDash: [4, 3] } 
       ]},
       options: baseOpts
     });
   }
-}
 
 // ═══════════════════════════════════════════════════════
 // AI PROJECT CHATBOT
