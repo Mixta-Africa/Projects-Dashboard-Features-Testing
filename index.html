@@ -4974,10 +4974,11 @@ function getDeptReminderTasks(proj, dept, latest, overrides) {
 // Build the plain-text email body for one department
 function buildReminderEmailBody(proj, dept, tasks) {
   const projLabel = 'Lakowe ' + proj;
+  const projColor = proj === 'Annexe' ? '#D32F2F' : '#1b5e20';
   const dateStr = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
   const total = tasks.delayed.length + tasks.ontrack.length + tasks.onhold.length;
 
-  // Opening urgency line — fixed subject/verb agreement so "department" always uses "has"
+  // Opening urgency line
   let urgencyLine = '';
   if (total === 0) {
     urgencyLine = 'Our records show no outstanding tasks for your department at this time. Please log into the Projects Dashboard to verify and update your task statuses.';
@@ -4988,48 +4989,93 @@ function buildReminderEmailBody(proj, dept, tasks) {
     urgencyLine = `Your department has ${total} open ${total === 1 ? 'task' : 'tasks'} in the tracker. Kindly review and ensure ${total === 1 ? 'it is' : 'they are'} progressing ahead of our next review session.`;
   }
 
-  // Build task section
-  function formatSection(list, heading) {
+  // Build an HTML table for a category of tasks
+  function buildTable(list, heading, headerColor, statusLabel) {
     if (!list.length) return '';
-    let out = '\n' + heading + '\n';
-    list.forEach((t, i) => {
-      out += `  ${i + 1}. ${t.action}`;
-      if (t.due && t.due !== 'TBD') out += ` (Due: ${t.due})`;
-      if (isOverdue(t)) out += ' — OVERDUE';
-      out += '\n';
-    });
-    return out;
+    let rows = list.map((t, i) => {
+      const overdueTag = isOverdue(t) ? ' <span style="color:#c62828;font-weight:800;font-size:11px;">OVERDUE</span>' : '';
+      const due = (t.due && t.due !== 'TBD') ? t.due : '—';
+      const rowBg = i % 2 === 0 ? '#ffffff' : '#f9f9f9';
+      return `<tr style="background:${rowBg};">
+        <td style="padding:10px 14px;border-bottom:1px solid #e8e8e8;font-size:13px;color:#1a1a1a;line-height:1.5;">${t.action}${overdueTag}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #e8e8e8;font-size:12px;color:#555;white-space:nowrap;text-align:center;">${due}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #e8e8e8;font-size:11px;font-weight:800;text-align:center;white-space:nowrap;color:${headerColor};">${statusLabel}</td>
+      </tr>`;
+    }).join('');
+
+    return `<p style="margin:24px 0 8px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:${headerColor};">${heading}</p>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:1px solid #e0e0e0;border-radius:6px;overflow:hidden;margin-bottom:8px;">
+      <thead>
+        <tr style="background:${headerColor};">
+          <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:800;color:#ffffff;text-transform:uppercase;letter-spacing:0.05em;">Task / Action Item</th>
+          <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:800;color:#ffffff;text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap;">Due Date</th>
+          <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:800;color:#ffffff;text-transform:uppercase;letter-spacing:0.05em;">Status</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
   }
 
   let taskSection = '';
-  if (total === 0) {
-    taskSection = '';
-  } else {
-    taskSection += formatSection(tasks.delayed, 'DELAYED / OVERDUE — Action Required:');
-    taskSection += formatSection(tasks.ontrack, 'IN PROGRESS — On Track:');
-    taskSection += formatSection(tasks.onhold,  'ON HOLD — Due Within 7 Days:');
+  if (total > 0) {
+    taskSection += buildTable(tasks.delayed, '🔴 Delayed / Overdue — Immediate Action Required', '#c62828', 'DELAYED');
+    taskSection += buildTable(tasks.ontrack, '🟢 In Progress — On Track', '#2e7d32', 'ON TRACK');
+    taskSection += buildTable(tasks.onhold,  '⏸ On Hold — Due Within 7 Days', '#e65100', 'ON HOLD');
   }
 
-  // Closing instruction — singular/plural
+  // Closing instruction
   const concludeLine = total === 1
     ? 'Kindly conclude this task ahead of the next meeting and provide an update on the dashboard.'
     : total > 1
       ? 'Kindly conclude these tasks ahead of the next meeting and provide updates on the dashboard.'
       : 'Kindly log into the dashboard and confirm your department status ahead of the next meeting.';
 
-  return `Dear ${dept} Team,
+  // Build full HTML email
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f4f4;padding:24px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
 
-I trust you are well.
+        <!-- Header -->
+        <tr><td style="background:${projColor};padding:24px 32px;">
+          <p style="margin:0;font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.1em;">Mixta Africa — Task Reminder</p>
+          <p style="margin:6px 0 0;font-size:20px;font-weight:800;color:#ffffff;">${projLabel} · ${dept} Department</p>
+          <p style="margin:4px 0 0;font-size:12px;color:rgba(255,255,255,0.75);">${dateStr}</p>
+        </td></tr>
 
-${urgencyLine}
-${taskSection}
-${concludeLine}
+        <!-- Body -->
+        <tr><td style="padding:28px 32px;">
+          <p style="margin:0 0 16px;font-size:14px;color:#1a1a1a;">Dear <strong>${dept} Team</strong>,</p>
+          <p style="margin:0 0 20px;font-size:14px;color:#444;line-height:1.6;">I trust you are well.</p>
+          <p style="margin:0 0 20px;font-size:14px;color:#444;line-height:1.6;">${urgencyLine}</p>
 
-If any item is blocked or requires escalation, please respond to this email or flag it on the dashboard immediately so the project team can assist.
+          ${taskSection || '<p style="margin:0 0 20px;font-size:13px;color:#777;font-style:italic;">No open tasks recorded for this department in the current session.</p>'}
 
-Best Regards,
-Mixta Africa — Projects Team
-${projLabel} | ${dateStr}`;
+          <p style="margin:20px 0 0;font-size:14px;color:#444;line-height:1.6;">${concludeLine}</p>
+          <p style="margin:12px 0 0;font-size:14px;color:#444;line-height:1.6;">If any item is blocked or requires escalation, please respond to this email or flag it on the dashboard immediately so the project team can assist.</p>
+        </td></tr>
+
+        <!-- Divider -->
+        <tr><td style="padding:0 32px;"><hr style="border:none;border-top:1px solid #ebebeb;margin:0;"></td></tr>
+
+        <!-- Footer -->
+        <tr><td style="padding:20px 32px 28px;">
+          <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#1a1a1a;">Mixta Africa — Projects Team</p>
+          <p style="margin:0 0 12px;font-size:12px;color:#888;">${projLabel} &nbsp;|&nbsp; ${dateStr}</p>
+          <p style="margin:0;font-size:13px;color:#555;">
+            View real-time task status and updates on the
+            <a href="https://bit.ly/MixtaProjectsDashboard" style="color:${projColor};font-weight:700;text-decoration:none;">Projects Dashboard</a>
+          </p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
 }
 
 // Compose email(s) and show preview
@@ -5220,7 +5266,8 @@ function sendReminderEmail() {
         to_email: recipient,
         to_name:  emailGroup.dept + ' Team',
         subject:  emailGroup.subject,
-        message:  emailGroup.body,
+        message:  emailGroup.body,       // plain-text fallback
+        html_message: emailGroup.body,   // HTML body — use {{html_message}} in EmailJS template
         reply_to: 'o.olasunkanmi@mixtafrica.com'
       };
 
@@ -6712,8 +6759,8 @@ label = '₦' + (bVal.endsWith('.00') ? bVal.slice(0, -3) : bVal) + 'Bn';
         <div class="email-preview-label">Recipients</div>
         <div id="reminder-recipients" class="email-meta" style="margin-bottom: 16px;"></div>
 
-        <div class="email-preview-label">Email preview (generated by AI)</div>
-        <div id="reminder-email-preview" class="email-preview-box">Select a department to preview the email content.</div>
+        <div class="email-preview-label">Email preview (HTML — renders as formatted table in inbox)</div>
+        <div id="reminder-email-preview" class="email-preview-box" style="font-size:12px;color:var(--text-muted);font-style:italic;">Select a department to generate a preview. The email will render as a formatted HTML table in the recipient's inbox.</div>
       </div>
 
     </div>
