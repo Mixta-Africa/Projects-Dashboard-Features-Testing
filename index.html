@@ -5149,10 +5149,10 @@ function sendReminderEmail() {
   const statusEl = document.getElementById('reminder-status-text');
   const btn = document.getElementById('reminder-send-btn');
 
-  // Resolve Resend API key — injected at build time or from localStorage for local dev
-  const RESEND_KEY = window.RESEND_API_KEY || localStorage.getItem('RESEND_API_KEY');
-  if (!RESEND_KEY) {
-    statusEl.textContent = '⚠ RESEND_API_KEY not configured. Add it to GitHub Secrets.';
+  // Resolve GitHub workflow token — injected at build time or localStorage for local dev
+  const GH_TOKEN = window.GH_WORKFLOW_TOKEN || localStorage.getItem('GH_WORKFLOW_TOKEN');
+  if (!GH_TOKEN) {
+    statusEl.textContent = '⚠ GH_WORKFLOW_TOKEN not configured. Add it to GitHub Secrets.';
     return;
   }
 
@@ -5167,7 +5167,6 @@ function sendReminderEmail() {
   // Helper — builds email payloads, handles AMC personalisation
   function pushEmail(dept, rawRecipients, subject, baseBody) {
     if (!rawRecipients || rawRecipients.length === 0) return;
-
     if (dept.toUpperCase() === 'AMC') {
       rawRecipients.forEach(function(realEmail) {
         var greeting = 'Dear AMC Team,';
@@ -5177,11 +5176,10 @@ function sendReminderEmail() {
         else if (e.includes('b.ajayi')) greeting = 'Dear BA,';
         var customBody = baseBody.replace('Dear ' + dept + ' Team,', greeting);
         var toAddress = mode === 'test' ? TEST_EMAIL : realEmail;
-        emailsToSend.push({ to: toAddress, subject: subject, html: customBody, dept: dept });
+        emailsToSend.push({ to: [toAddress], subject: subject, html: customBody, dept: dept });
       });
     } else {
       var recipients = mode === 'test' ? [TEST_EMAIL] : rawRecipients;
-      // Resend supports array of addresses in `to`
       emailsToSend.push({ to: recipients, subject: subject, html: baseBody, dept: dept });
     }
   }
@@ -5201,20 +5199,26 @@ function sendReminderEmail() {
   if (emailsToSend.length === 0) { statusEl.textContent = 'No emails to send.'; return; }
 
   btn.disabled = true;
-  btn.innerHTML = '<span class="tool-spinner"></span> Sending...';
+  btn.innerHTML = '<span class="tool-spinner"></span> Queuing emails...';
   statusEl.textContent = '';
 
-  var totalEmails = emailsToSend.length;
-  var sentCount = 0;
-  var failCount = 0;
+  // GitHub Actions workflow dispatch API — runs server-side, no CORS issues
+  const REPO = 'Mixta-Africa/Projects-Dashboard-Features-Testing';
+  const WORKFLOW = 'send-email.yml';
 
-  // Send each email group sequentially via Resend API
-  function sendNext(idx) {
+  // Dispatch one workflow run per email group
+  // GitHub Actions inputs are strings so we JSON-encode the email payload
+  var dispatched = 0;
+  var failed = 0;
+
+  function dispatchNext(idx) {
     if (idx >= emailsToSend.length) {
       var currentMode = document.getElementById('reminder-mode').value;
-      statusEl.textContent = failCount === 0
-        ? '✓ ' + sentCount + ' email' + (sentCount !== 1 ? 's' : '') + ' sent successfully' + (currentMode === 'test' ? ' to test address' : '')
-        : sentCount + ' sent, ' + failCount + ' failed. Check browser console.';
+      if (failed === 0) {
+        statusEl.textContent = '✓ ' + dispatched + ' email' + (dispatched !== 1 ? 's' : '') + ' queued — delivering within 30 seconds' + (currentMode === 'test' ? ' (test mode)' : '');
+      } else {
+        statusEl.textContent = dispatched + ' queued, ' + failed + ' failed. Check that GH_WORKFLOW_TOKEN has workflow scope.';
+      }
       btn.innerHTML = '📨 Send Email' + (emailsToSend.length > 1 ? 's' : '');
       btn.disabled = false;
       return;
@@ -5222,36 +5226,43 @@ function sendReminderEmail() {
 
     var emailGroup = emailsToSend[idx];
 
-    fetch('https://api.resend.com/emails', {
+    fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/' + WORKFLOW + '/dispatches', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + RESEND_KEY
+        'Accept': 'application/vnd.github+json',
+        'Authorization': 'Bearer ' + GH_TOKEN,
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from:     RESEND_FROM,
-        to:       emailGroup.to,
-        subject:  emailGroup.subject,
-        html:     emailGroup.html,
-        reply_to: RESEND_REPLY_TO
+        ref: 'main',
+        inputs: {
+          to:      JSON.stringify(emailGroup.to),
+          subject: emailGroup.subject,
+          html:    emailGroup.html,
+          dept:    emailGroup.dept
+        }
       })
     })
     .then(function(res) {
-      return res.json().then(function(data) {
-        if (!res.ok) throw new Error(data.message || 'HTTP ' + res.status);
-        sentCount++;
-        statusEl.textContent = 'Sending... ' + sentCount + ' of ' + totalEmails + ' sent';
-        sendNext(idx + 1);
-      });
+      if (res.status === 204) {
+        dispatched++;
+        statusEl.textContent = 'Queuing... ' + dispatched + ' of ' + emailsToSend.length;
+        dispatchNext(idx + 1);
+      } else {
+        return res.json().then(function(data) {
+          throw new Error(data.message || 'HTTP ' + res.status);
+        });
+      }
     })
     .catch(function(err) {
-      failCount++;
-      console.error('[Resend] Failed for', emailGroup.dept, err.message);
-      sendNext(idx + 1);
+      failed++;
+      console.error('[GH Dispatch] Failed for', emailGroup.dept, err.message);
+      dispatchNext(idx + 1);
     });
   }
 
-  sendNext(0);
+  dispatchNext(0);
 }
 
 // Fallback: open mailto if EmailJS not set up
@@ -6603,6 +6614,11 @@ window.onload = function () {
     const _rk = '__RESEND_API_KEY__';
     if (_rk && !_rk.startsWith('__')) window.RESEND_API_KEY = _rk;
     else window.RESEND_API_KEY = localStorage.getItem('RESEND_API_KEY') || '';
+  }
+  if (!window.GH_WORKFLOW_TOKEN) {
+    const _gh = '__GH_WORKFLOW_TOKEN__';
+    if (_gh && !_gh.startsWith('__')) window.GH_WORKFLOW_TOKEN = _gh;
+    else window.GH_WORKFLOW_TOKEN = localStorage.getItem('GH_WORKFLOW_TOKEN') || '';
   }
   
   updateTargetHeaders();
