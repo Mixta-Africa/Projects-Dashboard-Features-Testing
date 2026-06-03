@@ -5085,15 +5085,6 @@ window.onload = function () {
   updateTargetHeaders();
   initFirebase();
 
-  if (!window.onAuthGateReady) {
-    window.onAuthGateReady = function () {
-      loadSeedData();
-      applyPriorityColors();
-      syncWithGoogleSheet();
-      setInterval(syncWithGoogleSheet, AUTO_SYNC_MINUTES * 60 * 1000);
-    };
-  }
-
   try {
     const lastPointPlugin = {
       id: 'lastPointLabel',
@@ -5292,63 +5283,35 @@ label = '₦' + (bVal.endsWith('.00') ? bVal.slice(0, -3) : bVal) + 'Bn';
      AUTH MODAL — Firebase email/password sign-in
      ════════════════════════════════════════════════════════════════ -->
 <!-- Auth handled by dashboard-auth.js (Google Sign-In) -->
-
-<!-- ══ AUTH GATE OVERLAY — required target for dashboard-auth.js to render into ══ -->
-<div id="auth-gate-overlay" style="display:none; position:fixed; inset:0; z-index:2147483647; background:rgba(255,255,255,0.97); align-items:center; justify-content:center; flex-direction:column; gap:20px; font-family:'DM Sans',sans-serif;">
-  <img src="Mixta Africa.jpg" alt="Mixta Africa" style="width:140px; object-fit:contain; border-radius:8px;" onerror="this.style.display='none'">
-  <div style="text-align:center;">
-    <div style="font-size:20px; font-weight:800; color:#1a1a1a; letter-spacing:-0.03em;">Projects Dashboard</div>
-    <div style="font-size:13px; color:#999; margin-top:4px;">Sign in to continue</div>
-  </div>
-  <!-- dashboard-auth.js will inject its Google Sign-In button here -->
-  <div id="auth-gate-inner" style="display:flex; flex-direction:column; align-items:center; gap:12px; min-width:280px;"></div>
-  <div id="auth-gate-error" style="color:#c62828; font-size:12px; text-align:center; max-width:280px; display:none;"></div>
-</div>
-
 <script>
-// ── AUTH GATE CALLBACK — defined here so it exists BEFORE dashboard-auth.js runs ──
-window.onAuthGateReady = window.onAuthGateReady || function () {
+// ── AUTH GATE CALLBACKS — must be defined BEFORE dashboard-auth.js loads ──
+// On a persisted Firebase session, onAuthStateChanged fires synchronously
+// inside initAuth() — before any code after <script src="dashboard-auth.js"> runs.
+// Defining them here (in the script block immediately before that tag) guarantees
+// they exist in all cases: fresh login, persisted session, and page reload.
+
+window.onAuthGateReady = function () {
   loadSeedData();
   applyPriorityColors();
   syncWithGoogleSheet();
   setInterval(syncWithGoogleSheet, AUTO_SYNC_MINUTES * 60 * 1000);
 };
 
-window.onAuthGateSignedIn = window.onAuthGateSignedIn || function(user, access) {
-  currentUser = user;
-  const role = (typeof USER_ROLES !== 'undefined') ? USER_ROLES[(user.email || '').toLowerCase()] : null;
-  currentUserRole = role;
-  if (typeof _drainWriteQueue === 'function') _drainWriteQueue();
-  if (role && role.project !== 'Both') {
-    if (currentProject !== role.project && typeof selectProject === 'function') {
-      selectProject(role.project);
-    }
-  }
-};
-
-// ── SAFETY UNLOCK ──
-// If auth-locked is still on after 10s (dashboard-auth.js failed/errored),
-// force-show the overlay so users can at least see the login UI.
-// If the overlay itself has nothing rendered (auth.js totally failed),
-// we remove auth-locked entirely so the page is usable.
-window._authSafetyTimer = setTimeout(function() {
-  if (document.body && document.body.classList.contains('auth-locked')) {
-    console.warn('[AUTH] Safety timeout — dashboard-auth.js may not have run. Attempting recovery.');
-    var overlay = document.getElementById('auth-gate-overlay');
-    var inner = document.getElementById('auth-gate-inner');
-    if (overlay) {
-      // Show the overlay with a fallback message if auth.js left it empty
-      if (inner && inner.children.length === 0) {
-        inner.innerHTML = '<div style="font-size:13px;color:#c62828;background:#fff5f5;border:1px solid #ffcdd2;border-radius:8px;padding:14px 18px;max-width:280px;text-align:center;">'
-          + '⚠ Sign-in failed to load.<br><br>Check that <strong>dashboard-auth.js</strong> is in the same folder as this file, then refresh the page.</div>';
+// onAuthGateSignedIn is set inside initFirebase() which has the full implementation.
+// A fallback is defined here only in case initFirebase hasn't run yet.
+if (!window.onAuthGateSignedIn) {
+  window.onAuthGateSignedIn = function(user, access) {
+    currentUser = user;
+    const role = (typeof USER_ROLES !== 'undefined') ? USER_ROLES[(user.email || '').toLowerCase()] : null;
+    currentUserRole = role;
+    if (typeof _drainWriteQueue === 'function') _drainWriteQueue();
+    if (role && role.project !== 'Both') {
+      if (currentProject !== role.project && typeof selectProject === 'function') {
+        selectProject(role.project);
       }
-      overlay.style.display = 'flex';
-    } else {
-      // Overlay doesn't exist at all — just unlock the body
-      document.body.classList.remove('auth-locked');
     }
-  }
-}, 10000);
+  };
+}
 </script>
 <script src="dashboard-auth.js"></script>
 <script src="dashboard-pi-engine.js"></script>
