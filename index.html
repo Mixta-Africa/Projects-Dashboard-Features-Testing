@@ -6574,11 +6574,18 @@ function addChatMsg(role, text, thinking=false) {
 function removeChatMsg(id) { const el=document.getElementById(id); if(el) el.remove(); }
 
 window.onload = function () {
-  if (!window.GROQ_API_KEY && typeof process !== 'undefined' && process.env && process.env.GROQ_API_KEY) {
-    window.GROQ_API_KEY = process.env.GROQ_API_KEY;
+  // API keys injected at build time by GitHub Actions (see .github/workflows/deploy.yml)
+  // Placeholders below are replaced with real values via sed before deployment.
+  // Falls back to localStorage for local development.
+  if (!window.GROQ_API_KEY) {
+    const _gk = '__GROQ_API_KEY__';
+    if (_gk && !_gk.startsWith('__')) window.GROQ_API_KEY = _gk;
+    else window.GROQ_API_KEY = localStorage.getItem('GROQ_API_KEY') || '';
   }
-  if (!window.CEREBRAS_API_KEY && typeof process !== 'undefined' && process.env && process.env.CEREBRAS_API_KEY) {
-    window.CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;
+  if (!window.CEREBRAS_API_KEY) {
+    const _ck = '__CEREBRAS_API_KEY__';
+    if (_ck && !_ck.startsWith('__')) window.CEREBRAS_API_KEY = _ck;
+    else window.CEREBRAS_API_KEY = localStorage.getItem('CEREBRAS_API_KEY') || '';
   }
   
   updateTargetHeaders();
