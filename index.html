@@ -71,39 +71,48 @@
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg: #f8f9fa;
-  --white: #ffffff;
-  --border: #dadce0;
-  --border-md: #bdc1c6;
-  --text-primary: #202124;
-  --text-secondary: #5f6368;
-  --text-muted: #80868b;
-  --brand-red: #d93025;
-  --brand-red-light: #fce8e6;
-  --brand-blue: #1a73e8;
-  --status-green: #1e8e3e;
-  --status-green-bg: #e6f4ea;
-  --status-red: #d93025;
-  --status-red-bg: #fce8e6;
-  --status-orange: #f29900;
-  --status-orange-bg: #fef7e0;
-  --status-grey: #5f6368;
-  --status-grey-bg: #f1f3f4;
+  --red: #C0392B; --red2: #E74C3C; --red3: #F5B7B1; --red4: #FDECEA; --red6: rgba(192,57,43,0.08);
+  --bg: #F2F3F5; --bg2: #EAEBEE;
+  --card: #FFFFFF; --card-border: rgba(0,0,0,0.06);
+  --text: #0F1117; --text2: #4A4A5A; --text3: #8A8AA0; --text4: #B0B0C0;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+  --r: 14px; --r-sm: 8px; --r-lg: 20px;
   
-  --cx-color: #1e8e3e;
-  --cx-bg: #e6f4ea;
-  --annex-color: #d93025;
-  --annex-bg: #fce8e6;
+  --cx-color: #C0392B; --cx-bg: #FDECEA;
+  --annex-color: #C0392B; --annex-bg: #FDECEA;
   
-  --nav-h: 64px;
-  --radius: 8px;
-  --radius-sm: 6px;
-  --radius-pill: 24px;
-  --shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
-  --shadow-sm: 0 1px 2px 0 rgba(60,64,67,0.1);
-  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+  --status-green: #27AE60; --status-green-bg: #EAFAF1;
+  --status-red: #E74C3C; --status-red-bg: #FDEDEC;
+  --status-orange: #F39C12; --status-orange-bg: #FEF9E7;
+  
+  --nav-h: 60px; --sidebar-w: 220px;
 }
-body { font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text-primary); font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 13px; line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  /* Power BI Card Styles */
+.stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--card); border-radius: 12px; border: 1px solid var(--card-border); box-shadow: var(--shadow-sm); padding: 18px 20px; position: relative; transition: box-shadow 0.2s, transform 0.15s; }
+.stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.stat-card-label { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+.metric-value { font-size: 24px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; font-family: 'DM Sans', sans-serif; margin-bottom: 4px; }
+.metric-delta { font-size: 11px; color: var(--text3); font-weight: 500; }
+.stat-card.priority { border: 1px solid var(--red3); background: var(--red6); }
+.stat-card.priority .metric-value { color: var(--red); }
+.priority-tag { position: absolute; top: 12px; right: 12px; background: var(--red); color: white; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 6px; letter-spacing: 0.5px; }
+.priority-tag.green { background: var(--status-green); }
+
+/* Power BI Chart Containers */
+.pbi-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-bottom: 24px; }
+.cc { background: var(--card); border: 1px solid var(--card-border); border-radius: 12px; box-shadow: var(--shadow-sm); padding: 20px; display: flex; flex-direction: column; }
+.ch { margin-bottom: 14px; }
+.ct { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: -0.2px; text-transform: uppercase; }
+.cs { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.cw { position: relative; width: 100%; height: 260px; }
+
+/* Floating Tools Override */
+.floating-tools { position: fixed; bottom: 24px; left: 24px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; }
+.tool-pill { background: var(--card); border: 1px solid var(--card-border); border-radius: 24px; padding: 10px 16px; font-size: 12px; font-weight: 600; color: var(--text2); box-shadow: var(--shadow-md); cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
+.tool-pill:hover { background: var(--bg); color: var(--text); }
 nav { position: fixed; top: 0; left: 0; right: 0; z-index: 200; height: var(--nav-h); background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; gap: 20px; }
 .nav-brand { font-size: 15px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.03em; white-space: nowrap; cursor: pointer; transition: opacity 0.2s; user-select: none; display: flex; align-items: center; gap: 6px; }
 .nav-brand:hover { opacity: 0.7; }
@@ -1093,11 +1102,11 @@ body.users-bar-visible .dept-sidebar {
 
 <div class="floating-tools" id="bottom-nav" style="display:none;">
   <button class="tool-pill" onclick="openReminderModal()">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
     Send Task Reminders
   </button>
   <button class="tool-pill" onclick="openReportModal()">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
     Word Report Broker
   </button>
 </div>
@@ -1122,26 +1131,43 @@ body.users-bar-visible .dept-sidebar {
 
   <!-- ══ CROSSINGS BLOCK ══ -->
   <div class="project-block" id="block-crossings" style="display:none;">
-    <div class="project-heading"><span class="nav-badge badge-cx">Lakowe Crossings</span><h2>Performance Overview</h2><span class="ph-date" id="ph-date-cx">Jan 5 – Apr 20, 2026</span></div>
-    <div class="metric-color-legend">
-      <span class="mc-item"><span class="mc-dot mc-red"></span>Danger</span>
-      <span class="mc-item"><span class="mc-dot mc-amber"></span>Caution</span>
-      <span class="mc-item"><span class="mc-dot mc-green"></span>Healthy</span>
-      <span class="mc-note">— Account Balance &amp; Active Offer Letters</span>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; border-bottom: 1px solid var(--card-border); padding-bottom: 12px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="nav-badge badge-cx" style="background: var(--red4); color: var(--red); border: 1px solid var(--red3);">Lakowe Crossings</span>
+        <h2 style="font-size: 20px; font-weight: 700; color: var(--text); margin: 0;">Performance Overview</h2>
+      </div>
+      <span class="ph-date" id="ph-date-cx" style="font-size: 12px; color: var(--text3); font-weight: 500;">Jan 5 – Apr 20, 2026</span>
     </div>
-    <div class="metrics-grid">
-      <div class="metric-card"><div class="metric-label">Total Inflow</div><div class="metric-value" id="val-cx-inflow">Syncing...</div><div class="metric-delta">Live Synced</div></div>
-      <div class="metric-card"><div class="metric-label">Units Sold</div><div class="metric-value" id="val-cx-units">Syncing...</div><div class="metric-delta">Live Synced</div></div>
-      <div class="metric-card"><div class="metric-label">Value of Sales</div><div class="metric-value" id="val-cx-sales">Syncing...</div><div class="metric-delta">Live Synced</div></div>
-      <div class="metric-card priority-card color-amber" id="card-cx-offers"><div class="priority-tag">★ Priority</div><div class="metric-label">Active Offer Letters</div><div class="metric-value" id="val-cx-offers">Syncing...</div><div class="metric-delta" id="delta-cx-offers">Live Synced</div></div>
-      <div class="metric-card priority-card color-red" id="card-cx-balance"><div class="priority-tag">★ Priority</div><div class="metric-label">Account Balance</div><div class="metric-value" id="val-cx-balance">Syncing...</div><div class="metric-delta" id="delta-cx-balance">Live Synced</div></div>
+
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-card-label">Total Inflow</div><div class="metric-value" id="val-cx-inflow">Syncing...</div><div class="metric-delta">Live Synced</div></div>
+      <div class="stat-card"><div class="stat-card-label">Units Sold</div><div class="metric-value" id="val-cx-units">Syncing...</div><div class="metric-delta">Live Synced</div></div>
+      <div class="stat-card"><div class="stat-card-label">Value of Sales</div><div class="metric-value" id="val-cx-sales">Syncing...</div><div class="metric-delta">Live Synced</div></div>
+      <div class="stat-card priority" id="card-cx-offers"><div class="priority-tag green">★ PRIORITY</div><div class="stat-card-label">Active Offer Letters</div><div class="metric-value" style="color:var(--status-green);" id="val-cx-offers">Syncing...</div><div class="metric-delta" id="delta-cx-offers">Live Synced</div></div>
+      <div class="stat-card priority" id="card-cx-balance"><div class="priority-tag">★ PRIORITY</div><div class="stat-card-label">Account Balance</div><div class="metric-value" id="val-cx-balance">Syncing...</div><div class="metric-delta" id="delta-cx-balance">Live Synced</div></div>
     </div>
-    <div id="overdue-cx"></div>
-    <div class="charts-row">
-      <div class="chart-card"><div class="chart-card-header"><h3>Cumulative Sales Inflow</h3></div><div class="chart-wrap"><canvas id="c3"></canvas></div></div>
-      <div class="chart-card">
-        <div class="chart-card-header"><h3 id="targets-cx-title">End of April Targets</h3><div class="target-legend"><span class="legend-dot legend-done">Done</span><span class="legend-dot legend-ongoing">Ongoing</span><span class="legend-dot legend-atrisk">At Risk</span></div></div>
-        <div class="target-list" id="targets-crossings"></div>
+
+    <div class="pbi-grid">
+      <div class="cc">
+        <div class="ch">
+          <div class="ct">Inflow & Balance Trend</div>
+          <div class="cs">Tracking cash inflow vs cumulative sales value (receivable gaps in millions)</div>
+        </div>
+        <div class="cw"><canvas id="c3"></canvas></div>
+      </div>
+      <div class="cc">
+        <div class="ch">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="ct" id="targets-cx-title">End of Month Targets</div>
+            <div style="font-size:9px; font-weight:700; color:var(--text3); text-transform:uppercase;">Priorities</div>
+          </div>
+          <div class="cs" style="display:flex; gap:10px; margin-top:6px;">
+            <span style="color:var(--status-green); font-weight:600;">● DONE</span>
+            <span style="color:var(--status-orange); font-weight:600;">● ONGOING</span>
+            <span style="color:var(--status-red); font-weight:600;">● AT RISK</span>
+          </div>
+        </div>
+        <div class="target-list" id="targets-crossings" style="height:230px; overflow-y:auto; padding-right:4px;"></div>
       </div>
     </div>
     <div id="alert-crossings" class="alert-strip" style="display:none;"></div>
@@ -1203,26 +1229,43 @@ body.users-bar-visible .dept-sidebar {
 
   <!-- ══ ANNEXE BLOCK ══ -->
   <div class="project-block" id="block-annexe" style="display:none;">
-    <div class="project-heading"><span class="nav-badge badge-annex">Lakowe Annexe</span><h2>Performance Overview</h2><span class="ph-date" id="ph-date-annex">Jan 5 – Apr 20, 2026</span></div>
-    <div class="metric-color-legend">
-      <span class="mc-item"><span class="mc-dot mc-red"></span>Danger</span>
-      <span class="mc-item"><span class="mc-dot mc-amber"></span>Caution</span>
-      <span class="mc-item"><span class="mc-dot mc-green"></span>Healthy</span>
-      <span class="mc-note">— Account Balance &amp; Active Offer Letters</span>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; border-bottom: 1px solid var(--card-border); padding-bottom: 12px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="nav-badge badge-annex" style="background: var(--red4); color: var(--red); border: 1px solid var(--red3);">Lakowe Annexe</span>
+        <h2 style="font-size: 20px; font-weight: 700; color: var(--text); margin: 0;">Performance Overview</h2>
+      </div>
+      <span class="ph-date" id="ph-date-annex" style="font-size: 12px; color: var(--text3); font-weight: 500;">Jan 5 – Apr 20, 2026</span>
     </div>
-    <div class="metrics-grid">
-      <div class="metric-card"><div class="metric-label">Total Inflow</div><div class="metric-value" id="val-annex-inflow">Syncing...</div><div class="metric-delta">Live Synced</div></div>
-      <div class="metric-card"><div class="metric-label">Units Sold</div><div class="metric-value" id="val-annex-units">Syncing...</div><div class="metric-delta">Live Synced</div></div>
-      <div class="metric-card"><div class="metric-label">Value of Sales</div><div class="metric-value" id="val-annex-sales">Syncing...</div><div class="metric-delta">Live Synced</div></div>
-      <div class="metric-card priority-card color-amber" id="card-annex-offers"><div class="priority-tag">★ Priority</div><div class="metric-label">Active Offer Letters</div><div class="metric-value" id="val-annex-offers">Syncing...</div><div class="metric-delta" id="delta-annex-offers">Live Synced</div></div>
-      <div class="metric-card priority-card color-green" id="card-annex-balance"><div class="priority-tag">★ Priority</div><div class="metric-label">Account Balance</div><div class="metric-value" id="val-annex-balance">Syncing...</div><div class="metric-delta" id="delta-annex-balance">Live Synced</div></div>
+
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-card-label">Total Inflow</div><div class="metric-value" id="val-annex-inflow">Syncing...</div><div class="metric-delta">Live Synced</div></div>
+      <div class="stat-card"><div class="stat-card-label">Units Sold</div><div class="metric-value" id="val-annex-units">Syncing...</div><div class="metric-delta">Live Synced</div></div>
+      <div class="stat-card"><div class="stat-card-label">Value of Sales</div><div class="metric-value" id="val-annex-sales">Syncing...</div><div class="metric-delta">Live Synced</div></div>
+      <div class="stat-card priority" id="card-annex-offers"><div class="priority-tag green">★ PRIORITY</div><div class="stat-card-label">Active Offer Letters</div><div class="metric-value" style="color:var(--status-green);" id="val-annex-offers">Syncing...</div><div class="metric-delta" id="delta-annex-offers">Live Synced</div></div>
+      <div class="stat-card priority" id="card-annex-balance"><div class="priority-tag">★ PRIORITY</div><div class="stat-card-label">Account Balance</div><div class="metric-value" id="val-annex-balance">Syncing...</div><div class="metric-delta" id="delta-annex-balance">Live Synced</div></div>
     </div>
-    <div id="overdue-annex"></div>
-    <div class="charts-row">
-      <div class="chart-card"><div class="chart-card-header"><h3>Inflow &amp; Balance Trend</h3></div><div class="chart-wrap"><canvas id="c1"></canvas></div></div>
-      <div class="chart-card">
-        <div class="chart-card-header"><h3 id="targets-annex-title">End of April Targets</h3><div class="target-legend"><span class="legend-dot legend-done">Done</span><span class="legend-dot legend-ongoing">Ongoing</span><span class="legend-dot legend-atrisk">At Risk</span></div></div>
-        <div class="target-list" id="targets-annexe"></div>
+
+    <div class="pbi-grid">
+      <div class="cc">
+        <div class="ch">
+          <div class="ct">Inflow & Balance Trend</div>
+          <div class="cs">Tracking cash inflow vs cumulative sales value (receivable gaps in millions)</div>
+        </div>
+        <div class="cw"><canvas id="c1"></canvas></div>
+      </div>
+      <div class="cc">
+        <div class="ch">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="ct" id="targets-annex-title">End of Month Targets</div>
+            <div style="font-size:9px; font-weight:700; color:var(--text3); text-transform:uppercase;">Priorities</div>
+          </div>
+          <div class="cs" style="display:flex; gap:10px; margin-top:6px;">
+            <span style="color:var(--status-green); font-weight:600;">● DONE</span>
+            <span style="color:var(--status-orange); font-weight:600;">● ONGOING</span>
+            <span style="color:var(--status-red); font-weight:600;">● AT RISK</span>
+          </div>
+        </div>
+        <div class="target-list" id="targets-annexe" style="height:230px; overflow-y:auto; padding-right:4px;"></div>
       </div>
     </div>
     <div id="alert-annexe" class="alert-strip" style="display:none;"></div>
@@ -4932,14 +4975,34 @@ function renderDynamicCharts() {
   const baseOpts = { 
     responsive: true, 
     maintainAspectRatio: false,
-    interaction: { mode: 'index', intersect: false },
+    interaction: {
+      mode: 'index',
+      intersect: false // THIS enables the crosshair to span both lines
+    },
     plugins: { 
-      legend: { display: true, position: 'bottom', labels: { font: { size: 12, weight: '600' }, color: '#1a73e8', usePointStyle: true, boxWidth: 8 } },
-      tooltip: { backgroundColor: '#ffffff', titleColor: '#202124', bodyColor: '#5f6368', borderColor: '#dadce0', borderWidth: 1, padding: 12, usePointStyle: true, boxShadow: '0 4px 6px rgba(0,0,0,0.1)', callbacks: { label: function(ctx) { return ' : ₦' + ctx.parsed.y + 'M'; } } }
+      legend: { 
+        display: true, position: 'bottom', 
+        labels: { font: { size: 12, weight: '700', family: "'DM Sans', sans-serif" }, color: '#1a73e8', usePointStyle: true, boxWidth: 8, padding: 20 } 
+      },
+      tooltip: {
+        backgroundColor: '#ffffff', titleColor: '#202124', bodyColor: '#5f6368', borderColor: '#dadce0', borderWidth: 1, padding: 12, boxPadding: 6, usePointStyle: true,
+        titleFont: { size: 13, weight: 'bold', family: "'DM Sans', sans-serif" },
+        bodyFont: { size: 12, weight: 'bold', family: "'DM Sans', sans-serif" },
+        boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+        callbacks: {
+          label: function(ctx) { return ' : ₦' + ctx.parsed.y + 'M'; }
+        }
+      }
     }, 
     scales: { 
-      x: { ticks: { color: '#80868b', font: { size: 11, weight: '500' }, maxRotation: 45, autoSkip: true, maxTicksLimit: 6 }, grid: { display: false } }, 
-      y: { ticks: { color: '#80868b', font: { size: 11 }, callback: function(value) { return '₦' + (value / 1000).toFixed(1) + 'B'; } }, grid: { color: '#f1f3f4', drawBorder: false } } 
+      x: { 
+        ticks: { color: '#80868b', font: { size: 11, weight: '600' }, maxRotation: 0, autoSkip: true, maxTicksLimit: 6 }, 
+        grid: { display: false } 
+      }, 
+      y: { 
+        ticks: { color: '#80868b', font: { size: 11, weight: '600' }, callback: function(value) { return '₦' + (value / 1000).toFixed(1) + 'B'; } }, 
+        grid: { color: '#EAEBEE', drawBorder: false } 
+      } 
     } 
   };
 
