@@ -2558,33 +2558,27 @@ if (/operations|fincon/i.test(lastDept)) {
       const units = parseExtractedMetric(actionText.match(METRIC_PATTERNS.units), false);
       const offers = parseExtractedMetric(actionText.match(METRIC_PATTERNS.offers), false);
 
-      // Save chart metrics locally for the chart engine
-      if (inflow) window._chartMetrics[proj][sheetName].inflow = parseNairaToM(inflow);
+      // Save chart metrics locally for the chart engine (Inflow vs Value of Sales)
+      if (inflow)   window._chartMetrics[proj][sheetName].inflow     = parseNairaToM(inflow);
       if (salesVal) window._chartMetrics[proj][sheetName].salesValue = parseNairaToM(salesVal);
+      if (balance)  window._chartMetrics[proj][sheetName].balance    = parseNairaToM(balance);
 
       // Write to Firebase (Firebase handles DOM updates via the listener)
       if (_fbReady && _fbDb) {
         const updates = {};
-        if (inflow) updates.inflow = inflow;
-        if (salesVal) updates.sales = salesVal;
-        if (balance) updates.balance = balance;
-        if (units) updates.units = units;
-        if (offers) updates.offers = offers;
-        
+        if (inflow)   updates.inflow   = inflow;
+        if (salesVal) updates.sales    = salesVal;
+        if (balance)  updates.balance  = balance;
+        if (units)    updates.units    = units;
+        if (offers)   updates.offers   = offers;
+
         if (Object.keys(updates).length > 0) {
-            updates.updatedAt = firebase.database.ServerValue.TIMESTAMP;
-            _fbDb.ref(`metrics/${proj}/${sheetName}`).update(updates);
+          updates.updatedAt = firebase.database.ServerValue.TIMESTAMP;
+          _fbDb.ref(`metrics/${proj}/${sheetName}`).update(updates);
         }
       }
     }
-
-      // 2. THE CHART SWAP
-      // Notice below: We kept inflow, but we deleted 'balance' and replaced it with 'salesVal'
-      if (inflow) window._chartMetrics[proj][sheetName].inflow = parseNairaToM(inflow);
-      if (salesVal) window._chartMetrics[proj][sheetName].salesValue = parseNairaToM(salesVal);
-      if (balance) window._chartMetrics[proj][sheetName].balance = parseNairaToM(balance);
-    }
-}
+  } // end if (operations|fincon)
     
     // ── TASK VERIFICATION ──
     if (!action || action.length < 4) continue;
@@ -5085,6 +5079,15 @@ window.onload = function () {
   updateTargetHeaders();
   initFirebase();
 
+  if (!window.onAuthGateReady) {
+    window.onAuthGateReady = function () {
+      loadSeedData();
+      applyPriorityColors();
+      syncWithGoogleSheet();
+      setInterval(syncWithGoogleSheet, AUTO_SYNC_MINUTES * 60 * 1000);
+    };
+  }
+
   try {
     const lastPointPlugin = {
       id: 'lastPointLabel',
@@ -5284,34 +5287,38 @@ label = '₦' + (bVal.endsWith('.00') ? bVal.slice(0, -3) : bVal) + 'Bn';
      ════════════════════════════════════════════════════════════════ -->
 <!-- Auth handled by dashboard-auth.js (Google Sign-In) -->
 <script>
-// ── AUTH GATE CALLBACKS — must be defined BEFORE dashboard-auth.js loads ──
-// On a persisted Firebase session, onAuthStateChanged fires synchronously
-// inside initAuth() — before any code after <script src="dashboard-auth.js"> runs.
-// Defining them here (in the script block immediately before that tag) guarantees
-// they exist in all cases: fresh login, persisted session, and page reload.
-
-window.onAuthGateReady = function () {
+// ── AUTH GATE CALLBACK — defined here so it exists BEFORE dashboard-auth.js runs ──
+// dashboard-auth.js calls this immediately after a valid sign-in.
+// If it were only defined inside window.onload, it would be undefined when
+// a persisted Firebase session fires onAuthStateChanged synchronously.
+window.onAuthGateReady = window.onAuthGateReady || function () {
   loadSeedData();
   applyPriorityColors();
   syncWithGoogleSheet();
   setInterval(syncWithGoogleSheet, AUTO_SYNC_MINUTES * 60 * 1000);
 };
 
-// onAuthGateSignedIn is set inside initFirebase() which has the full implementation.
-// A fallback is defined here only in case initFirebase hasn't run yet.
-if (!window.onAuthGateSignedIn) {
-  window.onAuthGateSignedIn = function(user, access) {
-    currentUser = user;
-    const role = (typeof USER_ROLES !== 'undefined') ? USER_ROLES[(user.email || '').toLowerCase()] : null;
-    currentUserRole = role;
-    if (typeof _drainWriteQueue === 'function') _drainWriteQueue();
-    if (role && role.project !== 'Both') {
-      if (currentProject !== role.project && typeof selectProject === 'function') {
-        selectProject(role.project);
-      }
+window.onAuthGateSignedIn = window.onAuthGateSignedIn || function(user, access) {
+  currentUser = user;
+  const role = (typeof USER_ROLES !== 'undefined') ? USER_ROLES[(user.email || '').toLowerCase()] : null;
+  currentUserRole = role;
+  if (typeof _drainWriteQueue === 'function') _drainWriteQueue();
+  if (role && role.project !== 'Both') {
+    if (currentProject !== role.project && typeof selectProject === 'function') {
+      selectProject(role.project);
     }
-  };
-}
+  }
+};
+
+// ── SAFETY UNLOCK — prevents permanent freeze if dashboard-auth.js fails silently ──
+// If auth-locked is still present after 8 seconds, force-remove it.
+// This surfaces the login screen even when Firebase or the auth script errors out.
+window._authSafetyTimer = setTimeout(function() {
+  if (document.body && document.body.classList.contains('auth-locked')) {
+    console.warn('[AUTH] Safety timeout fired — dashboard-auth.js may have failed. Force-unlocking body.');
+    document.body.classList.remove('auth-locked');
+  }
+}, 8000);
 </script>
 <script src="dashboard-auth.js"></script>
 <script src="dashboard-pi-engine.js"></script>
