@@ -468,7 +468,7 @@
       if (el) el.style.display = 'none';
     });
 
-    const name  = user.displayName ? user.displayName.split(' ')[0] : email.split('@')[0];
+    const name  = user.displayName ? user.displayName.split(' ')[0] : (user.email || '').split('@')[0];
     const label = access === 'Both' ? 'All Projects' : 'Lakowe ' + access;
 
     const wrap = document.createElement('div');
