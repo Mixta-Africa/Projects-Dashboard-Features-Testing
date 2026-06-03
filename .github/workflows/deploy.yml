@@ -46,12 +46,18 @@ jobs:
           GH_WORKFLOW_TOKEN: ${{ secrets.GH_WORKFLOW_TOKEN }}
         run: sed -i "s|__GH_WORKFLOW_TOKEN__|${GH_WORKFLOW_TOKEN}|g" index.html
 
+      - name: Inject Admin Password
+        env:
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: sed -i "s|__ADMIN_PASSWORD__|${ADMIN_PASSWORD}|g" index.html
+
       - name: Verify injections
         run: |
-          grep -q '__GROQ_API_KEY__'       index.html && echo "WARNING: GROQ key not injected"        || echo "✓ GROQ_API_KEY injected"
-          grep -q '__CEREBRAS_API_KEY__'   index.html && echo "WARNING: CEREBRAS key not injected"    || echo "✓ CEREBRAS_API_KEY injected"
-          grep -q '__RESEND_API_KEY__'     index.html && echo "WARNING: RESEND key not injected"      || echo "✓ RESEND_API_KEY injected"
-          grep -q '__GH_WORKFLOW_TOKEN__'  index.html && echo "WARNING: GH_WORKFLOW_TOKEN not injected" || echo "✓ GH_WORKFLOW_TOKEN injected"
+          grep -q '__GROQ_API_KEY__'      index.html && echo "WARNING: GROQ key not injected"          || echo "✓ GROQ_API_KEY injected"
+          grep -q '__CEREBRAS_API_KEY__'  index.html && echo "WARNING: CEREBRAS key not injected"      || echo "✓ CEREBRAS_API_KEY injected"
+          grep -q '__RESEND_API_KEY__'    index.html && echo "WARNING: RESEND key not injected"        || echo "✓ RESEND_API_KEY injected"
+          grep -q '__GH_WORKFLOW_TOKEN__' index.html && echo "WARNING: GH_WORKFLOW_TOKEN not injected" || echo "✓ GH_WORKFLOW_TOKEN injected"
+          grep -q '__ADMIN_PASSWORD__'    index.html && echo "WARNING: ADMIN_PASSWORD not injected"    || echo "✓ ADMIN_PASSWORD injected"
 
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v4
