@@ -5262,26 +5262,35 @@ function sendReminderEmail() {
       var recipient = recipientList[recipIdx];
       recipIdx++;
 
-      var templateParams = {
-        to_email: recipient,
-        to_name:  emailGroup.dept + ' Team',
-        subject:  emailGroup.subject,
-        message:  emailGroup.body,       // plain-text fallback
-        html_message: emailGroup.body,   // HTML body — use {{html_message}} in EmailJS template
-        reply_to: 'o.olasunkanmi@mixtafrica.com'
-      };
-
-      emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
-        .then(function() {
-          sentCount++;
-          statusEl.textContent = 'Sending... ' + sentCount + ' of ' + totalEmails + ' sent';
-          sendToNextRecipient();
+      // Use EmailJS REST API directly so HTML body is preserved without escaping
+      var ejsPublicKey = (typeof emailjs !== 'undefined' && emailjs.init) ? 'ZhLk9En36yNDqWqTL' : '';
+      fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service_id:  EMAILJS_SERVICE_ID,
+          template_id: EMAILJS_TEMPLATE_ID,
+          user_id:     'ZhLk9En36yNDqWqTL',
+          template_params: {
+            to_email:     recipient,
+            to_name:      emailGroup.dept + ' Team',
+            subject:      emailGroup.subject,
+            html_message: emailGroup.body,
+            reply_to:     'o.olasunkanmi@mixtafrica.com'
+          }
         })
-        .catch(function(err) {
-          failCount++;
-          console.error('EmailJS send failed for', recipient, err);
-          sendToNextRecipient();
-        });
+      })
+      .then(function(res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        sentCount++;
+        statusEl.textContent = 'Sending... ' + sentCount + ' of ' + totalEmails + ' sent';
+        sendToNextRecipient();
+      })
+      .catch(function(err) {
+        failCount++;
+        console.error('EmailJS REST send failed for', recipient, err);
+        sendToNextRecipient();
+      });
     }
     sendToNextRecipient();
   }
