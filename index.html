@@ -53,19 +53,12 @@
 <link rel="apple-touch-icon" href="Mixta Africa.jpg">
 <link rel="manifest" id="pwa-manifest">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<!-- EmailJS removed — using Resend API for HTML email delivery -->
 <!-- Firebase v10 modular SDKs via CDN compat layer -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script>
-  // EmailJS initialisation — replace with your public key from emailjs.com
-  (function(){
-    if (typeof emailjs !== 'undefined') {
-      emailjs.init({ publicKey: 'ZhLk9En36yNDqWqTL' });
-    }
-  })();
-</script>
+<!-- EmailJS init removed -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -2681,14 +2674,11 @@ function loadSeedData() {
 
 const STATUS_KEY = 'lakowe_status_v5';
 
-// ── EmailJS Configuration ──
-// Set these up once at emailjs.com (free plan: 200 emails/month)
-// Create an account, add an Email Service, create a Template with variables:
-//   {{to_name}}, {{to_email}}, {{subject}}, {{message}}
-// Then paste your IDs below:
-const EMAILJS_SERVICE_ID  = 'service_inb2uaf';
-const EMAILJS_TEMPLATE_ID = 'template_ipcax5i';
-// Public key is set in the emailjs.init() call above
+// ── Resend Configuration ──
+// API key is injected at build time by GitHub Actions from the RESEND_API_KEY secret.
+// Falls back to localStorage for local development.
+const RESEND_FROM = 'Mixta Africa Projects <onboarding@resend.dev>';
+const RESEND_REPLY_TO = 'o.olasunkanmi@mixtafrica.com';
 function getStatusOverrides() { try { return JSON.parse(localStorage.getItem(STATUS_KEY)) || {}; } catch { return {}; } }
 function saveStatus(taskId, status) { const o = getStatusOverrides(); o[taskId] = status; localStorage.setItem(STATUS_KEY, JSON.stringify(o)); }
 function taskId(t) { return (t.project + '_' + t.dept + '_' + t.session + '_' + t.action).replace(/\W+/g,'_').substring(0, 60); }
@@ -5159,14 +5149,10 @@ function sendReminderEmail() {
   const statusEl = document.getElementById('reminder-status-text');
   const btn = document.getElementById('reminder-send-btn');
 
-  // Check EmailJS library is loaded and keys are set
-  const ejsConfigured = typeof emailjs !== 'undefined'
-    && EMAILJS_SERVICE_ID !== '' 
-    && EMAILJS_TEMPLATE_ID !== '';
-
-  if (!ejsConfigured) {
-    statusEl.textContent = '⚠ EmailJS not ready — opening mail app as fallback.';
-    _sendViaMailto();
+  // Resolve Resend API key — injected at build time or from localStorage for local dev
+  const RESEND_KEY = window.RESEND_API_KEY || localStorage.getItem('RESEND_API_KEY');
+  if (!RESEND_KEY) {
+    statusEl.textContent = '⚠ RESEND_API_KEY not configured. Add it to GitHub Secrets.';
     return;
   }
 
@@ -5175,42 +5161,31 @@ function sendReminderEmail() {
     return;
   }
 
-  // Build the list of emails to send
   var emailsToSend = [];
   var mode = document.getElementById('reminder-mode').value;
 
-  // Helper to construct email payloads (handles AMC personalization)
+  // Helper — builds email payloads, handles AMC personalisation
   function pushEmail(dept, rawRecipients, subject, baseBody) {
     if (!rawRecipients || rawRecipients.length === 0) return;
-    
+
     if (dept.toUpperCase() === 'AMC') {
-      // AMC gets individualized emails to apply personal greetings
       rawRecipients.forEach(function(realEmail) {
         var greeting = 'Dear AMC Team,';
         var e = realEmail.toLowerCase();
-        
-        if (e.includes('d.alli') || e.includes('deji.alli')) {
-          greeting = 'Dear DA,';
-        } else if (e.includes('s.hughes')) {
-          greeting = 'Dear Mrs H,';
-        } else if (e.includes('b.ajayi')) {
-          greeting = 'Dear BA,';
-        }
-
-        // Swap out the generic greeting
+        if (e.includes('d.alli') || e.includes('deji.alli')) greeting = 'Dear DA,';
+        else if (e.includes('s.hughes')) greeting = 'Dear Mrs H,';
+        else if (e.includes('b.ajayi')) greeting = 'Dear BA,';
         var customBody = baseBody.replace('Dear ' + dept + ' Team,', greeting);
         var toAddress = mode === 'test' ? TEST_EMAIL : realEmail;
-        
-        emailsToSend.push({ to: [toAddress], subject: subject, body: customBody, dept: dept });
+        emailsToSend.push({ to: toAddress, subject: subject, html: customBody, dept: dept });
       });
     } else {
-      // Standard departments get one email sent to all their recipients
-      var finalRecipients = mode === 'test' ? [TEST_EMAIL] : rawRecipients;
-      emailsToSend.push({ to: finalRecipients, subject: subject, body: baseBody, dept: dept });
+      var recipients = mode === 'test' ? [TEST_EMAIL] : rawRecipients;
+      // Resend supports array of addresses in `to`
+      emailsToSend.push({ to: recipients, subject: subject, html: baseBody, dept: dept });
     }
   }
 
-  // Route All vs Single generation into the builder
   if (_allDeptEmails && _allDeptEmailKeys.length > 0) {
     _allDeptEmailKeys.forEach(function(dept) {
       var info = _allDeptEmails[dept];
@@ -5218,7 +5193,8 @@ function sendReminderEmail() {
       pushEmail(dept, originalList, info.subject, info.body);
     });
   } else if (_generatedEmailBody) {
-    var originalList = _reminderDept && MAILING_LIST[_reminderProject] ? (MAILING_LIST[_reminderProject][_reminderDept] || []) : [];
+    var originalList = _reminderDept && MAILING_LIST[_reminderProject]
+      ? (MAILING_LIST[_reminderProject][_reminderDept] || []) : [];
     pushEmail(_reminderDept, originalList, _generatedEmailSubject, _generatedEmailBody);
   }
 
@@ -5228,74 +5204,54 @@ function sendReminderEmail() {
   btn.innerHTML = '<span class="tool-spinner"></span> Sending...';
   statusEl.textContent = '';
 
-  // Send sequentially using EmailJS
-  var totalEmails = emailsToSend.reduce(function(n, e) { return n + e.to.length; }, 0);
+  var totalEmails = emailsToSend.length;
   var sentCount = 0;
   var failCount = 0;
 
-  function sendNext(emailList, idx) {
-    if (idx >= emailList.length) {
-      // All done
-      var mode = document.getElementById('reminder-mode').value;
-      if (failCount === 0) {
-        statusEl.textContent = '✓ ' + sentCount + ' email' + (sentCount !== 1 ? 's' : '') + ' sent successfully' + (mode === 'test' ? ' to test address' : '');
-      } else {
-        statusEl.textContent = sentCount + ' sent, ' + failCount + ' failed. Check browser console for details.';
-      }
+  // Send each email group sequentially via Resend API
+  function sendNext(idx) {
+    if (idx >= emailsToSend.length) {
+      var currentMode = document.getElementById('reminder-mode').value;
+      statusEl.textContent = failCount === 0
+        ? '✓ ' + sentCount + ' email' + (sentCount !== 1 ? 's' : '') + ' sent successfully' + (currentMode === 'test' ? ' to test address' : '')
+        : sentCount + ' sent, ' + failCount + ' failed. Check browser console.';
       btn.innerHTML = '📨 Send Email' + (emailsToSend.length > 1 ? 's' : '');
       btn.disabled = false;
       return;
     }
 
-    var emailGroup = emailList[idx];
-    // Send to each recipient in the group
-    var recipientList = emailGroup.to;
-    var recipIdx = 0;
+    var emailGroup = emailsToSend[idx];
 
-    function sendToNextRecipient() {
-      if (recipIdx >= recipientList.length) {
-        // Move to next dept group
-        statusEl.textContent = 'Sending... ' + sentCount + ' of ' + totalEmails + ' sent';
-        sendNext(emailList, idx + 1);
-        return;
-      }
-      var recipient = recipientList[recipIdx];
-      recipIdx++;
-
-      // Use EmailJS REST API directly so HTML body is preserved without escaping
-      var ejsPublicKey = (typeof emailjs !== 'undefined' && emailjs.init) ? 'ZhLk9En36yNDqWqTL' : '';
-      fetch('https://api.emailjs.com/api/v1.0/email/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          service_id:  EMAILJS_SERVICE_ID,
-          template_id: EMAILJS_TEMPLATE_ID,
-          user_id:     'ZhLk9En36yNDqWqTL',
-          template_params: {
-            to_email:     recipient,
-            to_name:      emailGroup.dept + ' Team',
-            subject:      emailGroup.subject,
-            html_message: emailGroup.body,
-            reply_to:     'o.olasunkanmi@mixtafrica.com'
-          }
-        })
+    fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + RESEND_KEY
+      },
+      body: JSON.stringify({
+        from:     RESEND_FROM,
+        to:       emailGroup.to,
+        subject:  emailGroup.subject,
+        html:     emailGroup.html,
+        reply_to: RESEND_REPLY_TO
       })
-      .then(function(res) {
-        if (!res.ok) throw new Error('HTTP ' + res.status);
+    })
+    .then(function(res) {
+      return res.json().then(function(data) {
+        if (!res.ok) throw new Error(data.message || 'HTTP ' + res.status);
         sentCount++;
         statusEl.textContent = 'Sending... ' + sentCount + ' of ' + totalEmails + ' sent';
-        sendToNextRecipient();
-      })
-      .catch(function(err) {
-        failCount++;
-        console.error('EmailJS REST send failed for', recipient, err);
-        sendToNextRecipient();
+        sendNext(idx + 1);
       });
-    }
-    sendToNextRecipient();
+    })
+    .catch(function(err) {
+      failCount++;
+      console.error('[Resend] Failed for', emailGroup.dept, err.message);
+      sendNext(idx + 1);
+    });
   }
 
-  sendNext(emailsToSend, 0);
+  sendNext(0);
 }
 
 // Fallback: open mailto if EmailJS not set up
@@ -6642,6 +6598,11 @@ window.onload = function () {
     const _ck = '__CEREBRAS_API_KEY__';
     if (_ck && !_ck.startsWith('__')) window.CEREBRAS_API_KEY = _ck;
     else window.CEREBRAS_API_KEY = localStorage.getItem('CEREBRAS_API_KEY') || '';
+  }
+  if (!window.RESEND_API_KEY) {
+    const _rk = '__RESEND_API_KEY__';
+    if (_rk && !_rk.startsWith('__')) window.RESEND_API_KEY = _rk;
+    else window.RESEND_API_KEY = localStorage.getItem('RESEND_API_KEY') || '';
   }
   
   updateTargetHeaders();
