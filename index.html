@@ -1004,6 +1004,183 @@ body.users-bar-visible .dept-sidebar {
   font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
 .task-card.no-permission .task-status-controls { opacity: 0.3; pointer-events: none; }
+/* ══════════════════════════════════════════════════════
+   TREND INTELLIGENCE ENGINE — CSS
+   ══════════════════════════════════════════════════════ */
+
+/* ── Panel shell ── */
+.ti-panel {
+  margin-top: 28px;
+  background: #ffffff;
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 4px 20px -4px rgba(0,0,0,0.03);
+}
+.ti-panel::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--ti-accent, #7c3aed);
+  z-index: 2;
+}
+
+/* ── Header ── */
+.ti-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px;
+  background: #ffffff;
+  border-bottom: 1px solid #f4f4f5;
+  cursor: pointer; user-select: none;
+}
+.ti-header:hover { background: #fafafa; }
+.ti-header-left { display: flex; align-items: center; gap: 14px; }
+.ti-header-badge {
+  width: 32px; height: 32px; border-radius: 6px;
+  background: #7c3aed;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ti-header-label { font-size: 14px; font-weight: 700; color: #18181b; letter-spacing: -0.01em; margin-bottom: 2px; }
+.ti-header-sub { font-size: 12px; color: #71717a; font-weight: 500; }
+.ti-header-right { display: flex; align-items: center; gap: 14px; }
+.ti-toggle { color: #a1a1aa; font-size: 10px; transition: transform 0.3s ease; }
+.ti-panel.ti-expanded .ti-toggle { transform: rotate(180deg); color: #18181b; }
+.ti-alert-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 800; padding: 3px 9px;
+  border-radius: 20px; letter-spacing: 0.04em; text-transform: uppercase;
+  background: #fef3c7; color: #92400e;
+  border: 1px solid #fde68a;
+}
+.ti-alert-badge.ti-critical { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+
+/* ── Body ── */
+.ti-body { display: none; }
+.ti-panel.ti-expanded .ti-body { display: block; animation: fadeUp 0.3s ease; }
+
+/* ── Section layout ── */
+.ti-section { padding: 20px 22px 0; }
+.ti-section-title {
+  font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.10em; color: #18181b; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 12px;
+}
+.ti-section-title::after { content: ''; flex: 1; height: 1px; background: #f4f4f5; }
+
+/* ── Stat row ── */
+.ti-stat-row {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  border: 1px solid #e4e4e7; border-radius: 6px;
+  margin-bottom: 20px; overflow: hidden;
+}
+.ti-stat { padding: 16px 18px; border-right: 1px solid #f4f4f5; }
+.ti-stat:last-child { border-right: none; }
+.ti-stat-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin-bottom: 6px; }
+.ti-stat-value { font-size: 28px; font-weight: 400; font-family: 'DM Mono', monospace; letter-spacing: -0.03em; color: #18181b; line-height: 1; margin-bottom: 4px; }
+.ti-stat-value.ti-danger { color: var(--status-red); }
+.ti-stat-value.ti-warning { color: var(--status-orange); }
+.ti-stat-value.ti-ok { color: var(--status-green); }
+.ti-stat-sub { font-size: 11px; color: #a1a1aa; }
+
+/* ── Digest digest panel (cross-session alerts) ── */
+.ti-digest {
+  margin: 0 22px 20px;
+  border: 1px solid #e4e4e7;
+  border-radius: 6px; overflow: hidden;
+}
+.ti-digest-empty {
+  padding: 20px 18px; font-size: 12px; color: #71717a; text-align: center;
+}
+
+/* ── Alert item rows ── */
+.ti-alert-item {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 14px 18px; border-bottom: 1px solid #f4f4f5;
+}
+.ti-alert-item:last-child { border-bottom: none; }
+.ti-alert-icon-wrap {
+  width: 32px; height: 32px; border-radius: 6px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.ti-alert-icon-wrap.recurring { background: #fef3c7; }
+.ti-alert-icon-wrap.velocity  { background: #dbeafe; }
+.ti-alert-icon-wrap.escalation { background: #fee2e2; }
+
+.ti-alert-content { flex: 1; min-width: 0; }
+.ti-alert-type {
+  font-size: 9px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.07em; color: #a1a1aa; margin-bottom: 3px;
+}
+.ti-alert-type.recurring { color: #92400e; }
+.ti-alert-type.velocity  { color: #1e40af; }
+.ti-alert-type.escalation { color: #991b1b; }
+.ti-alert-title { font-size: 13px; font-weight: 700; color: #18181b; margin-bottom: 3px; line-height: 1.4; }
+.ti-alert-detail { font-size: 12px; color: #71717a; line-height: 1.5; }
+.ti-alert-meta {
+  font-size: 10px; font-weight: 700; color: #a1a1aa;
+  white-space: nowrap; flex-shrink: 0; padding-top: 4px;
+}
+
+/* ── Velocity chart bars ── */
+.ti-velocity-list { padding: 0 22px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.ti-vel-row { display: flex; align-items: center; gap: 10px; }
+.ti-vel-label { font-size: 11px; font-weight: 600; color: #52525b; flex-shrink: 0; width: 60px; text-align: right; }
+.ti-vel-track { flex: 1; height: 6px; background: #f4f4f5; border-radius: 3px; overflow: hidden; }
+.ti-vel-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+.ti-vel-fill.improving { background: var(--status-green); }
+.ti-vel-fill.stable    { background: var(--status-blue); }
+.ti-vel-fill.declining { background: var(--status-orange); }
+.ti-vel-fill.stalled   { background: var(--status-red); }
+.ti-vel-count { font-size: 11px; font-family: 'DM Mono', monospace; color: #71717a; flex-shrink: 0; width: 36px; }
+
+/* ── Footer ── */
+.ti-footer {
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 22px;
+  border-top: 1px solid #f4f4f5;
+  font-size: 11px; color: #a1a1aa;
+}
+
+/* ── Task card trend badges (inline on each task card) ── */
+.trend-badge-row {
+  display: flex; flex-wrap: wrap; gap: 5px;
+  margin-top: 8px; padding-top: 8px;
+  border-top: 1px dashed rgba(0,0,0,0.07);
+}
+.trend-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 9.5px; font-weight: 700; padding: 2px 8px;
+  border-radius: var(--radius-pill); letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.trend-badge.recurring {
+  background: #fef3c7; color: #92400e;
+  border: 1px solid #fde68a;
+}
+.trend-badge.escalated {
+  background: #fee2e2; color: #991b1b;
+  border: 1px solid #fecaca;
+}
+.trend-badge.chronic {
+  background: #ffd7d7; color: #7f1d1d;
+  border: 1px solid #f87171;
+}
+.trend-badge.improving {
+  background: #dcfce7; color: #14532d;
+  border: 1px solid #86efac;
+}
+.trend-badge.velocity-slow {
+  background: #fff7ed; color: #7c2d12;
+  border: 1px solid #fed7aa;
+}
+
+@media (max-width: 768px) {
+  .ti-stat-row { grid-template-columns: 1fr 1fr; }
+  .ti-stat-row .ti-stat:nth-child(3) { border-top: 1px solid #f4f4f5; grid-column: 1 / -1; }
+}
+
 /* ── AI CHATBOT PANEL ── */
 .chatbot-panel{display:none;position:fixed;bottom:80px;right:20px;z-index:2000;width:420px;max-width:96vw;height:560px;max-height:calc(100vh - 100px);background:#fff;border-radius:var(--radius);box-shadow:0 16px 48px rgba(0,0,0,0.2);flex-direction:column;overflow:hidden;border:1px solid var(--border);}
 .chatbot-panel.open{display:flex;animation:fadeInScale 0.2s ease;}
@@ -1195,6 +1372,57 @@ body.users-bar-visible .dept-sidebar {
   </div>
 </div>
 
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  TREND INTELLIGENCE ENGINE — LAKOWE CROSSINGS        ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+<div class="ti-panel" id="ti-crossings" style="--ti-accent: var(--cx-color);">
+  <div class="ti-header" onclick="toggleTI('ti-crossings')">
+    <div class="ti-header-left">
+      <div class="ti-header-badge" style="background:var(--cx-color);">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M5 20V8l7-5 7 5v12"/><path d="M9 20v-5h6v5"/></svg>
+      </div>
+      <div>
+        <span class="ti-header-label">Trend Intelligence</span>
+        <span class="ti-header-sub">Lakowe Crossings · Recurring Tasks · Velocity · Risk Escalation · Cross-Session Patterns</span>
+      </div>
+    </div>
+    <div class="ti-header-right">
+      <span class="ti-alert-badge" id="ti-cx-badge" style="display:none;"></span>
+      <div class="ti-toggle">▼</div>
+    </div>
+  </div>
+  <div class="ti-body" id="ti-cx-body">
+    <!-- Stat summary row -->
+    <div class="ti-section">
+      <div class="ti-section-title">Cross-Session Summary</div>
+      <div class="ti-stat-row" id="ti-cx-stats">
+        <div class="ti-stat"><div class="ti-stat-label">Sessions Analysed</div><div class="ti-stat-value" id="ti-cx-sessions">—</div><div class="ti-stat-sub">Historical snapshots</div></div>
+        <div class="ti-stat"><div class="ti-stat-label">Recurring Tasks</div><div class="ti-stat-value ti-warning" id="ti-cx-recurring">—</div><div class="ti-stat-sub">Unresolved ≥2 sessions</div></div>
+        <div class="ti-stat"><div class="ti-stat-label">Escalated Risks</div><div class="ti-stat-value ti-danger" id="ti-cx-escalated">—</div><div class="ti-stat-sub">Chronic delays / critical</div></div>
+      </div>
+    </div>
+
+    <!-- Alert digest -->
+    <div class="ti-section">
+      <div class="ti-section-title">Intelligence Alerts</div>
+    </div>
+    <div class="ti-digest" id="ti-cx-digest">
+      <div class="ti-digest-empty">Sync data to generate trend analysis across sessions.</div>
+    </div>
+
+    <!-- Completion velocity per session -->
+    <div class="ti-section">
+      <div class="ti-section-title">Completion Velocity — Sessions</div>
+    </div>
+    <div class="ti-velocity-list" id="ti-cx-velocity"></div>
+
+    <div class="ti-footer">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <span id="ti-cx-footer-text">Trend analysis runs across all available session snapshots. Refreshes on sync.</span>
+    </div>
+  </div>
+</div>
+
   </div><!-- /block-crossings -->
 
   <!-- ══ ANNEXE BLOCK ══ -->
@@ -1272,6 +1500,57 @@ body.users-bar-visible .dept-sidebar {
     <div class="pi-footer" id="pi-ann-footer" style="display:none;">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
       <span id="pi-ann-footer-text">Strategic analysis generated from live dashboard data. Refreshes on every sync.</span>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  TREND INTELLIGENCE ENGINE — LAKOWE ANNEXE           ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+<div class="ti-panel" id="ti-annexe" style="--ti-accent: var(--annex-color);">
+  <div class="ti-header" onclick="toggleTI('ti-annexe')">
+    <div class="ti-header-left">
+      <div class="ti-header-badge" style="background:var(--annex-color);">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M5 20V8l7-5 7 5v12"/><path d="M9 20v-5h6v5"/></svg>
+      </div>
+      <div>
+        <span class="ti-header-label">Trend Intelligence</span>
+        <span class="ti-header-sub">Lakowe Annexe · Recurring Tasks · Velocity · Risk Escalation · Cross-Session Patterns</span>
+      </div>
+    </div>
+    <div class="ti-header-right">
+      <span class="ti-alert-badge" id="ti-annex-badge" style="display:none;"></span>
+      <div class="ti-toggle">▼</div>
+    </div>
+  </div>
+  <div class="ti-body" id="ti-annex-body">
+    <!-- Stat summary row -->
+    <div class="ti-section">
+      <div class="ti-section-title">Cross-Session Summary</div>
+      <div class="ti-stat-row" id="ti-annex-stats">
+        <div class="ti-stat"><div class="ti-stat-label">Sessions Analysed</div><div class="ti-stat-value" id="ti-annex-sessions">—</div><div class="ti-stat-sub">Historical snapshots</div></div>
+        <div class="ti-stat"><div class="ti-stat-label">Recurring Tasks</div><div class="ti-stat-value ti-warning" id="ti-annex-recurring">—</div><div class="ti-stat-sub">Unresolved ≥2 sessions</div></div>
+        <div class="ti-stat"><div class="ti-stat-label">Escalated Risks</div><div class="ti-stat-value ti-danger" id="ti-annex-escalated">—</div><div class="ti-stat-sub">Chronic delays / critical</div></div>
+      </div>
+    </div>
+
+    <!-- Alert digest -->
+    <div class="ti-section">
+      <div class="ti-section-title">Intelligence Alerts</div>
+    </div>
+    <div class="ti-digest" id="ti-annex-digest">
+      <div class="ti-digest-empty">Sync data to generate trend analysis across sessions.</div>
+    </div>
+
+    <!-- Completion velocity per session -->
+    <div class="ti-section">
+      <div class="ti-section-title">Completion Velocity — Sessions</div>
+    </div>
+    <div class="ti-velocity-list" id="ti-annex-velocity"></div>
+
+    <div class="ti-footer">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <span id="ti-annex-footer-text">Trend analysis runs across all available session snapshots. Refreshes on sync.</span>
     </div>
   </div>
 </div>
@@ -2048,6 +2327,11 @@ function loadSeedData() {
   renderOverduePanels();
   updateLandingPageMetrics();
   if (currentDept) renderCurrentDept();
+  // Run Trend Intelligence on seed data (deferred so UI renders first)
+  setTimeout(function() {
+    try { runAndRenderTrend('Crossings'); } catch(e) {}
+    try { runAndRenderTrend('Annexe'); } catch(e) {}
+  }, 600);
 }
 
 
@@ -2361,6 +2645,19 @@ async function syncWithGoogleSheet() {
     _piGenerated = { Crossings: false, Annexe: false };
     _milestonesLoaded = { Crossings: false, Annexe: false };
     viewingSessionDate = 'current'; updateDashboardDates(); applyPriorityColors(); renderAlertStrips(); updateSidebarCounts(); renderOverduePanels(); if (currentDept) renderCurrentDept(); populateSessionPicker(); if(_dashboardSession!=='latest') refreshDashboardForSession(); renderDynamicCharts(); updateLandingPageMetrics();
+    // 25002500 Run Trend Intelligence Engine 25002500
+    setTimeout(function() {
+      try { runAndRenderTrend('Crossings'); } catch(e) { console.warn('[TI] Crossings:', e); }
+      try { runAndRenderTrend('Annexe'); } catch(e) { console.warn('[TI] Annexe:', e); }
+      if (currentProject) {
+        const pfx = currentProject === 'Crossings' ? 'cx' : 'annex';
+        const result = _tiCache[currentProject];
+        if (result && (result.totalRecurring + result.totalEscalated) > 0) {
+          const panel = document.getElementById('ti-' + pfx);
+          if (panel && !panel.classList.contains('ti-expanded')) panel.classList.add('ti-expanded');
+        }
+      }
+    }, 400);
   } catch (error) { console.error('Error syncing:', error); } finally { document.querySelectorAll('.sync-btn').forEach(btn => btn.classList.remove('syncing')); }
 }
 
@@ -2808,6 +3105,8 @@ function renderCurrentDept() {
     finalHTML += `<div class="status-accordion ${expClass}"><div class="status-header" onclick="this.parentElement.classList.toggle('expanded')"><div style="display:flex; align-items:center; gap:8px;"><span>${cfg.title} Tasks</span><span class="nav-badge" style="background:var(--border-md); color:var(--text-primary);">${groupTasks.length}</span></div><span class="status-toggle-icon">▼</span></div><div class="status-tasks-wrapper">${tasksHTML}</div></div>`;
   });
   list.innerHTML = finalHTML; renderUpdatesList(); populateTaskLinkDropdown(tasks); autoFillAuthorName();
+  // Inject trend badges after render
+  setTimeout(function() { try { injectTrendBadges(currentProject); } catch(e){} }, 50);
 }
 // ── Status change confirmation system ──
 let _pendingStatusId = null;
@@ -2910,6 +3209,9 @@ function selectProject(proj) {
   document.getElementById('panel-placeholder').style.display = ''; document.getElementById('dynamic-dept-container').style.display = 'none'; document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
   updateTargetHeaders(); updateSidebarCounts(); applyPriorityColors(); renderAlertStrips(); renderOverduePanels(); rebuildMobilePills(); _dashboardSession='latest'; populateSessionPicker(); refreshDashboardForSession(); _dashboardSession='latest'; populateSessionPicker(); refreshDashboardForSession();
   piAutoExpand(proj);
+  // Re-render Trend Intelligence panel for the selected project (use cached result if available)
+  if (_tiCache[proj]) renderTrendPanel(proj, _tiCache[proj]);
+  else setTimeout(function() { try { runAndRenderTrend(proj); } catch(e){} }, 500);
   applyDeptTabLocks();
 }
 function updateDashboardDates() {
@@ -3405,50 +3707,15 @@ function buildPISnapshot(proj) {
     deptMap[t.dept][t.status] = (deptMap[t.dept][t.status]||0)+1;
   });
 
-  // ── SENIOR PM CROSS-SESSION TREND ANALYZER ──
-  // Scans the last 4 weeks of sheets to find tasks that are chronically repeated or stalled
-  const sessions = availableSessions[proj] || [];
-  const recentSessions = sessions.slice(0, 4); 
-  let chronicTasks = [];
-  
-  if (recentSessions.length > 1) {
-    allTasks.forEach(lt => {
-      if (lt.status === 'achieved') return;
-      let appearanceCount = 1;
-      
-      // Look back through previous sessions for the exact same task
-      // Look back through previous sessions for the exact same task, result, and due date
-      for (let i = 1; i < recentSessions.length; i++) {
-        const prevMatch = taskDatabase.find(t => 
-          t.project === proj && 
-          t.session === recentSessions[i] && 
-          t.dept === lt.dept && 
-          t.action.toLowerCase().trim() === lt.action.toLowerCase().trim() &&
-          (t.resultToAchieve || '').toLowerCase().trim() === (lt.resultToAchieve || '').toLowerCase().trim() &&
-          (t.due || '').trim() === (lt.due || '').trim()
-        );
-        
-        if (prevMatch && prevMatch.status !== 'achieved') {
-          appearanceCount++;
-        } else {
-          break; // Chain broken: task was updated, completed, or didn't exist
-        }
-      }
-      
-      if (appearanceCount >= 3) {
-        chronicTasks.push(`[${lt.dept}] Stalled for ${appearanceCount} consecutive reporting periods: ${lt.action}`);
-      }
-    });
-  }
-
   const inflow  = document.getElementById(proj==='Annexe'?'val-annex-inflow':'val-cx-inflow').textContent;
   const units   = document.getElementById(proj==='Annexe'?'val-annex-units':'val-cx-units').textContent;
   const balance = document.getElementById(proj==='Annexe'?'val-annex-balance':'val-cx-balance').textContent;
   const sales   = document.getElementById(proj==='Annexe'?'val-annex-sales':'val-cx-sales').textContent;
   const offers  = document.getElementById(proj==='Annexe'?'val-annex-offers':'val-cx-offers').textContent;
 
+  // Parse balance for runway calc
   const balNum = parseNairaToM(balance);
-  const burnRate = proj === 'Annexe' ? 35 : 18; 
+  const burnRate = proj === 'Annexe' ? 35 : 18; // ₦M/week
   const runwayWks = balNum > 0 ? (balNum / burnRate).toFixed(1) : '< 1';
 
   const topDelayed = byStatus.delayed.slice(0,8).map(t=>`[${t.dept}] ${t.action}${isOverdue(t)?' ⚠OVERDUE':''}`).join('\n');
@@ -3461,8 +3728,7 @@ function buildPISnapshot(proj) {
     ontrack: byStatus.ontrack.length, delayed: byStatus.delayed.length,
     onhold: byStatus.onhold.length, achieved: byStatus.achieved.length,
     overdue: overdueTasks.length,
-    topDelayed, topAchieved, deptSummary,
-    chronicTasks: chronicTasks.join('\n')
+    topDelayed, topAchieved, deptSummary
   };
 }
 
@@ -3483,36 +3749,23 @@ async function generateDynamicPI(proj) {
   const loadEl   = document.getElementById(proj==='Crossings'?'pi-cx-loading':'pi-ann-loading');
   const footerEl = document.getElementById(proj==='Crossings'?'pi-cx-footer':'pi-ann-footer');
   const footTxt  = document.getElementById(proj==='Crossings'?'pi-cx-footer-text':'pi-ann-footer-text');
-  
   if (!dynEl) return;
 
-  // ── CACHE CHECK: Prevent redundant API calls to Groq ──
-  if (_piGenerated[proj] && _piCache[proj]) {
-    dynEl.innerHTML = _piCache[proj];
-    dynEl.style.display = 'block';
-    if (loadEl) loadEl.style.display = 'none';
-    if (footerEl) footerEl.style.display = 'flex';
-    return;
-  }
-
-  // Restore the loading spinner UI before fetching
-  if (loadEl) { 
-    loadEl.style.display='flex'; 
-    loadEl.innerHTML = '<div class="pi-loading-spinner"></div><span>Generating strategic intelligence from live data…</span>';
-  }
+  // Show loading
+  if (loadEl) { loadEl.style.display='flex'; }
   dynEl.style.display = 'none';
   if (footerEl) footerEl.style.display = 'none';
 
   const snap = buildPISnapshot(proj);
-  const accentColor = proj === 'Crossings' ? '#C0392B' : '#C0392B';
+  const accentColor = proj === 'Crossings' ? '#1b5e20' : '#D32F2F';
   const projLabel   = 'Lakowe ' + proj;
 
   const projContext = proj === 'Annexe'
-    ? `ANNEXE-SPECIFIC CONTEXT:\n- Overall construction: 35.3% actual vs 40.7% projected (5.4pp shortfall)\n- Internal roads: 42.7% actual vs 47.5% projected\n- Layout provisional approval: 40+ weeks overdue (Commissioner signature pending)`
-    : `CROSSINGS-SPECIFIC CONTEXT:\n- Overall programme: 27.8% actual vs 30.6% projected (2.8pp shortfall)\n- Phase 1 sandfill: 44% complete; road clearing: 56.5% complete\n- Main civil works: NOT STARTED — gated on ₦800M cumulative inflow milestone`;
+    ? `ANNEXE-SPECIFIC CONTEXT:\n- Overall construction: 35.3% actual vs 40.7% projected (5.4pp shortfall)\n- Internal roads: 42.7% actual vs 47.5% projected\n- MEP/utilities (ALMOG): ~1% started — barely mobilised\n- Streets not yet cleared: Segun Odegbami, Tobi Amusan\n- Rainy season begins May — drainage & compaction at serious risk of stalling\n- Layout provisional approval: 40+ weeks overdue (Commissioner signature pending)\n- No active ad campaign or offer letters as of latest session\n- ₦100M still owed to Elms Gardens (cross-project liability)\n- QS onboarding recently closed — critical for contractor payment sign-off`
+    : `CROSSINGS-SPECIFIC CONTEXT:\n- Overall programme: 27.8% actual vs 30.6% projected (2.8pp shortfall)\n- Phase 1 sandfill: 44% complete; road clearing: 56.5% complete\n- Main civil works: NOT STARTED — gated on ₦800M cumulative inflow milestone\n- Currently ₦${Math.round(800-(parseNairaToM(snap.inflow)))}M short of the ₦800M civil mobilisation trigger\n- Account down ~81% over 6 weeks — zero new inflow since January 2026\n- BAFF vs FUNKUS civil contractor decision still unresolved at DA level\n- Hospitality site redesigned CX9→CX10 — adds 6 commercial + 68 residential units\n- Renders and "coming soon" billboard blocked pending design freeze\n- Rainy season puts Phase 1 clearing and sandfill at risk`;
 
-  const prompt = `You are a strict, highly experienced Senior Project Manager advising Mixta Africa's executive board. 
-Your objective is to spot trends across reporting periods, flag chronic delays, and deliver predictive intelligence for ${projLabel}.
+  const prompt = `You are a Senior Business Strategy Associate advising Mixta Africa's executive board. 
+Your objective is to analyze the provided live dashboard metrics for ${projLabel} and deliver a 'Predictive Intelligence' brief.
 
 LIVE CONTEXT:
 - Cash Liquidity: ${snap.balance}
@@ -3520,21 +3773,19 @@ LIVE CONTEXT:
 - Sales Pipeline: ${snap.offers} Active Offer Letters
 - Critical Bottlenecks: ${snap.delayed} Delayed Tasks (${snap.overdue} Overdue).
 
-CHRONICALLY STALLED TASKS (Repeated across multiple reporting periods):
-${snap.chronicTasks || "No chronic tasks flagged."}
-
 ${projContext}
 
 CRITICAL INSTRUCTIONS:
-1. NO ACADEMIC FLUFF. Speak strictly in terms of cash flow, contractor mobilization, and real estate execution.
-2. If there are "CHRONICALLY STALLED TASKS" listed above, you MUST call them out by name and reprimand the department responsible. A task delayed for 3+ weeks is a severe management failure.
-3. Output EXACTLY these HTML blocks (using the exact class names provided) to inject into the dashboard.
+1. NO ACADEMIC OR THEORETICAL FLUFF. Speak strictly in terms of cash flow, contractor mobilization, and real estate execution.
+2. Focus on the "So What?": If account balances are low and offers are stagnant, explicitly state that contractor payments for the next phase are at severe risk.
+3. Be candid, sharp, and action-oriented. Do not soften the blow.
 
-YOUR HTML OUTPUT FORMAT:
+YOUR TASK:
+Output EXACTLY these HTML blocks (using the exact class names provided) to inject into the dashboard:
 
 <div class="pi-insight-block" style="border-top:3px solid ${accentColor};margin-top:0">
-  <div class="pi-insight-headline">📍 Liquidity & Pipeline Correlation</div>
-  <div class="pi-insight-text">[1-2 punchy sentences on how current cash and offers impact construction ability.]</div>
+  <div class="pi-insight-headline">📍 Liquidity & Sales Correlation</div>
+  <div class="pi-insight-text">[1-2 punchy sentences. How does the current cash liquidity and offer letter pipeline directly impact our immediate construction ability?]</div>
 </div>
 
 <div class="pi-metrics-row">
@@ -3545,23 +3796,23 @@ YOUR HTML OUTPUT FORMAT:
 </div>
 
 <div class="pi-insight-block">
-  <div class="pi-insight-headline">🚨 Senior PM Trend Alert: Chronic Delays</div>
-  <div class="pi-insight-text">[Analyze the "CHRONICALLY STALLED TASKS". Call out the departments. Explain the downstream impact of these recurring failures.]</div>
+  <div class="pi-insight-headline">🔥 Milestone Delivery Risks</div>
+  <div class="pi-insight-text">[1-2 sentences identifying exactly what milestone is at risk right now due to the bottlenecks or cash position.]</div>
 </div>
 
 <div class="pi-insight-block">
   <div class="pi-insight-headline">🎯 Immediate Required Executive Action</div>
-  <div class="pi-insight-text">[1-2 sentences. What exact decision must the board make THIS WEEK to unblock the project?]</div>
+  <div class="pi-insight-text">[1-2 sentences. What exact decision must the board make THIS WEEK to unblock the project? Name it clearly.]</div>
 </div>
 
 Output ONLY the HTML, nothing else before or after it.`;
 
+  // ── Use Groq (CORS-friendly, fast) ──
   const GROQ_KEY = window.GROQ_API_KEY || localStorage.getItem('GROQ_API_KEY');
   if (!GROQ_KEY) {
     if (loadEl) loadEl.innerHTML = '<span style="color:var(--status-orange);font-size:12px">⚠ GROQ_API_KEY not configured as environment secret.</span>';
     return;
   }
-  
   try {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -3571,39 +3822,28 @@ Output ONLY the HTML, nothing else before or after it.`;
         max_tokens: 1400,
         temperature: 0.3,
         messages: [
-          { role: 'system', content: 'You are a strict, senior real estate project manager. Write punchy, direct executive intelligence. Output only valid HTML using the exact class names given. No markdown, no preamble.' },
+          { role: 'system', content: 'You are a sharp business strategy associate at a real estate development firm. Write punchy, direct executive intelligence. Output only valid HTML using the exact class names given. No markdown, no preamble.' },
           { role: 'user', content: prompt }
         ]
       })
     });
-    
-    // ── ELEGANT RATE LIMIT ERROR HANDLING ──
-    if (!res.ok) {
-      if (res.status === 429) {
-        throw new Error("Groq API rate limit exceeded (429). Please wait 60 seconds.");
-      }
-      throw new Error('API Error ' + res.status);
-    }
-
     const data = await res.json();
     const text = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content
       ? data.choices[0].message.content.trim() : '';
     if (!text) throw new Error('Empty response from Groq');
 
+    // Strip any accidental markdown fences
     const clean = text.replace(/^```html?\n?/i,'').replace(/\n?```$/,'').trim();
 
     dynEl.innerHTML = clean;
     dynEl.style.display = 'block';
     if (loadEl) loadEl.style.display = 'none';
     if (footerEl) footerEl.style.display = 'flex';
-    if (footTxt) footTxt.textContent = `Strategic intelligence generated by Cross-Session Analysis Engine · ${new Date().toLocaleDateString('en-NG',{day:'2-digit',month:'short',year:'numeric'})} ${new Date().toLocaleTimeString('en-NG',{hour:'2-digit',minute:'2-digit'})}`;
-    
-    // Save to Cache
+    if (footTxt) footTxt.textContent = `Strategic intelligence generated from live data · ${new Date().toLocaleDateString('en-NG',{day:'2-digit',month:'short',year:'numeric'})} ${new Date().toLocaleTimeString('en-NG',{hour:'2-digit',minute:'2-digit'})} · Refreshes on every sync`;
     _piGenerated[proj] = true;
     _piCache[proj] = clean;
-    
   } catch(err) {
-    if (loadEl) loadEl.innerHTML = `<span style="color:var(--status-orange);font-size:12px;display:flex;align-items:center;gap:8px;">⚠ Intelligence generation failed: ${err.message}. <button onclick="generateDynamicPI('${proj}')" style="font-size:11px;padding:6px 12px;border:1px solid #e4e4e7;border-radius:4px;cursor:pointer;background:#fff;font-family:inherit;font-weight:600;">Retry</button></span>`;
+    if (loadEl) loadEl.innerHTML = `<span style="color:var(--status-orange);font-size:12px">⚠ Intelligence generation failed: ${err.message}. <button onclick="generateDynamicPI('${proj}')" style="margin-left:8px;font-size:11px;padding:4px 10px;border:1px solid #e4e4e7;border-radius:4px;cursor:pointer;background:#fff;font-family:inherit">Retry</button></span>`;
   }
 }
 
@@ -3702,8 +3942,354 @@ function piAutoExpand(proj) {
 
 
 // ╔══════════════════════════════════════════════════════════════════╗
-// ║  MAILING LIST DATA                                               ║
+// ║  TREND INTELLIGENCE ENGINE                                        ║
+// ║  Senior PM logic: recurring tasks, velocity, risk escalation      ║
 // ╚══════════════════════════════════════════════════════════════════╝
+
+// ── Similarity check: are two task action strings the same task? ──
+function tiTaskSimilarity(a, b) {
+  if (!a || !b) return 0;
+  // Normalize: lowercase, strip punctuation
+  const norm = s => s.toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+  const na = norm(a), nb = norm(b);
+  if (na === nb) return 1.0;
+  // Token overlap (Jaccard)
+  const ta = new Set(na.split(' ').filter(w => w.length > 3));
+  const tb = new Set(nb.split(' ').filter(w => w.length > 3));
+  const inter = new Set([...ta].filter(x => tb.has(x)));
+  const union = new Set([...ta, ...tb]);
+  return union.size === 0 ? 0 : inter.size / union.size;
+}
+
+// ── Parse session name to a sortable date value ──
+function tiSessionToDate(name) {
+  const p = parseSheetName(name);
+  if (!p) return null;
+  // Use 2026 as base year; sessions in Jan=1, May=5 etc.
+  return new Date(2026, p.month - 1, p.day);
+}
+
+// ── Core engine: analyse taskDatabase for a project ──
+function runTrendAnalysis(proj) {
+  const overrides = getStatusOverrides();
+
+  // Get all sessions sorted oldest → newest
+  const sessions = [...(availableSessions[proj] || [])].sort((a, b) => {
+    const da = tiSessionToDate(a), db = tiSessionToDate(b);
+    if (!da || !db) return 0;
+    return da - db;
+  });
+
+  if (sessions.length < 2) return null; // Need at least 2 sessions for trend
+
+  // Build per-session task maps
+  const sessionMaps = sessions.map(sess => {
+    const tasks = taskDatabase
+      .filter(t => t.project === proj && t.session === sess)
+      .map(t => ({ ...t, status: overrides[taskId(t)] || t.status }));
+    return { sess, tasks };
+  });
+
+  const latestSess = sessions[sessions.length - 1];
+  const latestTasks = (sessionMaps[sessionMaps.length - 1] || {}).tasks || [];
+
+  // ── 1. RECURRING TASK DETECTION ──
+  // A task is "recurring" if a similar action text exists across ≥2 sessions
+  // and was never achieved in between
+  const recurringMap = {}; // key: normalized action → { sessions:[], dept, latestStatus }
+
+  sessionMaps.forEach(({ sess, tasks }, si) => {
+    tasks.forEach(t => {
+      const norm = t.action.toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim().substring(0, 80);
+      let matched = false;
+      Object.keys(recurringMap).forEach(key => {
+        if (tiTaskSimilarity(key, norm) >= 0.42) {
+          const entry = recurringMap[key];
+          if (!entry.sessions.includes(sess)) entry.sessions.push(sess);
+          if (si === sessionMaps.length - 1) { entry.latestStatus = t.status; entry.latestDept = t.dept; }
+          matched = true;
+        }
+      });
+      if (!matched) {
+        recurringMap[norm] = { action: t.action, dept: t.dept, sessions: [sess], latestStatus: t.status, latestDept: t.dept };
+      }
+    });
+  });
+
+  // Filter: appears in ≥2 sessions AND not achieved in latest session
+  const recurring = Object.values(recurringMap).filter(r =>
+    r.sessions.length >= 2 && r.latestStatus !== 'achieved'
+  ).sort((a, b) => b.sessions.length - a.sessions.length);
+
+  // ── 2. VELOCITY TRACKING ──
+  // Per session: what % of tasks were achieved?
+  const velocityData = sessionMaps.map(({ sess, tasks }) => {
+    const total = tasks.length;
+    const achieved = tasks.filter(t => t.status === 'achieved').length;
+    const delayed = tasks.filter(t => t.status === 'delayed' || isOverdue(t)).length;
+    const pct = total > 0 ? Math.round((achieved / total) * 100) : 0;
+    return { sess, total, achieved, delayed, pct };
+  });
+
+  // Velocity trend: compare last 2 sessions
+  let velocityTrend = 'stable';
+  if (velocityData.length >= 2) {
+    const last = velocityData[velocityData.length - 1].pct;
+    const prev = velocityData[velocityData.length - 2].pct;
+    if (last > prev + 8) velocityTrend = 'improving';
+    else if (last < prev - 8) velocityTrend = 'declining';
+    else if (last < 10) velocityTrend = 'stalled';
+  }
+
+  // ── 3. RISK ESCALATION ──
+  // Chronic: delayed in ≥3 sessions
+  // Escalated: was on-track, became delayed in most recent session
+  const escalated = [];
+  const chronic = [];
+
+  // Build "delayed sessions" count per action
+  const delayedCount = {};
+  sessionMaps.forEach(({ sess, tasks }) => {
+    tasks.filter(t => t.status === 'delayed' || (isOverdue(t) && t.status !== 'achieved')).forEach(t => {
+      const key = (t.dept + '__' + t.action).substring(0, 100);
+      if (!delayedCount[key]) delayedCount[key] = { action: t.action, dept: t.dept, sessions: [] };
+      delayedCount[key].sessions.push(sess);
+    });
+  });
+
+  Object.values(delayedCount).forEach(entry => {
+    if (entry.sessions.length >= 3) {
+      chronic.push(entry);
+    } else if (entry.sessions.length >= 2) {
+      // Check if latest session is in the delayed list
+      if (entry.sessions.includes(latestSess)) escalated.push(entry);
+    }
+  });
+
+  // Tasks that appear for first time as delayed in the latest session (new risk flags)
+  const newDelayed = latestTasks.filter(t => {
+    if (t.status !== 'delayed' && !isOverdue(t)) return false;
+    // Was it delayed in any previous session?
+    const prevDelayed = sessionMaps.slice(0, -1).some(({ tasks }) =>
+      tasks.some(pt => tiTaskSimilarity(pt.action, t.action) >= 0.42 && (pt.status === 'delayed' || isOverdue(pt)))
+    );
+    return !prevDelayed; // New occurrence
+  });
+
+  // ── 4. BUILD TREND BADGE MAP for task cards ──
+  // Returns map of taskId → array of badge objects for current session
+  const trendBadgeMap = {};
+  latestTasks.forEach(t => {
+    const tid = taskId(t);
+    const badges = [];
+
+    // Check if recurring
+    const norm = t.action.toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim().substring(0, 80);
+    const matchedRecurring = recurring.find(r => tiTaskSimilarity(r.action.substring(0,80).toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim(), norm) >= 0.42);
+    if (matchedRecurring) {
+      const sessCount = matchedRecurring.sessions.length;
+      badges.push({ type: sessCount >= 4 ? 'chronic' : 'recurring', label: `🔁 Recurring · ${sessCount} sessions` });
+    }
+
+    // Check if chronic delayed
+    const key = (t.dept + '__' + t.action).substring(0, 100);
+    if (delayedCount[key] && delayedCount[key].sessions.length >= 3) {
+      badges.push({ type: 'escalated', label: `🚨 Chronic · ${delayedCount[key].sessions.length}x delayed` });
+    } else if (delayedCount[key] && delayedCount[key].sessions.length >= 2) {
+      badges.push({ type: 'escalated', label: `⚠ Escalated · ${delayedCount[key].sessions.length}x delayed` });
+    }
+
+    if (badges.length) trendBadgeMap[tid] = badges;
+  });
+
+  return {
+    proj, sessions, sessionMaps, latestSess, latestTasks,
+    recurring, velocityData, velocityTrend,
+    escalated, chronic, newDelayed, trendBadgeMap,
+    totalSessions: sessions.length,
+    totalRecurring: recurring.length,
+    totalEscalated: chronic.length + escalated.length
+  };
+}
+
+// ── Store trend analysis results per project ──
+const _tiCache = { Crossings: null, Annexe: null };
+
+function runAndRenderTrend(proj) {
+  try {
+    const result = runTrendAnalysis(proj);
+    _tiCache[proj] = result;
+    if (result) renderTrendPanel(proj, result);
+  } catch(e) {
+    console.warn('[TrendIntelligence] Error for', proj, e);
+  }
+}
+
+function renderTrendPanel(proj, result) {
+  const pfx = proj === 'Crossings' ? 'cx' : 'annex';
+  const themeColor = proj === 'Crossings' ? 'var(--cx-color)' : 'var(--annex-color)';
+
+  // ── Stats ──
+  const sessEl = document.getElementById(`ti-${pfx}-sessions`);
+  const recEl  = document.getElementById(`ti-${pfx}-recurring`);
+  const escEl  = document.getElementById(`ti-${pfx}-escalated`);
+  if (sessEl) sessEl.textContent = result.totalSessions;
+  if (recEl)  recEl.textContent  = result.totalRecurring;
+  if (escEl)  escEl.textContent  = result.totalEscalated;
+
+  // ── Header badge ──
+  const badgeEl = document.getElementById(`ti-${pfx}-badge`);
+  if (badgeEl) {
+    const total = result.totalRecurring + result.totalEscalated;
+    if (total > 0) {
+      badgeEl.style.display = 'inline-flex';
+      badgeEl.textContent = total + ' alerts';
+      badgeEl.className = 'ti-alert-badge' + (result.totalEscalated > 0 ? ' ti-critical' : '');
+    } else {
+      badgeEl.style.display = 'none';
+    }
+  }
+
+  // ── Digest alerts ──
+  const digestEl = document.getElementById(`ti-${pfx}-digest`);
+  if (digestEl) {
+    let html = '';
+
+    // Chronic delays (highest priority)
+    result.chronic.slice(0, 5).forEach(entry => {
+      html += `<div class="ti-alert-item">
+        <div class="ti-alert-icon-wrap escalation">🚨</div>
+        <div class="ti-alert-content">
+          <div class="ti-alert-type escalation">Chronic Delay — ${entry.sessions.length} Consecutive Sessions</div>
+          <div class="ti-alert-title">${escHtml(entry.action.substring(0, 110))}</div>
+          <div class="ti-alert-detail"><strong>${escHtml(entry.dept)}</strong> · Has been delayed or overdue in ${entry.sessions.length} separate meetings: ${entry.sessions.map(s => formatSheetName(s)).join(', ')}. Requires executive intervention — not a routine follow-up item.</div>
+        </div>
+        <div class="ti-alert-meta">${entry.sessions.length}× delayed</div>
+      </div>`;
+    });
+
+    // Newly escalated
+    result.escalated.slice(0, 4).forEach(entry => {
+      html += `<div class="ti-alert-item">
+        <div class="ti-alert-icon-wrap escalation">⚠️</div>
+        <div class="ti-alert-content">
+          <div class="ti-alert-type escalation">Escalating Risk — Delayed Again</div>
+          <div class="ti-alert-title">${escHtml(entry.action.substring(0, 110))}</div>
+          <div class="ti-alert-detail"><strong>${escHtml(entry.dept)}</strong> · Previously delayed and still unresolved. Appearances: ${entry.sessions.map(s => formatSheetName(s)).join(', ')}.</div>
+        </div>
+        <div class="ti-alert-meta">${entry.sessions.length}× flagged</div>
+      </div>`;
+    });
+
+    // Recurring unresolved tasks
+    result.recurring.filter(r => !result.chronic.find(c => tiTaskSimilarity(c.action, r.action) >= 0.42) && !result.escalated.find(e => tiTaskSimilarity(e.action, r.action) >= 0.42)).slice(0, 6).forEach(r => {
+      const sessLabels = r.sessions.map(s => formatSheetName(s)).join(', ');
+      html += `<div class="ti-alert-item">
+        <div class="ti-alert-icon-wrap recurring">🔁</div>
+        <div class="ti-alert-content">
+          <div class="ti-alert-type recurring">Recurring Unresolved Task</div>
+          <div class="ti-alert-title">${escHtml(r.action.substring(0, 110))}</div>
+          <div class="ti-alert-detail"><strong>${escHtml(r.latestDept || r.dept)}</strong> · Appears unresolved across <strong>${r.sessions.length} sessions</strong>: ${sessLabels}. Current status: <strong>${r.latestStatus}</strong>. Risk of normalisation — may need a formal decision or closure.</div>
+        </div>
+        <div class="ti-alert-meta">${r.sessions.length} sessions</div>
+      </div>`;
+    });
+
+    // New delays (first-time flags in latest session)
+    result.newDelayed.slice(0, 3).forEach(t => {
+      html += `<div class="ti-alert-item">
+        <div class="ti-alert-icon-wrap velocity">📍</div>
+        <div class="ti-alert-content">
+          <div class="ti-alert-type velocity">New Delay Flag — ${formatSheetName(result.latestSess)}</div>
+          <div class="ti-alert-title">${escHtml(t.action.substring(0, 110))}</div>
+          <div class="ti-alert-detail"><strong>${escHtml(t.dept)}</strong> · Newly delayed or overdue this session — first-time flag. Due: ${t.due}. Monitor closely before next meeting.</div>
+        </div>
+        <div class="ti-alert-meta">New</div>
+      </div>`;
+    });
+
+    // Velocity insight
+    const vd = result.velocityData;
+    if (vd.length >= 2) {
+      const last = vd[vd.length - 1], prev = vd[vd.length - 2];
+      const diff = last.pct - prev.pct;
+      const trendLabel = diff > 0 ? `↑ +${diff}pp` : diff < 0 ? `↓ ${diff}pp` : '→ unchanged';
+      const trendClass = diff > 5 ? 'velocity' : diff < -5 ? 'escalation' : 'velocity';
+      const trendIcon = diff > 5 ? '📈' : diff < -5 ? '📉' : '📊';
+      html += `<div class="ti-alert-item">
+        <div class="ti-alert-icon-wrap velocity">${trendIcon}</div>
+        <div class="ti-alert-content">
+          <div class="ti-alert-type ${trendClass}">Completion Velocity ${trendLabel}</div>
+          <div class="ti-alert-title">${formatSheetName(last.sess)}: ${last.pct}% achieved (${last.achieved}/${last.total} tasks)</div>
+          <div class="ti-alert-detail">Previous session (${formatSheetName(prev.sess)}): ${prev.pct}% achieved. ${result.velocityTrend === 'stalled' ? '⚠ Delivery rate critically low — risk of milestone slippage.' : result.velocityTrend === 'declining' ? 'Completion rate falling — check for blockers in delayed tasks.' : result.velocityTrend === 'improving' ? 'Positive momentum — maintain focus.' : 'Stable delivery pace.'}</div>
+        </div>
+        <div class="ti-alert-meta">${last.pct}% rate</div>
+      </div>`;
+    }
+
+    if (!html) {
+      html = '<div class="ti-digest-empty">✓ No significant recurring patterns or escalations detected across current sessions.</div>';
+    }
+    digestEl.innerHTML = html;
+  }
+
+  // ── Velocity chart ──
+  const velEl = document.getElementById(`ti-${pfx}-velocity`);
+  if (velEl && result.velocityData.length) {
+    const maxPct = Math.max(...result.velocityData.map(v => v.pct), 10);
+    let html = result.velocityData.map(v => {
+      const fillClass = v.pct >= 50 ? 'improving' : v.pct >= 25 ? 'stable' : v.pct >= 10 ? 'declining' : 'stalled';
+      const width = Math.max(2, Math.round((v.pct / maxPct) * 100));
+      return `<div class="ti-vel-row">
+        <div class="ti-vel-label">${formatSheetName(v.sess)}</div>
+        <div class="ti-vel-track"><div class="ti-vel-fill ${fillClass}" style="width:${width}%"></div></div>
+        <div class="ti-vel-count">${v.pct}%</div>
+      </div>`;
+    }).join('');
+    velEl.innerHTML = html;
+  }
+
+  // ── Footer timestamp ──
+  const ftEl = document.getElementById(`ti-${pfx}-footer-text`);
+  if (ftEl) {
+    const now = new Date();
+    ftEl.textContent = `Trend analysis across ${result.totalSessions} sessions · ${now.toLocaleDateString('en-NG',{day:'2-digit',month:'short',year:'numeric'})} ${now.toLocaleTimeString('en-NG',{hour:'2-digit',minute:'2-digit'})} · Refreshes on sync`;
+  }
+}
+
+function toggleTI(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('ti-expanded');
+}
+
+// ── Inject trend badges into rendered task cards ──
+function injectTrendBadges(proj) {
+  const result = _tiCache[proj];
+  if (!result || !result.trendBadgeMap) return;
+  const overrides = getStatusOverrides();
+  const latest = availableSessions[proj] && availableSessions[proj][0];
+  const tasks = taskDatabase.filter(t => t.project === proj && t.session === latest);
+
+  tasks.forEach(t => {
+    const tid = taskId(t);
+    const badges = result.trendBadgeMap[tid];
+    if (!badges || !badges.length) return;
+    const cardEl = document.getElementById('card-' + tid);
+    if (!cardEl) return;
+    // Avoid duplicating if already injected
+    if (cardEl.querySelector('.trend-badge-row')) return;
+    const row = document.createElement('div');
+    row.className = 'trend-badge-row';
+    row.innerHTML = badges.map(b => `<span class="trend-badge ${b.type}">${b.label}</span>`).join('');
+    // Inject after step-context (result bar), before step-card-top
+    const ctx = cardEl.querySelector('.step-context');
+    const top = cardEl.querySelector('.step-card-top');
+    if (top) cardEl.insertBefore(row, top);
+    else cardEl.appendChild(row);
+  });
+}
+
+// ╔══════════════════════════════════════════════════════════════════╝
 const MAILING_LIST = {
   Crossings: {
     Design:     ['dcs_nigeria@mixtafrica.com','a.arokodare@mixtafrica.com','c.uwadiale@mixtafrica.com','a.uwuigbe@mixtafrica.com'],
