@@ -2721,7 +2721,7 @@ function buildHistoryBar() {
   }
   bar.innerHTML = monthRow + dateRow;
 }
-function formatSheetName(sheetName) { return sheetName.replace(/^([a-z]{3})\s*(\d+)/i, (_, m, d) => m.charAt(0).toUpperCase() + m.slice(1).toLowerCase() + ' ' + d.padStart(2,'0')); }
+function formatSheetName(sheetName) { return sheetName.replace(/^([a-z]{3,9})\s*(\d+)/i, (_, m, d) => m.substring(0,3).charAt(0).toUpperCase() + m.substring(0,3).slice(1).toLowerCase() + ' ' + d.padStart(2,'0')); }
 function expandMonth(m) { const sessions = availableSessions[currentProject] || []; const monthSessions = sessions.filter(s => s.toLowerCase().startsWith(m)); if (monthSessions.length >= 1) switchSession(monthSessions[0]); }
 function switchSession(val) {
   viewingSessionDate = val; buildHistoryBar(); const dateLabel = document.getElementById('viewing-date-label');
@@ -2916,7 +2916,7 @@ function updateDashboardDates() {
   const monthNames = {jan:'Jan',feb:'Feb',mar:'Mar',apr:'Apr',may:'May',jun:'Jun',jul:'Jul',aug:'Aug',sep:'Sep',oct:'Oct',nov:'Nov',dec:'Dec'};
   ['Crossings','Annexe'].forEach(proj => {
     const sessions = availableSessions[proj]; if (!sessions || sessions.length === 0) return; const latest = sessions[0];
-    const m = latest.match(/^([a-z]{3})\s*(\d+)/i); if (!m) return; const mon = monthNames[m[1].toLowerCase()] || m[1]; const day = parseInt(m[2]);
+    const m = latest.match(/^([a-z]{3,9})\s*(\d+)/i); if (!m) return; const monKey = m[1].substring(0,3).toLowerCase(); const mon = monthNames[monKey] || m[1].charAt(0).toUpperCase() + m[1].substring(1,3).toLowerCase(); const day = parseInt(m[2]);
     const dateStr = `Jan 5 – ${mon} ${day}, 2026`; const elId = proj === 'Crossings' ? 'ph-date-cx' : 'ph-date-annex'; const el = document.getElementById(elId); if (el) el.textContent = dateStr;
   });
 }
@@ -4650,10 +4650,11 @@ function refreshDashboardForSession() {
   renderOverduePanels();
   if (availableSessions[proj][0] === session && session !== realFirst) availableSessions[proj].shift();
 
-  const m2 = session.match(/^([a-z]{3})\s*(\d+)/i);
+  const m2 = session.match(/^([a-z]{3,9})\s*(\d+)/i);
   if (m2) {
     const mn = {jan:'Jan',feb:'Feb',mar:'Mar',apr:'Apr',may:'May',jun:'Jun',jul:'Jul',aug:'Aug',sep:'Sep',oct:'Oct',nov:'Nov',dec:'Dec'};
-    const mon = mn[m2[1].toLowerCase()] || m2[1];
+    const monKey = m2[1].substring(0,3).toLowerCase();
+    const mon = mn[monKey] || m2[1].charAt(0).toUpperCase() + m2[1].substring(1,3).toLowerCase();
     const el = document.getElementById(pfx ? 'ph-date-cx' : 'ph-date-annex');
     if (el) el.textContent = 'Jan 5 \u2013 ' + mon + ' ' + parseInt(m2[2]) + ', 2026';
   }
