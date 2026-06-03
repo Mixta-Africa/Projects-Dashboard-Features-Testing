@@ -959,14 +959,17 @@ body.users-bar-visible .dept-sidebar {
 }
 
 @media (max-width: 768px) {
-  nav { flex-wrap: wrap; height: auto; min-height: var(--nav-h); padding: 12px 20px; gap: 12px; justify-content: space-between; }
-  .nav-brand span { display: none; } /* Hide "AFRICA" word on mobile */
-  .nav-tabs { order: 3; width: 100%; justify-content: center; overflow-x: auto; padding-bottom: 6px; }
-  .page { margin-top: 110px; padding-top: 12px; } /* Push content down safely below wrapped nav */
+  nav { flex-wrap: wrap; height: auto; min-height: var(--nav-h); padding: 12px 16px; gap: 10px; justify-content: space-between; }
+  .nav-brand { flex-shrink: 0; }
+  .nav-brand span { display: none; }
+  .nav-tabs { order: 3; width: 100%; justify-content: flex-start; overflow-x: auto; padding-bottom: 6px; }
+  .page { margin-top: 110px; padding-top: 12px; }
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
-  .nav-right { gap: 8px; }
-  .admin-btn { padding: 6px 12px; }
-  .admin-btn span:not(.diag-badge-count) { display: none; } /* Hide Admin Name */
+  .nav-right { gap: 6px; max-width: calc(100vw - 110px); overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; }
+  .nav-right::-webkit-scrollbar { display: none; }
+  .nav-badge-group, .admin-btn { flex-shrink: 0; }
+  .admin-btn { padding: 6px 10px; }
+  .admin-btn span:not(.diag-badge-count) { display: none; }
   .tool-modal { max-width: 100%; border-radius: 0; max-height: 100vh; height: 100vh; }
   .report-type-grid { grid-template-columns: 1fr; }
   .tool-nav-btn .tool-nav-label { display: none; }
@@ -974,8 +977,11 @@ body.users-bar-visible .dept-sidebar {
 }
 
 @media (max-width: 480px) {
-  .stat-grid { grid-template-columns: 1fr; }
-  .nav-project-btn { padding: 6px 12px; font-size: 11px; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .stat-card { padding: 12px; }
+  .metric-value { font-size: 18px; }
+  .stat-card-label { font-size: 9px; }
+  .nav-project-btn { padding: 6px 10px; font-size: 10px; }
 }
 
 /* ── AUTH STYLES ── */
