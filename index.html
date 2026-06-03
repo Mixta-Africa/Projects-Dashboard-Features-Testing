@@ -4798,7 +4798,12 @@ function renderDynamicCharts() {
       'Apr 7': { inflow: 1415, salesValue: 2202 },
       'Apr 13': { inflow: 1415, salesValue: 2202 },
       'Apr 20': { inflow: 1415, salesValue: 2202 },
-      'Apr 27': { inflow: 1415, salesValue: 2202 }
+      'Apr 27': { inflow: 1415, salesValue: 2202 },
+      'May 4':  { inflow: 1720, salesValue: 2070 },
+      'May 11': { inflow: 1720, salesValue: 2000 },
+      'May 18': { inflow: 1720, salesValue: 2070 },
+      'May 25': { inflow: 1760, salesValue: 2170 },
+      'June 1': { inflow: 1760, salesValue: 2170 }
     },
     'Annexe': {
       'Jun 24': { inflow: 4790, salesValue: 6380 },
@@ -4880,7 +4885,15 @@ function renderDynamicCharts() {
       'Apr 20': { inflow: 5970, salesValue: 6910 },
       'Apr 23': { inflow: 5970, salesValue: 6910 },
       'Apr 27': { inflow: 5970, salesValue: 6910 },
-      'Apr 30': { inflow: 5970, salesValue: 6910 }
+      'Apr 30': { inflow: 5970, salesValue: 6910 },
+      'May 4':  { inflow: 6450, salesValue: 7030 },
+      'May 7':  { inflow: 6450, salesValue: 7030 },
+      'May 11': { inflow: 6450, salesValue: 7030 },
+      'May 14': { inflow: 6450, salesValue: 7030 },
+      'May 18': { inflow: 6590, salesValue: 7160 },
+      'May 21': { inflow: 6639, salesValue: 7160 },
+      'May 25': { inflow: 6639, salesValue: 7167 },
+      'June 1': { inflow: 6639, salesValue: 7267 }
     }
   };
 
@@ -4895,7 +4908,7 @@ function renderDynamicCharts() {
   }
   
   // 3. FALLBACK TO PREVENT BREAKING
-  return { inflow: null, salesValue: null };
+  return { inflow: null, salesValue: null, balance: null };
 }
   function buildChartData(proj) {
     let sessions = [...(availableSessions[proj] || [])].reverse();
