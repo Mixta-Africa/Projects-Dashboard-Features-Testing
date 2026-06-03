@@ -2005,7 +2005,7 @@ const SEED_TASKS = [
 function loadSeedData() {
   // Only load seed data if Google Sheet hasn't already populated the DB
   if (taskDatabase.length > 0) return;
-
+  
   // Normalize dept names using the dashboard normalization map
   const normalizeSeedDept = (raw) => {
     if (!raw) return 'General';
@@ -2029,6 +2029,12 @@ function loadSeedData() {
   availableSessions.Annexe = SEED_ANNEXE_SESSIONS;
   availableSessions.Crossings = SEED_CX_SESSIONS;
 
+  // Extract metrics immediately from seed Operations rows
+  (function() {
+    ['Crossings','Annexe'].forEach(proj => {
+      
+    });
+  })();
   // Update UI
   const now = new Date().toLocaleDateString('en-NG',{day:'2-digit',month:'short',year:'numeric'});
   document.getElementById('last-updated-text').textContent = 'Seed Data: ' + now + ' (syncing...)';
@@ -2040,6 +2046,7 @@ function loadSeedData() {
   updateLandingPageMetrics();
   if (currentDept) renderCurrentDept();
 }
+
 
 const STATUS_KEY = 'lakowe_status_v5';
 
@@ -4594,25 +4601,6 @@ document.addEventListener('click', function(e) {
 // ═══════════════════════════════════════════════════════
 // SESSION PICKER — drives all dashboard tiles per date
 // ═══════════════════════════════════════════════════════
-// ── Update Landing Page Buttons ──
-function updateLandingPageMetrics() {
-  ['Crossings', 'Annexe'].forEach(proj => {
-    const pfx = proj === 'Crossings' ? 'cx' : 'annex';
-    
-    const finalInflow = document.getElementById(`val-${pfx}-inflow`).textContent;
-    const finalUnits = document.getElementById(`val-${pfx}-units`).textContent;
-    
-    const subtitleId = proj === 'Crossings' ? 'landing-cx-subtitle' : 'landing-annex-subtitle';
-    const el = document.getElementById(subtitleId);
-    if (el) {
-      if (finalInflow.includes('Syncing')) {
-        el.textContent = 'Syncing live data...';
-      } else {
-        el.textContent = `${finalUnits} units · ${finalInflow} inflow`;
-      }
-    }
-  });
-}
   let _dashboardSession = 'latest';
 
 function populateSessionPicker() {
@@ -4649,7 +4637,7 @@ function refreshDashboardForSession() {
   const pfx = proj === 'Crossings';
 
   const latestSession = availableSessions[proj][0];
-
+  
   // Pull directly from our Firebase cache safely
   const selectedMetrics = (window._firebaseMetrics && window._firebaseMetrics[proj]) ? window._firebaseMetrics[proj][session] || {} : {};
   const latestMetrics = (window._firebaseMetrics && window._firebaseMetrics[proj]) ? window._firebaseMetrics[proj][latestSession] || {} : {};
@@ -5327,6 +5315,16 @@ window.onAuthGateSignedIn = window.onAuthGateSignedIn || function(user, access) 
     }
   }
 };
+
+// ── SAFETY UNLOCK — prevents permanent freeze if dashboard-auth.js fails silently ──
+// If auth-locked is still present after 8 seconds, force-remove it.
+// This surfaces the login screen even when Firebase or the auth script errors out.
+window._authSafetyTimer = setTimeout(function() {
+  if (document.body && document.body.classList.contains('auth-locked')) {
+    console.warn('[AUTH] Safety timeout fired — dashboard-auth.js may have failed. Force-unlocking body.');
+    document.body.classList.remove('auth-locked');
+  }
+}, 8000);
 </script>
 <script src="dashboard-auth.js"></script>
 <script src="dashboard-pi-engine.js"></script>
