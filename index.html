@@ -4739,26 +4739,26 @@ function injectTrendBadges(proj) {
 // ╔══════════════════════════════════════════════════════════════════╝
 const MAILING_LIST = {
   Crossings: {
-    Design:     ['dcs_nigeria@mixtafrica.com','a.arokodare@mixtafrica.com','c.uwadiale@mixtafrica.com','a.uwuigbe@mixtafrica.com'],
+    Design:     ['dcs_nigeria@mixtafrica.com'],
     AMC:        ['deji.alli@mixtafrica.com','s.hughes@mixtafrica.com','b.ajayi@mixtafrica.com'],
-    IPD:        ['ipd_nigeria@mixtafrica.com','pmo_nigeria@mixtafrica.com','w.salami@mixtafrica.com','t.banjo@mixtafrica.com','h.kacou@mixtafrica.com'],
-    Costing:    ['mn_costingandprocurement@mixtafrica.com','o.james@mixtafrica.com','j.olowe@mixtafrica.com','t.ibidokun@mixtafrica.com'],
-    MCC:        ['mcc@mixtafrica.com','k.haastrup@mixtafrica.com','n.anaeto@mixtafrica.com'],
+    IPD:        ['ipd_nigeria@mixtafrica.com','pmo_nigeria@mixtafrica.com'],
+    Costing:    ['mn_costingandprocurement@mixtafrica.com','o.james@mixtafrica.com'],
+    MCC:        ['mcc@mixtafrica.com'],
     Sales:      ['a.cameron-cole@mixtafrica.com','e.ezeh@mixtafrica.com'],
-    Legal:      ['r.idaeho@mixtafrica.com','o.shoyoye@mixtafrica.com'],
-    FINCON:     ['o.ekpikie@mixtafrica.com','o.tona-obafemi@mixtafrica.com','o.isabu@mixtafrica.com','a.omotayo@mixtafrica.com'],
-    Operations: ['u.ojembe@mixtafrica.com','o.ajala@mixtafrica.com','c.ajie@mixtafrica.com','r.jolaiya@mixtafrica.com']
+    Legal:      ['legal@mixtafrica.com'],
+    FINCON:     ['mixta_fincon@mixtafrica.com'],
+    Operations: [realestateoperations_nigeria@mixtafrica.com]
   },
   Annexe: {
-    Design:        ['dcs_nigeria@mixtafrica.com','a.arokodare@mixtafrica.com','c.uwadiale@mixtafrica.com','a.uwuigbe@mixtafrica.com'],
+    Design:        ['dcs_nigeria@mixtafrica.com'],
     AMC:           ['deji.alli@mixtafrica.com','s.hughes@mixtafrica.com'],
-    IPD:           ['ipd_nigeria@mixtafrica.com','pmo_nigeria@mixtafrica.com','w.salami@mixtafrica.com','t.banjo@mixtafrica.com','h.kacou@mixtafrica.com'],
-    Costing:       ['mn_costingandprocurement@mixtafrica.com','o.ogunewu@mixtafrica.com','j.olowe@mixtafrica.com','t.ibidokun@mixtafrica.com'],
-    MCC:           ['mcc@mixtafrica.com','k.haastrup@mixtafrica.com','n.anaeto@mixtafrica.com'],
+    IPD:           ['ipd_nigeria@mixtafrica.com','pmo_nigeria@mixtafrica.com'],
+    Costing:       ['mn_costingandprocurement@mixtafrica.com','o.ogunewu@mixtafrica.com'],
+    MCC:           ['mcc@mixtafrica.com'],
     Sales:         ['a.cameron-cole@mixtafrica.com','e.ezeh@mixtafrica.com'],
-    Legal:         ['r.idaeho@mixtafrica.com','o.shoyoye@mixtafrica.com'],
-    FINCON:        ['o.ekpikie@mixtafrica.com','o.tona-obafemi@mixtafrica.com','a.omotayo@mixtafrica.com'],
-    Operations:    ['u.ojembe@mixtafrica.com','o.ajala@mixtafrica.com','c.ajie@mixtafrica.com','r.jolaiya@mixtafrica.com'],
+    Legal:         ['legal@mixtafrica.com'],
+    FINCON:        ['mixta_fincon@mixtafrica.com'],
+    Operations:    ['realestateoperations_nigeria@mixtafrica.com'],
     Telemarketing: ['m.apuh@mixtafrica.com']
   }
 };
@@ -4817,7 +4817,7 @@ function reminderProjectChanged() {
 
   // NEW: "Active Departments Only" option
   const activeOpt = document.createElement('option');
-  activeOpt.value = '__ACTIVE__'; activeOpt.textContent = '🔥 Active Departments Only';
+  activeOpt.value = '__ACTIVE__'; activeOpt.textContent = '💡Active Departments Only';
   deptSel.appendChild(activeOpt);
 
   Object.keys(MAILING_LIST[_reminderProject]).forEach(dept => {
