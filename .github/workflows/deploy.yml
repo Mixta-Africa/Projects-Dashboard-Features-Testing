@@ -3,15 +3,14 @@ name: Deploy Dashboard to GitHub Pages
 on:
   push:
     branches:
-      - main        # triggers on every push to main
-  workflow_dispatch: # allows manual trigger from GitHub Actions tab
+      - main
+  workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Only one deployment runs at a time
 concurrency:
   group: pages
   cancel-in-progress: true
@@ -27,33 +26,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Inject GROQ_API_KEY — replaces __GROQ_API_KEY__ placeholder in index.html
       - name: Inject GROQ API key
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-        run: |
-          sed -i "s|__GROQ_API_KEY__|${GROQ_API_KEY}|g" index.html
+        run: sed -i "s|__GROQ_API_KEY__|${GROQ_API_KEY}|g" index.html
 
-      # Inject CEREBRAS_API_KEY — replaces __CEREBRAS_API_KEY__ placeholder in index.html
       - name: Inject Cerebras API key
         env:
           CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
-        run: |
-          sed -i "s|__CEREBRAS_API_KEY__|${CEREBRAS_API_KEY}|g" index.html
+        run: sed -i "s|__CEREBRAS_API_KEY__|${CEREBRAS_API_KEY}|g" index.html
 
-      # Verify injection worked (prints masked confirmation, never prints the key itself)
-      - name: Verify injection
+      - name: Inject Resend API key
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: sed -i "s|__RESEND_API_KEY__|${RESEND_API_KEY}|g" index.html
+
+      - name: Verify injections
         run: |
-          if grep -q '__GROQ_API_KEY__' index.html; then
-            echo "WARNING: GROQ placeholder was NOT replaced. Check that GROQ_API_KEY secret exists."
-          else
-            echo "✓ GROQ_API_KEY injected successfully"
-          fi
-          if grep -q '__CEREBRAS_API_KEY__' index.html; then
-            echo "WARNING: CEREBRAS placeholder was NOT replaced. Check that CEREBRAS_API_KEY secret exists."
-          else
-            echo "✓ CEREBRAS_API_KEY injected successfully"
-          fi
+          grep -q '__GROQ_API_KEY__'     index.html && echo "WARNING: GROQ key not injected"     || echo "✓ GROQ_API_KEY injected"
+          grep -q '__CEREBRAS_API_KEY__' index.html && echo "WARNING: CEREBRAS key not injected" || echo "✓ CEREBRAS_API_KEY injected"
+          grep -q '__RESEND_API_KEY__'   index.html && echo "WARNING: RESEND key not injected"   || echo "✓ RESEND_API_KEY injected"
 
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v4
@@ -61,7 +53,7 @@ jobs:
       - name: Upload site to Pages
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'   # uploads the whole repo root (index.html + dashboard-auth.js etc.)
+          path: '.'
 
       - name: Deploy to GitHub Pages
         id: deployment
