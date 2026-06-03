@@ -1990,11 +1990,11 @@ function loadSeedData() {
         const txt=(t.action||'')+' '+(t.explanation||'')+' '+(t.resultToAchieve||'');
         if (!/[₦N][\d,]+|sales[-:\s]+\d|\d+\s*units|offer letter/i.test(txt)) return;
         let m;
-        m=txt.match(/inflow[:\s\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?(?:mn|MN)?)/i);
+        m=txt.match(/(?:total\\s+inflow\\s+to\\s+date|total\\s+inflow|\\binflow)[:\\s\\-]+([\xe2\x82\xa6N]?\\s*[\\d,.]+\\s*[BMKbmk]?(?:mn|MN)?)/i);
         if(m){let v=m[1].trim().toUpperCase().replace(/MN$/,'M').replace(/^N(?=\d)/,'₦');if(!v.startsWith('₦'))v='₦'+v;document.getElementById(pfx?'val-cx-inflow':'val-annex-inflow').textContent=v;}
         m=txt.match(/value of sales[:\s\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?)/i);
         if(m){let v=m[1].trim().toUpperCase().replace(/^N(?=\d)/,'₦');if(!v.startsWith('₦'))v='₦'+v;document.getElementById(pfx?'val-cx-sales':'val-annex-sales').textContent=v;}
-        m=txt.match(/account balance[:\s\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?)/i);
+        m=txt.match(/(?:account\\s+balance|account\\s+bal|\\bbalance)[:\\s\\-]+([\xe2\x82\xa6N]?\\s*[\\d,.]+\\s*[BMKbmk]?(?:mn|MN)?)/i);
         if(m){let v=m[1].trim().toUpperCase().replace(/^N(?=\d)/,'₦');if(!v.startsWith('₦'))v='₦'+v;document.getElementById(pfx?'val-cx-balance':'val-annex-balance').textContent=v;}
         m=txt.match(/sales[:\s\-]+(\d{1,4})/i)||txt.match(/(\d{1,4})\s+units/i);
         if(m)document.getElementById(pfx?'val-cx-units':'val-annex-units').textContent=m[1];
@@ -4642,7 +4642,7 @@ function refreshDashboardForSession() {
       match = txt.match(/value of sales[:\s\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?)/i);
       if (match) { let v=match[1].trim().toUpperCase().replace(/^N(?=\d)/,'₦'); if(!v.startsWith('₦'))v='₦'+v; m.sales=v; }
       
-      match = txt.match(/account bal(?:ance)?[\s:\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?)/i);
+      match = txt.match(/(?:account\\s+balance|account\\s+bal|\\bbalance)[:\\s\\-]+([\xe2\x82\xa6N]?\\s*[\\d,.]+\\s*[BMKbmk]?(?:mn|MN)?)/i);
       if (match) { let v=match[1].trim().toUpperCase().replace(/^N(?=\d)/,'₦'); if(!v.startsWith('₦'))v='₦'+v; m.balance=v; }
       
       match = txt.match(/\bsales[:\s\-]+(\d{1,4})\b/i) || txt.match(/\b(\d{1,4})\s+units/i);
@@ -4781,24 +4781,24 @@ function renderDynamicCharts() {
       'Dec 8': { inflow: 607.5, salesValue: 683.3 },
       'Dec 15': { inflow: 607.5, salesValue: 904 },
       'Dec 22': { inflow: 607.5, salesValue: 904 },
-      'Jan 5': { inflow: 1050, salesValue: 1848 },
-      'Jan 12': { inflow: 1050, salesValue: 1848 },
+      'Jan 5':  { inflow: 1050, salesValue: 1848 },
+      'Jan 12': { inflow: 1179, salesValue: 2202 },
       'Jan 19': { inflow: 1300, salesValue: 2202 },
       'Jan 26': { inflow: 1300, salesValue: 2202 },
-      'Feb 02': { inflow: 1415, salesValue: 2202 },
+      'Feb 02': { inflow: 1300, salesValue: 2202 },
       'Feb 09': { inflow: 1415, salesValue: 2202 },
       'Feb 16': { inflow: 1415, salesValue: 2202 },
       'Feb 23': { inflow: 1415, salesValue: 2202 },
       'Mar 02': { inflow: 1415, salesValue: 2202 },
       'Mar 09': { inflow: 1415, salesValue: 2202 },
-      'Mar 16': { inflow: 1415, salesValue: 2202 },
-      'Mar 23': { inflow: 1415, salesValue: 2202 },
-      'Mar 30': { inflow: 1415, salesValue: 2202 },
-      'Apr 2': { inflow: 1415, salesValue: 2202 },
-      'Apr 7': { inflow: 1415, salesValue: 2202 },
-      'Apr 13': { inflow: 1415, salesValue: 2202 },
-      'Apr 20': { inflow: 1415, salesValue: 2202 },
-      'Apr 27': { inflow: 1415, salesValue: 2202 },
+      'Mar 16': { inflow: 1415, salesValue: 2200 },
+      'Mar 23': { inflow: 1680, salesValue: 2070 },
+      'Mar 30': { inflow: 1720, salesValue: 2070 },
+      'Apr 2':  { inflow: 1720, salesValue: 2070 },
+      'Apr 7':  { inflow: 1720, salesValue: 2070 },
+      'Apr 13': { inflow: 1720, salesValue: 2070 },
+      'Apr 20': { inflow: 1720, salesValue: 2070 },
+      'Apr 27': { inflow: 1720, salesValue: 2070 },
       'May 4':  { inflow: 1720, salesValue: 2070 },
       'May 11': { inflow: 1720, salesValue: 2000 },
       'May 18': { inflow: 1720, salesValue: 2070 },
@@ -4854,38 +4854,38 @@ function renderDynamicCharts() {
       'Dec 15': { inflow: 5340, salesValue: 6950 },
       'Dec 18': { inflow: 5340, salesValue: 6950 },
       'Dec 22': { inflow: 5340, salesValue: 6950 },
-      'Jan 5': { inflow: 5970, salesValue: 6910 },
-      'Jan 8': { inflow: 5970, salesValue: 6980 },
+      'Jan 5':  { inflow: 5970, salesValue: 6090 },
+      'Jan 8':  { inflow: 5970, salesValue: 6980 },
       'Jan 12': { inflow: 5140, salesValue: 6910 },
       'Jan 15': { inflow: 5970, salesValue: 6910 },
       'Jan 19': { inflow: 5970, salesValue: 6910 },
       'Jan 22': { inflow: 5970, salesValue: 6910 },
       'Jan 26': { inflow: 5970, salesValue: 6910 },
-      'Jan 29': { inflow: 5970, salesValue: 6910 },
-      'Feb 02': { inflow: 5970, salesValue: 6910 },
-      'Feb 05': { inflow: 5970, salesValue: 6910 },
-      'Feb 09': { inflow: 5970, salesValue: 6910 },
-      'Feb 12': { inflow: 5970, salesValue: 6910 },
-      'Feb 16': { inflow: 5970, salesValue: 6910 },
-      'Feb 23': { inflow: 5970, salesValue: 6910 },
-      'Feb 26': { inflow: 5970, salesValue: 6910 },
-      'Mar 02': { inflow: 5970, salesValue: 6910 },
-      'Mar 05': { inflow: 5970, salesValue: 6910 },
-      'Mar 09': { inflow: 5970, salesValue: 6910 },
-      'Mar 12': { inflow: 5970, salesValue: 6910 },
-      'Mar 16': { inflow: 5970, salesValue: 6910 },
-      'Mar 23': { inflow: 5970, salesValue: 6910 },
-      'Mar 26': { inflow: 5970, salesValue: 6910 },
-      'Mar 30': { inflow: 5970, salesValue: 6910 },
-      'Apr 02': { inflow: 5970, salesValue: 6910 },
-      'Apr 07': { inflow: 5970, salesValue: 6910 },
-      'Apr 09': { inflow: 5970, salesValue: 6910 },
-      'Apr 13': { inflow: 5970, salesValue: 6910 },
-      'Apr 16': { inflow: 5970, salesValue: 6910 },
-      'Apr 20': { inflow: 5970, salesValue: 6910 },
-      'Apr 23': { inflow: 5970, salesValue: 6910 },
-      'Apr 27': { inflow: 5970, salesValue: 6910 },
-      'Apr 30': { inflow: 5970, salesValue: 6910 },
+      'Jan 29': { inflow: 6400, salesValue: 6910 },
+      'Feb 02': { inflow: 6400, salesValue: 6910 },
+      'Feb 05': { inflow: 6040, salesValue: 6840 },
+      'Feb 09': { inflow: 6050, salesValue: 6840 },
+      'Feb 12': { inflow: 6050, salesValue: 6840 },
+      'Feb 16': { inflow: 6080, salesValue: 6840 },
+      'Feb 23': { inflow: 6110, salesValue: 6840 },
+      'Feb 26': { inflow: 6120, salesValue: 6850 },
+      'Mar 02': { inflow: 6140, salesValue: 6850 },
+      'Mar 05': { inflow: 6150, salesValue: 6850 },
+      'Mar 09': { inflow: 6170, salesValue: 6840 },
+      'Mar 12': { inflow: 6170, salesValue: 6840 },
+      'Mar 16': { inflow: 6250, salesValue: 6840 },
+      'Mar 23': { inflow: 6270, salesValue: 6890 },
+      'Mar 26': { inflow: 6270, salesValue: 6890 },
+      'Mar 30': { inflow: 6270, salesValue: 6890 },
+      'Apr 02': { inflow: 6270, salesValue: 6890 },
+      'Apr 07': { inflow: 6270, salesValue: 6890 },
+      'Apr 09': { inflow: 6270, salesValue: 6890 },
+      'Apr 13': { inflow: 6270, salesValue: 6890 },
+      'Apr 16': { inflow: 6270, salesValue: 6890 },
+      'Apr 20': { inflow: 6270, salesValue: 6890 },
+      'Apr 23': { inflow: 6270, salesValue: 6890 },
+      'Apr 27': { inflow: 6270, salesValue: 6890 },
+      'Apr 30': { inflow: 6350, salesValue: 6890 },
       'May 4':  { inflow: 6450, salesValue: 7030 },
       'May 7':  { inflow: 6450, salesValue: 7030 },
       'May 11': { inflow: 6450, salesValue: 7030 },
