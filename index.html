@@ -1005,6 +1005,141 @@ body.users-bar-visible .dept-sidebar {
 }
 .task-card.no-permission .task-status-controls { opacity: 0.3; pointer-events: none; }
 /* ══════════════════════════════════════════════════════
+   COMMERCIAL VELOCITY INDICATOR — CSS
+   ══════════════════════════════════════════════════════ */
+.cvi-panel {
+  margin-top: 20px;
+  background: #fff;
+  border: 1px solid #e4e4e7;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+
+/* ── Top accent bar colour per project ── */
+.cvi-panel[id="cvi-crossings"] { border-top: 3px solid var(--cx-color); }
+.cvi-panel[id="cvi-annexe"]    { border-top: 3px solid var(--annex-color); }
+
+/* ── Header ── */
+.cvi-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f4f4f5;
+}
+.cvi-header-left { display: flex; align-items: center; gap: 12px; }
+.cvi-icon-badge {
+  width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.cvi-icon-badge.cx   { background: var(--cx-color); }
+.cvi-icon-badge.annex { background: var(--annex-color); }
+.cvi-title    { font-size: 14px; font-weight: 700; color: #18181b; letter-spacing: -0.01em; }
+.cvi-subtitle { font-size: 11px; color: #71717a; font-weight: 500; margin-top: 2px; }
+
+.cvi-status-chip {
+  font-size: 10px; font-weight: 800; padding: 4px 12px;
+  border-radius: 20px; text-transform: uppercase; letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.cvi-status-chip.critical { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+.cvi-status-chip.warning  { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.cvi-status-chip.healthy  { background: #dcfce7; color: #14532d; border: 1px solid #86efac; }
+.cvi-status-chip.neutral  { background: #f4f4f5; color: #52525b; border: 1px solid #e4e4e7; }
+
+/* ── KPI row ── */
+.cvi-kpi-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid #f4f4f5;
+}
+.cvi-kpi {
+  padding: 16px 18px;
+  border-right: 1px solid #f4f4f5;
+}
+.cvi-kpi:last-child { border-right: none; }
+.cvi-kpi-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin-bottom: 6px; }
+.cvi-kpi-value {
+  font-size: 22px; font-weight: 400; font-family: 'DM Mono', monospace;
+  letter-spacing: -0.02em; color: #18181b; line-height: 1; margin-bottom: 4px;
+}
+.cvi-kpi-value.cvi-kpi-danger { color: var(--status-red); }
+.cvi-kpi-value.cvi-kpi-warn   { color: var(--status-orange); }
+.cvi-kpi-value.cvi-kpi-green  { color: var(--status-green); }
+.cvi-kpi-sub { font-size: 10px; color: #a1a1aa; line-height: 1.4; }
+
+/* ── Threshold / progress bar ── */
+.cvi-threshold-section { padding: 16px 20px 12px; border-bottom: 1px solid #f4f4f5; }
+.cvi-threshold-header  { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.cvi-threshold-label   { font-size: 11px; font-weight: 600; color: #52525b; }
+.cvi-threshold-pct     { font-size: 13px; font-weight: 800; font-family: 'DM Mono', monospace; color: #18181b; }
+
+.cvi-bar-wrap   { position: relative; padding-bottom: 4px; }
+.cvi-bar-track  { height: 10px; background: #f4f4f5; border-radius: 6px; overflow: visible; position: relative; }
+.cvi-bar-fill   {
+  height: 100%; border-radius: 6px;
+  transition: width 1s cubic-bezier(0.4,0,0.2,1);
+  position: absolute; top: 0; left: 0;
+}
+.cvi-bar-fill.cx    { background: linear-gradient(90deg, #2e7d32, #4caf50); }
+.cvi-bar-fill.annex { background: linear-gradient(90deg, #c62828, #ef5350); }
+.cvi-bar-fill.danger { background: linear-gradient(90deg, #b71c1c, #c62828) !important; }
+
+/* Threshold marker line */
+.cvi-bar-marker {
+  position: absolute; top: -4px; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; pointer-events: none;
+}
+.cvi-bar-marker::before {
+  content: ''; width: 2px; height: 18px;
+  background: #18181b; display: block;
+}
+.cvi-marker-label {
+  font-size: 9px; font-weight: 800; color: #18181b;
+  white-space: nowrap; margin-top: 2px; letter-spacing: 0.03em;
+}
+
+.cvi-bar-legend {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: #a1a1aa; margin-top: 6px;
+  font-weight: 600;
+}
+
+/* ── Balance trend chart ── */
+.cvi-chart-section  { padding: 16px 20px 12px; border-bottom: 1px solid #f4f4f5; }
+.cvi-chart-header   { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 12px; font-weight: 700; color: #52525b; }
+.cvi-chart-legend   { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #71717a; font-weight: 600; }
+.cvi-leg-dot        { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.cvi-chart-wrap     { height: 160px; position: relative; }
+
+/* ── Verdict callout ── */
+.cvi-verdict {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 20px;
+  background: #fafafa;
+}
+.cvi-verdict-icon  { font-size: 16px; flex-shrink: 0; line-height: 1.5; }
+.cvi-verdict-text  { font-size: 12.5px; line-height: 1.65; color: #3f3f46; flex: 1; }
+.cvi-verdict-text strong { color: #18181b; }
+.cvi-verdict.critical { background: #fff8f8; border-top: 1px solid #fee2e2; }
+.cvi-verdict.warning  { background: #fffdf0; border-top: 1px solid #fde68a; }
+.cvi-verdict.healthy  { background: #f0fdf4; border-top: 1px solid #86efac; }
+
+/* ── Inflow drought callout strip ── */
+.cvi-drought-strip {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px; background: #fff1f1;
+  border-top: 1px solid #fecaca;
+  font-size: 11.5px; font-weight: 600; color: #991b1b;
+}
+
+@media (max-width: 768px) {
+  .cvi-kpi-row { grid-template-columns: repeat(2,1fr); }
+  .cvi-kpi:nth-child(2) { border-right: none; }
+  .cvi-kpi:nth-child(3) { border-top: 1px solid #f4f4f5; }
+  .cvi-kpi:nth-child(4) { border-right: none; border-top: 1px solid #f4f4f5; }
+  .cvi-chart-wrap { height: 130px; }
+}
+
+/* ══════════════════════════════════════════════════════
    TREND INTELLIGENCE ENGINE — CSS
    ══════════════════════════════════════════════════════ */
 
@@ -1176,6 +1311,25 @@ body.users-bar-visible .dept-sidebar {
   border: 1px solid #fed7aa;
 }
 
+/* ── Time-grouped section headers in digest ── */
+.ti-time-section-head {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 10px 18px 6px;
+  background: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+}
+.ti-time-section-head:first-child { border-top: none; }
+.ti-time-label {
+  font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.08em; color: #18181b;
+}
+.ti-time-sub {
+  font-size: 10px; color: #a1a1aa; font-weight: 500;
+}
+
+/* ── Resolved items slightly muted ── */
+.ti-alert-item.resolved-item { opacity: 0.7; }
+
 @media (max-width: 768px) {
   .ti-stat-row { grid-template-columns: 1fr 1fr; }
   .ti-stat-row .ti-stat:nth-child(3) { border-top: 1px solid #f4f4f5; grid-column: 1 / -1; }
@@ -1320,6 +1474,85 @@ body.users-bar-visible .dept-sidebar {
     <div id="alert-crossings" class="alert-strip" style="display:none;"></div>
 
 <!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  COMMERCIAL VELOCITY INDICATOR — LAKOWE CROSSINGS   ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+<div class="cvi-panel" id="cvi-crossings">
+  <div class="cvi-header">
+    <div class="cvi-header-left">
+      <div class="cvi-icon-badge cx">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg>
+      </div>
+      <div>
+        <div class="cvi-title">Commercial Velocity Indicator</div>
+        <div class="cvi-subtitle">Account balance trajectory · Inflow pace · Civil mobilisation threshold</div>
+      </div>
+    </div>
+    <div class="cvi-status-chip" id="cvi-cx-status-chip">—</div>
+  </div>
+
+  <!-- Key figures row -->
+  <div class="cvi-kpi-row">
+    <div class="cvi-kpi">
+      <div class="cvi-kpi-label">Current Balance</div>
+      <div class="cvi-kpi-value" id="cvi-cx-balance">—</div>
+      <div class="cvi-kpi-sub" id="cvi-cx-balance-sub">vs last session</div>
+    </div>
+    <div class="cvi-kpi">
+      <div class="cvi-kpi-label">Inflow This Period</div>
+      <div class="cvi-kpi-value" id="cvi-cx-inflow-delta">—</div>
+      <div class="cvi-kpi-sub" id="cvi-cx-inflow-sub">week-on-week</div>
+    </div>
+    <div class="cvi-kpi">
+      <div class="cvi-kpi-label">Civil Threshold Gap</div>
+      <div class="cvi-kpi-value cvi-kpi-danger" id="cvi-cx-gap">—</div>
+      <div class="cvi-kpi-sub">₦800M trigger remaining</div>
+    </div>
+    <div class="cvi-kpi">
+      <div class="cvi-kpi-label">Weeks at Current Pace</div>
+      <div class="cvi-kpi-value cvi-kpi-warn" id="cvi-cx-runway">—</div>
+      <div class="cvi-kpi-sub">to reach civil threshold</div>
+    </div>
+  </div>
+
+  <!-- Threshold progress bar -->
+  <div class="cvi-threshold-section">
+    <div class="cvi-threshold-header">
+      <span class="cvi-threshold-label">Progress to Civil Mobilisation (₦800M total inflow)</span>
+      <span class="cvi-threshold-pct" id="cvi-cx-threshold-pct">—%</span>
+    </div>
+    <div class="cvi-bar-wrap">
+      <div class="cvi-bar-track">
+        <div class="cvi-bar-fill cx" id="cvi-cx-bar" style="width:0%"></div>
+        <div class="cvi-bar-marker" id="cvi-cx-marker" style="left:100%">
+          <span class="cvi-marker-label">₦800M</span>
+        </div>
+      </div>
+    </div>
+    <div class="cvi-bar-legend">
+      <span>₦0</span><span id="cvi-cx-bar-current">Current</span><span>₦800M threshold</span>
+    </div>
+  </div>
+
+  <!-- Balance trend chart -->
+  <div class="cvi-chart-section">
+    <div class="cvi-chart-header">
+      <span>Account Balance Trend</span>
+      <div class="cvi-chart-legend">
+        <span class="cvi-leg-dot" style="background:#1b5e20"></span>Balance
+        <span class="cvi-leg-dot" style="background:#c62828;margin-left:12px"></span>Danger zone (&lt;₦50M)
+      </div>
+    </div>
+    <div class="cvi-chart-wrap"><canvas id="cvi-cx-chart"></canvas></div>
+  </div>
+
+  <!-- Verdict callout -->
+  <div class="cvi-verdict" id="cvi-cx-verdict">
+    <div class="cvi-verdict-icon">⚡</div>
+    <div class="cvi-verdict-text" id="cvi-cx-verdict-text">Sync data to generate commercial velocity analysis.</div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗ -->
 <!-- ║  PROJECT MILESTONES — LAKOWE CROSSINGS (KD P sheet) ║ -->
 <!-- ╚══════════════════════════════════════════════════════╝ -->
 <div class="milestones-panel" id="milestones-crossings">
@@ -1383,7 +1616,7 @@ body.users-bar-visible .dept-sidebar {
       </div>
       <div>
         <span class="ti-header-label">Trend Intelligence</span>
-        <span class="ti-header-sub">Lakowe Crossings · Recurring Tasks · Velocity · Risk Escalation · Cross-Session Patterns</span>
+        <span class="ti-header-sub">Lakowe Crossings · Repeated Tasks · Velocity · Risk Escalation · Time-Grouped</span>
       </div>
     </div>
     <div class="ti-header-right">
@@ -1397,8 +1630,8 @@ body.users-bar-visible .dept-sidebar {
       <div class="ti-section-title">Cross-Session Summary</div>
       <div class="ti-stat-row" id="ti-cx-stats">
         <div class="ti-stat"><div class="ti-stat-label">Sessions Analysed</div><div class="ti-stat-value" id="ti-cx-sessions">—</div><div class="ti-stat-sub">Historical snapshots</div></div>
-        <div class="ti-stat"><div class="ti-stat-label">Recurring Tasks</div><div class="ti-stat-value ti-warning" id="ti-cx-recurring">—</div><div class="ti-stat-sub">Unresolved ≥2 sessions</div></div>
-        <div class="ti-stat"><div class="ti-stat-label">Escalated Risks</div><div class="ti-stat-value ti-danger" id="ti-cx-escalated">—</div><div class="ti-stat-sub">Chronic delays / critical</div></div>
+        <div class="ti-stat"><div class="ti-stat-label">Repeated Tasks</div><div class="ti-stat-value ti-warning" id="ti-cx-recurring">—</div><div class="ti-stat-sub">Same task, multiple meetings</div></div>
+        <div class="ti-stat"><div class="ti-stat-label">Escalated Risks</div><div class="ti-stat-value ti-danger" id="ti-cx-escalated">—</div><div class="ti-stat-sub">Stuck or escalating</div></div>
       </div>
     </div>
 
@@ -1450,6 +1683,85 @@ body.users-bar-visible .dept-sidebar {
       </div>
     </div>
     <div id="alert-annexe" class="alert-strip" style="display:none;"></div>
+
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  COMMERCIAL VELOCITY INDICATOR — LAKOWE ANNEXE      ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+<div class="cvi-panel" id="cvi-annexe">
+  <div class="cvi-header">
+    <div class="cvi-header-left">
+      <div class="cvi-icon-badge annex">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg>
+      </div>
+      <div>
+        <div class="cvi-title">Commercial Velocity Indicator</div>
+        <div class="cvi-subtitle">Account balance trajectory · Inflow pace · Collections gap</div>
+      </div>
+    </div>
+    <div class="cvi-status-chip" id="cvi-annex-status-chip">—</div>
+  </div>
+
+  <!-- Key figures row -->
+  <div class="cvi-kpi-row">
+    <div class="cvi-kpi">
+      <div class="cvi-kpi-label">Current Balance</div>
+      <div class="cvi-kpi-value" id="cvi-annex-balance">—</div>
+      <div class="cvi-kpi-sub" id="cvi-annex-balance-sub">vs last session</div>
+    </div>
+    <div class="cvi-kpi">
+      <div class="cvi-kpi-label">Inflow This Period</div>
+      <div class="cvi-kpi-value" id="cvi-annex-inflow-delta">—</div>
+      <div class="cvi-kpi-sub" id="cvi-annex-inflow-sub">week-on-week</div>
+    </div>
+    <div class="cvi-kpi">
+      <div class="cvi-kpi-label">Collections Gap</div>
+      <div class="cvi-kpi-value cvi-kpi-warn" id="cvi-annex-gap">—</div>
+      <div class="cvi-kpi-sub">Sales value vs inflow received</div>
+    </div>
+    <div class="cvi-kpi">
+      <div class="cvi-kpi-label">Balance Runway</div>
+      <div class="cvi-kpi-value" id="cvi-annex-runway">—</div>
+      <div class="cvi-kpi-sub">weeks at ₦35M/week burn</div>
+    </div>
+  </div>
+
+  <!-- Collections gap progress bar -->
+  <div class="cvi-threshold-section">
+    <div class="cvi-threshold-header">
+      <span class="cvi-threshold-label">Inflow collected vs Total Value of Sales</span>
+      <span class="cvi-threshold-pct" id="cvi-annex-threshold-pct">—%</span>
+    </div>
+    <div class="cvi-bar-wrap">
+      <div class="cvi-bar-track">
+        <div class="cvi-bar-fill annex" id="cvi-annex-bar" style="width:0%"></div>
+        <div class="cvi-bar-marker" id="cvi-annex-marker" style="left:100%">
+          <span class="cvi-marker-label">Full collection</span>
+        </div>
+      </div>
+    </div>
+    <div class="cvi-bar-legend">
+      <span>₦0</span><span id="cvi-annex-bar-current">Current inflow</span><span>Value of Sales</span>
+    </div>
+  </div>
+
+  <!-- Balance trend chart -->
+  <div class="cvi-chart-section">
+    <div class="cvi-chart-header">
+      <span>Account Balance Trend</span>
+      <div class="cvi-chart-legend">
+        <span class="cvi-leg-dot" style="background:#D32F2F"></span>Balance
+        <span class="cvi-leg-dot" style="background:#c62828;margin-left:12px"></span>Danger zone (&lt;₦50M)
+      </div>
+    </div>
+    <div class="cvi-chart-wrap"><canvas id="cvi-annex-chart"></canvas></div>
+  </div>
+
+  <!-- Verdict callout -->
+  <div class="cvi-verdict" id="cvi-annex-verdict">
+    <div class="cvi-verdict-icon">⚡</div>
+    <div class="cvi-verdict-text" id="cvi-annex-verdict-text">Sync data to generate commercial velocity analysis.</div>
+  </div>
+</div>
 
 <!-- ╔══════════════════════════════════════════════════════╗ -->
 <!-- ║  PROJECT MILESTONES — LAKOWE ANNEXE (KD sheet)      ║ -->
@@ -1515,7 +1827,7 @@ body.users-bar-visible .dept-sidebar {
       </div>
       <div>
         <span class="ti-header-label">Trend Intelligence</span>
-        <span class="ti-header-sub">Lakowe Annexe · Recurring Tasks · Velocity · Risk Escalation · Cross-Session Patterns</span>
+        <span class="ti-header-sub">Lakowe Annexe · Repeated Tasks · Velocity · Risk Escalation · Time-Grouped</span>
       </div>
     </div>
     <div class="ti-header-right">
@@ -1529,8 +1841,8 @@ body.users-bar-visible .dept-sidebar {
       <div class="ti-section-title">Cross-Session Summary</div>
       <div class="ti-stat-row" id="ti-annex-stats">
         <div class="ti-stat"><div class="ti-stat-label">Sessions Analysed</div><div class="ti-stat-value" id="ti-annex-sessions">—</div><div class="ti-stat-sub">Historical snapshots</div></div>
-        <div class="ti-stat"><div class="ti-stat-label">Recurring Tasks</div><div class="ti-stat-value ti-warning" id="ti-annex-recurring">—</div><div class="ti-stat-sub">Unresolved ≥2 sessions</div></div>
-        <div class="ti-stat"><div class="ti-stat-label">Escalated Risks</div><div class="ti-stat-value ti-danger" id="ti-annex-escalated">—</div><div class="ti-stat-sub">Chronic delays / critical</div></div>
+        <div class="ti-stat"><div class="ti-stat-label">Repeated Tasks</div><div class="ti-stat-value ti-warning" id="ti-annex-recurring">—</div><div class="ti-stat-sub">Same task, multiple meetings</div></div>
+        <div class="ti-stat"><div class="ti-stat-label">Escalated Risks</div><div class="ti-stat-value ti-danger" id="ti-annex-escalated">—</div><div class="ti-stat-sub">Stuck or escalating</div></div>
       </div>
     </div>
 
@@ -2644,7 +2956,7 @@ async function syncWithGoogleSheet() {
     // ── Reset PI + milestones so they regenerate with fresh data ──
     _piGenerated = { Crossings: false, Annexe: false };
     _milestonesLoaded = { Crossings: false, Annexe: false };
-    viewingSessionDate = 'current'; updateDashboardDates(); applyPriorityColors(); renderAlertStrips(); updateSidebarCounts(); renderOverduePanels(); if (currentDept) renderCurrentDept(); populateSessionPicker(); if(_dashboardSession!=='latest') refreshDashboardForSession(); renderDynamicCharts(); updateLandingPageMetrics();
+    viewingSessionDate = 'current'; updateDashboardDates(); applyPriorityColors(); renderAlertStrips(); updateSidebarCounts(); renderOverduePanels(); if (currentDept) renderCurrentDept(); populateSessionPicker(); if(_dashboardSession!=='latest') refreshDashboardForSession(); renderDynamicCharts(); updateLandingPageMetrics(); setTimeout(renderAllCVIs, 200);
     // 25002500 Run Trend Intelligence Engine 25002500
     setTimeout(function() {
       try { runAndRenderTrend('Crossings'); } catch(e) { console.warn('[TI] Crossings:', e); }
@@ -2652,7 +2964,7 @@ async function syncWithGoogleSheet() {
       if (currentProject) {
         const pfx = currentProject === 'Crossings' ? 'cx' : 'annex';
         const result = _tiCache[currentProject];
-        if (result && (result.totalRecurring + result.totalEscalated) > 0) {
+        if (result && (result.totalRepeated + result.totalEscalated) > 0) {
           const panel = document.getElementById('ti-' + pfx);
           if (panel && !panel.classList.contains('ti-expanded')) panel.classList.add('ti-expanded');
         }
@@ -3212,6 +3524,8 @@ function selectProject(proj) {
   // Re-render Trend Intelligence panel for the selected project (use cached result if available)
   if (_tiCache[proj]) renderTrendPanel(proj, _tiCache[proj]);
   else setTimeout(function() { try { runAndRenderTrend(proj); } catch(e){} }, 500);
+  // Render Commercial Velocity Indicator for selected project
+  setTimeout(function() { try { renderCVI(proj); } catch(e) { console.warn('[CVI]', e); } }, 300);
   applyDeptTabLocks();
 }
 function updateDashboardDates() {
@@ -3942,18 +4256,16 @@ function piAutoExpand(proj) {
 
 
 // ╔══════════════════════════════════════════════════════════════════╗
-// ║  TREND INTELLIGENCE ENGINE                                        ║
-// ║  Senior PM logic: recurring tasks, velocity, risk escalation      ║
+// ║  TREND INTELLIGENCE ENGINE v2                                     ║
+// ║  Time-grouped · Absent = Resolved · Plain English · PM-grade      ║
 // ╚══════════════════════════════════════════════════════════════════╝
 
-// ── Similarity check: are two task action strings the same task? ──
+// ── Similarity: are two task action strings the same task? ──
 function tiTaskSimilarity(a, b) {
   if (!a || !b) return 0;
-  // Normalize: lowercase, strip punctuation
   const norm = s => s.toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
   const na = norm(a), nb = norm(b);
   if (na === nb) return 1.0;
-  // Token overlap (Jaccard)
   const ta = new Set(na.split(' ').filter(w => w.length > 3));
   const tb = new Set(nb.split(' ').filter(w => w.length > 3));
   const inter = new Set([...ta].filter(x => tb.has(x)));
@@ -3961,28 +4273,33 @@ function tiTaskSimilarity(a, b) {
   return union.size === 0 ? 0 : inter.size / union.size;
 }
 
-// ── Parse session name to a sortable date value ──
+// ── Parse session name to sortable date ──
 function tiSessionToDate(name) {
   const p = parseSheetName(name);
   if (!p) return null;
-  // Use 2026 as base year; sessions in Jan=1, May=5 etc.
   return new Date(2026, p.month - 1, p.day);
 }
 
-// ── Core engine: analyse taskDatabase for a project ──
+// ── Count weeks a task has been running without resolution ──
+function tiWeeksOpen(firstSess, latestSess) {
+  const d1 = tiSessionToDate(firstSess), d2 = tiSessionToDate(latestSess);
+  if (!d1 || !d2) return null;
+  return Math.round(Math.abs(d2 - d1) / (7 * 24 * 60 * 60 * 1000));
+}
+
+// ── Core engine ──
 function runTrendAnalysis(proj) {
   const overrides = getStatusOverrides();
 
-  // Get all sessions sorted oldest → newest
+  // Sessions sorted oldest → newest
   const sessions = [...(availableSessions[proj] || [])].sort((a, b) => {
     const da = tiSessionToDate(a), db = tiSessionToDate(b);
     if (!da || !db) return 0;
     return da - db;
   });
 
-  if (sessions.length < 2) return null; // Need at least 2 sessions for trend
+  if (sessions.length < 2) return null;
 
-  // Build per-session task maps
   const sessionMaps = sessions.map(sess => {
     const tasks = taskDatabase
       .filter(t => t.project === proj && t.session === sess)
@@ -3991,63 +4308,71 @@ function runTrendAnalysis(proj) {
   });
 
   const latestSess = sessions[sessions.length - 1];
+  const prevSess   = sessions[sessions.length - 2];
   const latestTasks = (sessionMaps[sessionMaps.length - 1] || {}).tasks || [];
+  const prevTasks   = (sessionMaps[sessionMaps.length - 2] || {}).tasks || [];
 
-  // ── 1. RECURRING TASK DETECTION ──
-  // A task is "recurring" if a similar action text exists across ≥2 sessions
-  // and was never achieved in between
-  const recurringMap = {}; // key: normalized action → { sessions:[], dept, latestStatus }
+  // ═══════════════════════════════════════════════
+  // 1. BUILD CANONICAL TASK CHAIN
+  // Track each unique task across all sessions it appeared in.
+  // If a task was present in session N but absent in session N+1, treat it as resolved.
+  // ═══════════════════════════════════════════════
+  const taskChain = {}; // normalized key → { action, dept, firstSess, lastSess, sessionsPresent, lastStatus, wasAbsent }
 
   sessionMaps.forEach(({ sess, tasks }, si) => {
     tasks.forEach(t => {
-      const norm = t.action.toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim().substring(0, 80);
+      const normKey = t.action.toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim().substring(0, 90);
       let matched = false;
-      Object.keys(recurringMap).forEach(key => {
-        if (tiTaskSimilarity(key, norm) >= 0.42) {
-          const entry = recurringMap[key];
-          if (!entry.sessions.includes(sess)) entry.sessions.push(sess);
-          if (si === sessionMaps.length - 1) { entry.latestStatus = t.status; entry.latestDept = t.dept; }
+      for (const key of Object.keys(taskChain)) {
+        if (tiTaskSimilarity(key, normKey) >= 0.44) {
+          const chain = taskChain[key];
+          chain.sessionsPresent.push(sess);
+          chain.lastSess = sess;
+          chain.lastStatus = t.status;
+          chain.lastDept = t.dept;
           matched = true;
+          break;
         }
-      });
+      }
       if (!matched) {
-        recurringMap[norm] = { action: t.action, dept: t.dept, sessions: [sess], latestStatus: t.status, latestDept: t.dept };
+        taskChain[normKey] = {
+          action: t.action, dept: t.dept, firstSess: sess, lastSess: sess,
+          sessionsPresent: [sess], lastStatus: t.status, lastDept: t.dept
+        };
       }
     });
   });
 
-  // Filter: appears in ≥2 sessions AND not achieved in latest session
-  const recurring = Object.values(recurringMap).filter(r =>
-    r.sessions.length >= 2 && r.latestStatus !== 'achieved'
-  ).sort((a, b) => b.sessions.length - a.sessions.length);
-
-  // ── 2. VELOCITY TRACKING ──
-  // Per session: what % of tasks were achieved?
-  const velocityData = sessionMaps.map(({ sess, tasks }) => {
-    const total = tasks.length;
-    const achieved = tasks.filter(t => t.status === 'achieved').length;
-    const delayed = tasks.filter(t => t.status === 'delayed' || isOverdue(t)).length;
-    const pct = total > 0 ? Math.round((achieved / total) * 100) : 0;
-    return { sess, total, achieved, delayed, pct };
+  // Mark tasks that disappeared from the latest session as implicitly resolved
+  Object.values(taskChain).forEach(chain => {
+    // If the task was present in a previous session but NOT in the latest one
+    chain.wasAbsent = chain.sessionsPresent.length >= 1 && !chain.sessionsPresent.includes(latestSess);
+    // If absent AND never explicitly achieved → treat as resolved
+    chain.implicitlyResolved = chain.wasAbsent && chain.lastStatus !== 'achieved';
+    // Weeks the task was in the system
+    chain.weeksOpen = tiWeeksOpen(chain.firstSess, chain.lastSess);
   });
 
-  // Velocity trend: compare last 2 sessions
-  let velocityTrend = 'stable';
-  if (velocityData.length >= 2) {
-    const last = velocityData[velocityData.length - 1].pct;
-    const prev = velocityData[velocityData.length - 2].pct;
-    if (last > prev + 8) velocityTrend = 'improving';
-    else if (last < prev - 8) velocityTrend = 'declining';
-    else if (last < 10) velocityTrend = 'stalled';
-  }
+  // ═══════════════════════════════════════════════
+  // 2. REPEATED TASK DETECTION
+  // A task is "repeated" if it appeared in ≥2 sessions AND is still present (not absent, not achieved)
+  // ═══════════════════════════════════════════════
+  const repeated = Object.values(taskChain).filter(c =>
+    c.sessionsPresent.length >= 2 &&
+    !c.wasAbsent &&
+    c.lastStatus !== 'achieved'
+  ).sort((a, b) => b.sessionsPresent.length - a.sessionsPresent.length);
 
-  // ── 3. RISK ESCALATION ──
-  // Chronic: delayed in ≥3 sessions
-  // Escalated: was on-track, became delayed in most recent session
-  const escalated = [];
-  const chronic = [];
+  // ═══════════════════════════════════════════════
+  // 3. RESOLVED THIS SESSION (absent from latest but present before)
+  // ═══════════════════════════════════════════════
+  const resolvedByAbsence = Object.values(taskChain).filter(c =>
+    c.implicitlyResolved && c.sessionsPresent.length >= 2
+  );
 
-  // Build "delayed sessions" count per action
+  // ═══════════════════════════════════════════════
+  // 4. RISK ESCALATION
+  // ═══════════════════════════════════════════════
   const delayedCount = {};
   sessionMaps.forEach(({ sess, tasks }) => {
     tasks.filter(t => t.status === 'delayed' || (isOverdue(t) && t.status !== 'achieved')).forEach(t => {
@@ -4057,58 +4382,102 @@ function runTrendAnalysis(proj) {
     });
   });
 
-  Object.values(delayedCount).forEach(entry => {
-    if (entry.sessions.length >= 3) {
-      chronic.push(entry);
-    } else if (entry.sessions.length >= 2) {
-      // Check if latest session is in the delayed list
-      if (entry.sessions.includes(latestSess)) escalated.push(entry);
-    }
-  });
+  const chronic   = Object.values(delayedCount).filter(e => e.sessions.length >= 3);
+  const escalated = Object.values(delayedCount).filter(e => e.sessions.length === 2 && e.sessions.includes(latestSess));
 
-  // Tasks that appear for first time as delayed in the latest session (new risk flags)
+  // New first-time delays this session
   const newDelayed = latestTasks.filter(t => {
     if (t.status !== 'delayed' && !isOverdue(t)) return false;
-    // Was it delayed in any previous session?
-    const prevDelayed = sessionMaps.slice(0, -1).some(({ tasks }) =>
-      tasks.some(pt => tiTaskSimilarity(pt.action, t.action) >= 0.42 && (pt.status === 'delayed' || isOverdue(pt)))
+    const prevSeen = sessionMaps.slice(0, -1).some(({ tasks }) =>
+      tasks.some(pt => tiTaskSimilarity(pt.action, t.action) >= 0.44 && (pt.status === 'delayed' || isOverdue(pt)))
     );
-    return !prevDelayed; // New occurrence
+    return !prevSeen;
   });
 
-  // ── 4. BUILD TREND BADGE MAP for task cards ──
-  // Returns map of taskId → array of badge objects for current session
+  // ═══════════════════════════════════════════════
+  // 5. VELOCITY — improved: count absent tasks as resolved (positive contribution)
+  // ═══════════════════════════════════════════════
+  const velocityData = sessionMaps.map(({ sess, tasks }, si) => {
+    const achieved = tasks.filter(t => t.status === 'achieved').length;
+    // Count tasks that existed in this session but not in the next (implicitly resolved)
+    let absentNextCount = 0;
+    if (si < sessionMaps.length - 1) {
+      const nextTasks = sessionMaps[si + 1].tasks;
+      tasks.forEach(t => {
+        if (t.status === 'achieved') return;
+        const stillPresent = nextTasks.some(nt => tiTaskSimilarity(nt.action, t.action) >= 0.44);
+        if (!stillPresent) absentNextCount++;
+      });
+    }
+    const total = tasks.length;
+    const resolvedTotal = achieved + absentNextCount;
+    const pct = total > 0 ? Math.round((resolvedTotal / total) * 100) : 0;
+    const delayed = tasks.filter(t => t.status === 'delayed' || isOverdue(t)).length;
+    return { sess, total, achieved, absentNextCount, resolvedTotal, delayed, pct };
+  });
+
+  let velocityTrend = 'stable';
+  if (velocityData.length >= 2) {
+    const last = velocityData[velocityData.length - 1].pct;
+    const prev = velocityData[velocityData.length - 2].pct;
+    if (last > prev + 8) velocityTrend = 'improving';
+    else if (last < prev - 8) velocityTrend = 'declining';
+    else if (last < 12) velocityTrend = 'stalled';
+  }
+
+  // ═══════════════════════════════════════════════
+  // 6. TIME BUCKETING for digest grouping
+  // Recent = only in latest 1–2 sessions
+  // Ongoing = 3–4 sessions
+  // Long-standing = 5+ sessions
+  // ═══════════════════════════════════════════════
+  function timeBucket(sessCount) {
+    if (sessCount >= 5) return 'longstanding';
+    if (sessCount >= 3) return 'ongoing';
+    return 'recent';
+  }
+
+  // ═══════════════════════════════════════════════
+  // 7. TREND BADGES for task cards
+  // ═══════════════════════════════════════════════
   const trendBadgeMap = {};
   latestTasks.forEach(t => {
     const tid = taskId(t);
     const badges = [];
+    const normKey = t.action.toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim().substring(0, 90);
 
-    // Check if recurring
-    const norm = t.action.toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim().substring(0, 80);
-    const matchedRecurring = recurring.find(r => tiTaskSimilarity(r.action.substring(0,80).toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim(), norm) >= 0.42);
-    if (matchedRecurring) {
-      const sessCount = matchedRecurring.sessions.length;
-      badges.push({ type: sessCount >= 4 ? 'chronic' : 'recurring', label: `🔁 Recurring · ${sessCount} sessions` });
+    // Repeated?
+    const matchedRepeated = repeated.find(r =>
+      tiTaskSimilarity(r.action.toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim().substring(0,90), normKey) >= 0.44
+    );
+    if (matchedRepeated) {
+      const n = matchedRepeated.sessionsPresent.length;
+      const wks = matchedRepeated.weeksOpen;
+      const wkLabel = wks !== null ? ` · ${wks}w` : '';
+      badges.push({ type: n >= 5 ? 'chronic' : 'recurring', label: `🔁 Repeated ${n}×${wkLabel}` });
     }
 
-    // Check if chronic delayed
-    const key = (t.dept + '__' + t.action).substring(0, 100);
-    if (delayedCount[key] && delayedCount[key].sessions.length >= 3) {
-      badges.push({ type: 'escalated', label: `🚨 Chronic · ${delayedCount[key].sessions.length}x delayed` });
-    } else if (delayedCount[key] && delayedCount[key].sessions.length >= 2) {
-      badges.push({ type: 'escalated', label: `⚠ Escalated · ${delayedCount[key].sessions.length}x delayed` });
+    // Chronic / escalated delay?
+    const delKey = (t.dept + '__' + t.action).substring(0, 100);
+    if (delayedCount[delKey]) {
+      const dc = delayedCount[delKey].sessions.length;
+      if (dc >= 3) badges.push({ type: 'escalated', label: `🚨 Stuck · ${dc}× delayed` });
+      else if (dc >= 2) badges.push({ type: 'escalated', label: `⚠ Delayed again · ${dc}×` });
     }
 
     if (badges.length) trendBadgeMap[tid] = badges;
   });
 
   return {
-    proj, sessions, sessionMaps, latestSess, latestTasks,
-    recurring, velocityData, velocityTrend,
-    escalated, chronic, newDelayed, trendBadgeMap,
+    proj, sessions, sessionMaps, latestSess, prevSess, latestTasks, prevTasks,
+    repeated, resolvedByAbsence,
+    velocityData, velocityTrend,
+    escalated, chronic, newDelayed,
+    trendBadgeMap, timeBucket,
     totalSessions: sessions.length,
-    totalRecurring: recurring.length,
-    totalEscalated: chronic.length + escalated.length
+    totalRepeated: repeated.length,
+    totalEscalated: chronic.length + escalated.length,
+    totalResolvedByAbsence: resolvedByAbsence.length
   };
 }
 
@@ -4127,20 +4496,19 @@ function runAndRenderTrend(proj) {
 
 function renderTrendPanel(proj, result) {
   const pfx = proj === 'Crossings' ? 'cx' : 'annex';
-  const themeColor = proj === 'Crossings' ? 'var(--cx-color)' : 'var(--annex-color)';
 
   // ── Stats ──
   const sessEl = document.getElementById(`ti-${pfx}-sessions`);
   const recEl  = document.getElementById(`ti-${pfx}-recurring`);
   const escEl  = document.getElementById(`ti-${pfx}-escalated`);
   if (sessEl) sessEl.textContent = result.totalSessions;
-  if (recEl)  recEl.textContent  = result.totalRecurring;
+  if (recEl)  recEl.textContent  = result.totalRepeated;
   if (escEl)  escEl.textContent  = result.totalEscalated;
 
   // ── Header badge ──
   const badgeEl = document.getElementById(`ti-${pfx}-badge`);
   if (badgeEl) {
-    const total = result.totalRecurring + result.totalEscalated;
+    const total = result.totalRepeated + result.totalEscalated;
     if (total > 0) {
       badgeEl.style.display = 'inline-flex';
       badgeEl.textContent = total + ' alerts';
@@ -4150,97 +4518,155 @@ function renderTrendPanel(proj, result) {
     }
   }
 
-  // ── Digest alerts ──
+  // ── Digest: time-grouped alerts ──
   const digestEl = document.getElementById(`ti-${pfx}-digest`);
   if (digestEl) {
-    let html = '';
 
-    // Chronic delays (highest priority)
-    result.chronic.slice(0, 5).forEach(entry => {
-      html += `<div class="ti-alert-item">
-        <div class="ti-alert-icon-wrap escalation">🚨</div>
+    // Helper: render one alert row
+    function alertRow(iconWrapClass, icon, typeClass, typeLabel, title, detail, meta) {
+      return `<div class="ti-alert-item">
+        <div class="ti-alert-icon-wrap ${iconWrapClass}">${icon}</div>
         <div class="ti-alert-content">
-          <div class="ti-alert-type escalation">Chronic Delay — ${entry.sessions.length} Consecutive Sessions</div>
-          <div class="ti-alert-title">${escHtml(entry.action.substring(0, 110))}</div>
-          <div class="ti-alert-detail"><strong>${escHtml(entry.dept)}</strong> · Has been delayed or overdue in ${entry.sessions.length} separate meetings: ${entry.sessions.map(s => formatSheetName(s)).join(', ')}. Requires executive intervention — not a routine follow-up item.</div>
+          <div class="ti-alert-type ${typeClass}">${typeLabel}</div>
+          <div class="ti-alert-title">${escHtml(title.substring(0, 120))}</div>
+          <div class="ti-alert-detail">${detail}</div>
         </div>
-        <div class="ti-alert-meta">${entry.sessions.length}× delayed</div>
+        <div class="ti-alert-meta">${meta}</div>
       </div>`;
+    }
+
+    // Helper: section divider
+    function sectionHead(label, sublabel) {
+      return `<div class="ti-time-section-head"><span class="ti-time-label">${label}</span><span class="ti-time-sub">${sublabel}</span></div>`;
+    }
+
+    // ── Collect all alerts with time bucket ──
+    const allAlerts = [];
+
+    // Chronic stuck tasks (5+ sessions delayed)
+    result.chronic.sort((a,b) => b.sessions.length - a.sessions.length).slice(0, 6).forEach(entry => {
+      const n = entry.sessions.length;
+      const wks = tiWeeksOpen(entry.sessions[0], entry.sessions[entry.sessions.length-1]);
+      const bucket = result.timeBucket(n);
+      allAlerts.push({ bucket, priority: 0, html: alertRow(
+        'escalation', '🚨', 'escalation',
+        `Stuck Task — ${n} meetings, ${wks !== null ? wks + ' weeks' : 'multiple weeks'}`,
+        entry.action,
+        `<strong>${escHtml(entry.dept)}</strong> · This item has been flagged as delayed or overdue at <strong>${n} separate meetings</strong>: ${entry.sessions.map(s => formatSheetName(s)).join(' → ')}. This is no longer a follow-up item — it needs a formal decision or a named person to unblock it.`,
+        `${n}× delayed`
+      )});
     });
 
-    // Newly escalated
+    // Escalating (2× delayed including latest)
     result.escalated.slice(0, 4).forEach(entry => {
-      html += `<div class="ti-alert-item">
-        <div class="ti-alert-icon-wrap escalation">⚠️</div>
-        <div class="ti-alert-content">
-          <div class="ti-alert-type escalation">Escalating Risk — Delayed Again</div>
-          <div class="ti-alert-title">${escHtml(entry.action.substring(0, 110))}</div>
-          <div class="ti-alert-detail"><strong>${escHtml(entry.dept)}</strong> · Previously delayed and still unresolved. Appearances: ${entry.sessions.map(s => formatSheetName(s)).join(', ')}.</div>
-        </div>
-        <div class="ti-alert-meta">${entry.sessions.length}× flagged</div>
-      </div>`;
+      allAlerts.push({ bucket: 'recent', priority: 1, html: alertRow(
+        'escalation', '⚠️', 'escalation',
+        'Delayed Again This Session',
+        entry.action,
+        `<strong>${escHtml(entry.dept)}</strong> · Was delayed before and came back delayed this session: ${entry.sessions.map(s => formatSheetName(s)).join(' → ')}. Act before it becomes a long-running item.`,
+        `${entry.sessions.length}× flagged`
+      )});
     });
 
-    // Recurring unresolved tasks
-    result.recurring.filter(r => !result.chronic.find(c => tiTaskSimilarity(c.action, r.action) >= 0.42) && !result.escalated.find(e => tiTaskSimilarity(e.action, r.action) >= 0.42)).slice(0, 6).forEach(r => {
-      const sessLabels = r.sessions.map(s => formatSheetName(s)).join(', ');
-      html += `<div class="ti-alert-item">
-        <div class="ti-alert-icon-wrap recurring">🔁</div>
-        <div class="ti-alert-content">
-          <div class="ti-alert-type recurring">Recurring Unresolved Task</div>
-          <div class="ti-alert-title">${escHtml(r.action.substring(0, 110))}</div>
-          <div class="ti-alert-detail"><strong>${escHtml(r.latestDept || r.dept)}</strong> · Appears unresolved across <strong>${r.sessions.length} sessions</strong>: ${sessLabels}. Current status: <strong>${r.latestStatus}</strong>. Risk of normalisation — may need a formal decision or closure.</div>
-        </div>
-        <div class="ti-alert-meta">${r.sessions.length} sessions</div>
-      </div>`;
+    // Repeated unresolved (not already in chronic/escalated)
+    result.repeated.filter(r =>
+      !result.chronic.find(c => tiTaskSimilarity(c.action, r.action) >= 0.44) &&
+      !result.escalated.find(e => tiTaskSimilarity(e.action, r.action) >= 0.44)
+    ).slice(0, 8).forEach(r => {
+      const n = r.sessionsPresent.length;
+      const wks = r.weeksOpen;
+      const bucket = result.timeBucket(n);
+      const sessStr = r.sessionsPresent.map(s => formatSheetName(s)).join(' → ');
+      allAlerts.push({ bucket, priority: 2, html: alertRow(
+        'recurring', '🔁', 'recurring',
+        `Task repeated ${n} times — not yet closed`,
+        r.action,
+        `<strong>${escHtml(r.lastDept || r.dept)}</strong> · This task has appeared at <strong>${n} meetings</strong>${wks !== null ? ` over ${wks} weeks` : ''}: ${sessStr}. It is still open (status: ${r.lastStatus}). If this is genuinely in progress, it may need a sub-task breakdown or an owner update. If it is stuck, it needs escalation.`,
+        `${n} sessions${wks !== null ? ' · ' + wks + 'w' : ''}`
+      )});
     });
 
-    // New delays (first-time flags in latest session)
+    // New delays this session
     result.newDelayed.slice(0, 3).forEach(t => {
-      html += `<div class="ti-alert-item">
-        <div class="ti-alert-icon-wrap velocity">📍</div>
-        <div class="ti-alert-content">
-          <div class="ti-alert-type velocity">New Delay Flag — ${formatSheetName(result.latestSess)}</div>
-          <div class="ti-alert-title">${escHtml(t.action.substring(0, 110))}</div>
-          <div class="ti-alert-detail"><strong>${escHtml(t.dept)}</strong> · Newly delayed or overdue this session — first-time flag. Due: ${t.due}. Monitor closely before next meeting.</div>
-        </div>
-        <div class="ti-alert-meta">New</div>
-      </div>`;
+      allAlerts.push({ bucket: 'recent', priority: 3, html: alertRow(
+        'velocity', '📍', 'velocity',
+        `New delay — first time flagged this session`,
+        t.action,
+        `<strong>${escHtml(t.dept)}</strong> · This is the first time this item has been flagged as delayed or overdue. Due: ${t.due}. Catch it now before it becomes a pattern.`,
+        'New this session'
+      )});
     });
 
-    // Velocity insight
+    // Resolved by absence (tasks that dropped out of the sheet — treated as done)
+    result.resolvedByAbsence.slice(0, 5).forEach(r => {
+      const n = r.sessionsPresent.length;
+      allAlerts.push({ bucket: 'resolved', priority: 10, html: alertRow(
+        'velocity', '✅', 'velocity',
+        `Closed — no longer on the agenda`,
+        r.action,
+        `<strong>${escHtml(r.lastDept || r.dept)}</strong> · This task appeared at ${n} meeting${n > 1 ? 's' : ''} and was removed from the sheet after ${formatSheetName(r.lastSess)} without being marked achieved — treated as resolved. Last known status: ${r.lastStatus}.`,
+        'Implicitly closed'
+      )});
+    });
+
+    // Velocity summary card
     const vd = result.velocityData;
     if (vd.length >= 2) {
       const last = vd[vd.length - 1], prev = vd[vd.length - 2];
       const diff = last.pct - prev.pct;
-      const trendLabel = diff > 0 ? `↑ +${diff}pp` : diff < 0 ? `↓ ${diff}pp` : '→ unchanged';
+      const trendLabel = diff > 0 ? `↑ Up ${diff} points` : diff < 0 ? `↓ Down ${Math.abs(diff)} points` : '→ Unchanged';
       const trendClass = diff > 5 ? 'velocity' : diff < -5 ? 'escalation' : 'velocity';
       const trendIcon = diff > 5 ? '📈' : diff < -5 ? '📉' : '📊';
-      html += `<div class="ti-alert-item">
-        <div class="ti-alert-icon-wrap velocity">${trendIcon}</div>
-        <div class="ti-alert-content">
-          <div class="ti-alert-type ${trendClass}">Completion Velocity ${trendLabel}</div>
-          <div class="ti-alert-title">${formatSheetName(last.sess)}: ${last.pct}% achieved (${last.achieved}/${last.total} tasks)</div>
-          <div class="ti-alert-detail">Previous session (${formatSheetName(prev.sess)}): ${prev.pct}% achieved. ${result.velocityTrend === 'stalled' ? '⚠ Delivery rate critically low — risk of milestone slippage.' : result.velocityTrend === 'declining' ? 'Completion rate falling — check for blockers in delayed tasks.' : result.velocityTrend === 'improving' ? 'Positive momentum — maintain focus.' : 'Stable delivery pace.'}</div>
-        </div>
-        <div class="ti-alert-meta">${last.pct}% rate</div>
-      </div>`;
+      const verdict = result.velocityTrend === 'stalled'
+        ? 'Delivery pace is critically low across the board — very few tasks are being closed at each meeting.'
+        : result.velocityTrend === 'declining'
+        ? 'Fewer tasks are being resolved compared to the previous session. Check what is blocking closure.'
+        : result.velocityTrend === 'improving'
+        ? 'More tasks are being closed than in the previous session — positive direction.'
+        : 'Delivery pace is broadly consistent with the previous session.';
+      allAlerts.push({ bucket: 'recent', priority: 4, html: alertRow(
+        'velocity', trendIcon, trendClass,
+        `Delivery rate this session: ${last.pct}% — ${trendLabel}`,
+        `${formatSheetName(last.sess)}: ${last.resolvedTotal} tasks closed out of ${last.total} (${last.achieved} explicitly achieved + ${last.absentNextCount} dropped from next session)`,
+        `Previous session (${formatSheetName(prev.sess)}): ${prev.pct}%. ${verdict}`,
+        `${last.pct}% rate`
+      )});
     }
 
+    // ── Render grouped by time bucket ──
+    const bucketOrder = ['longstanding', 'ongoing', 'recent', 'resolved'];
+    const bucketMeta = {
+      longstanding: { label: 'Long-Standing Issues', sub: '5+ sessions · needs executive decision' },
+      ongoing:      { label: 'Ongoing Items',          sub: '3–4 sessions · watch closely' },
+      recent:       { label: 'This Session',            sub: 'new flags and current velocity' },
+      resolved:     { label: 'Closed Since Last Meeting', sub: 'absent from latest sheet — treated as resolved' }
+    };
+
+    let html = '';
+    bucketOrder.forEach(bucket => {
+      const items = allAlerts.filter(a => a.bucket === bucket).sort((a,b) => a.priority - b.priority);
+      if (!items.length) return;
+      const meta = bucketMeta[bucket];
+      html += sectionHead(meta.label, meta.sub);
+      items.forEach(item => { html += item.html; });
+    });
+
     if (!html) {
-      html = '<div class="ti-digest-empty">✓ No significant recurring patterns or escalations detected across current sessions.</div>';
+      html = '<div class="ti-digest-empty">✓ No patterns detected across current sessions. Continue monitoring.</div>';
     }
     digestEl.innerHTML = html;
   }
 
-  // ── Velocity chart ──
+  // ── Velocity chart — newest first ──
   const velEl = document.getElementById(`ti-${pfx}-velocity`);
   if (velEl && result.velocityData.length) {
-    const maxPct = Math.max(...result.velocityData.map(v => v.pct), 10);
-    let html = result.velocityData.map(v => {
+    const displayData = [...result.velocityData].reverse();
+    const maxPct = Math.max(...displayData.map(v => v.pct), 10);
+    let html = displayData.map(v => {
       const fillClass = v.pct >= 50 ? 'improving' : v.pct >= 25 ? 'stable' : v.pct >= 10 ? 'declining' : 'stalled';
       const width = Math.max(2, Math.round((v.pct / maxPct) * 100));
-      return `<div class="ti-vel-row">
+      const tooltip = `${v.achieved} explicit + ${v.absentNextCount} dropped`;
+      return `<div class="ti-vel-row" title="${tooltip}">
         <div class="ti-vel-label">${formatSheetName(v.sess)}</div>
         <div class="ti-vel-track"><div class="ti-vel-fill ${fillClass}" style="width:${width}%"></div></div>
         <div class="ti-vel-count">${v.pct}%</div>
@@ -4253,7 +4679,7 @@ function renderTrendPanel(proj, result) {
   const ftEl = document.getElementById(`ti-${pfx}-footer-text`);
   if (ftEl) {
     const now = new Date();
-    ftEl.textContent = `Trend analysis across ${result.totalSessions} sessions · ${now.toLocaleDateString('en-NG',{day:'2-digit',month:'short',year:'numeric'})} ${now.toLocaleTimeString('en-NG',{hour:'2-digit',minute:'2-digit'})} · Refreshes on sync`;
+    ftEl.textContent = `Trend intelligence across ${result.totalSessions} sessions · Tasks absent from latest sheet are treated as resolved · ${now.toLocaleDateString('en-NG',{day:'2-digit',month:'short',year:'numeric'})} ${now.toLocaleTimeString('en-NG',{hour:'2-digit',minute:'2-digit'})}`;
   }
 }
 
@@ -4266,7 +4692,6 @@ function toggleTI(id) {
 function injectTrendBadges(proj) {
   const result = _tiCache[proj];
   if (!result || !result.trendBadgeMap) return;
-  const overrides = getStatusOverrides();
   const latest = availableSessions[proj] && availableSessions[proj][0];
   const tasks = taskDatabase.filter(t => t.project === proj && t.session === latest);
 
@@ -4276,13 +4701,10 @@ function injectTrendBadges(proj) {
     if (!badges || !badges.length) return;
     const cardEl = document.getElementById('card-' + tid);
     if (!cardEl) return;
-    // Avoid duplicating if already injected
     if (cardEl.querySelector('.trend-badge-row')) return;
     const row = document.createElement('div');
     row.className = 'trend-badge-row';
     row.innerHTML = badges.map(b => `<span class="trend-badge ${b.type}">${b.label}</span>`).join('');
-    // Inject after step-context (result bar), before step-card-top
-    const ctx = cardEl.querySelector('.step-context');
     const top = cardEl.querySelector('.step-card-top');
     if (top) cardEl.insertBefore(row, top);
     else cardEl.appendChild(row);
@@ -5344,13 +5766,368 @@ function updateLandingPageMetrics() {
 let annexChartInstance = null;
 let cxChartInstance = null;
 
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  COMMERCIAL VELOCITY INDICATOR ENGINE                            ║
+// ║  Balance trajectory · Inflow pace · Threshold · Verdict          ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+let _cviCxChart = null;
+let _cviAnnexChart = null;
+
+// Known balance data per session (sourced from meeting notes & ops reports)
+// Values in ₦M. Fills gaps where _chartMetrics has no balance data.
+const CVI_BALANCE_LEGACY = {
+  Crossings: {
+    'Jan 5':   433,  'Jan 12':  330,  'Jan 19':  280,  'Jan 26':  240,
+    'Feb 02':  200,  'Feb 09':  175,  'Feb 16':  140,  'Feb 23':  120,
+    'Mar 02':  105,  'Mar 09':   99,  'Mar 16':   99,  'Mar 23':   99,
+    'Mar 30':   99,  'Apr 2':   113,  'Apr 7':    99,  'Apr 13':   99,
+    'Apr 20':   40,  'Apr 27':   40,  'May 4':   62.4, 'May 11':  62.4,
+    'May 18':  62.4, 'May 25':  70,   'June 1':  70
+  },
+  Annexe: {
+    'Jan 5':  120,  'Jan 8':  120,  'Jan 12':  65,   'Jan 15':  65,
+    'Jan 22':  65,  'Jan 26':  65,  'Jan 29':  90,   'Feb 02':  90,
+    'Feb 05':  85,  'Feb 09':  11,  'Feb 12':  11,   'Feb 16':  11,
+    'Feb 23':  20,  'Feb 26':  25,  'Mar 02':  30,   'Mar 05':  35,
+    'Mar 09':  40,  'Mar 12':  40,  'Mar 16':  45,   'Mar 23':  55,
+    'Mar 26':  55,  'Mar 30':  55,  'Apr 02':  55,   'Apr 07':  55,
+    'Apr 09':  55,  'Apr 13':  55,  'Apr 16':  55,   'Apr 20':  55,
+    'Apr 23':  55,  'Apr 27':  68,  'Apr 30':  68,   'May 4':  67.96,
+    'May 7':  67.96,'May 11': 80,   'May 14':  80,   'May 18':  90,
+    'May 21':  90,  'May 25':  95,  'June 1':  100
+  }
+};
+
+// Crossings civil mobilisation threshold (₦M total inflow)
+const CX_CIVIL_THRESHOLD = 800;
+// Annexe burn rate (₦M/week)
+const ANNEX_BURN_RATE = 35;
+
+function getCviBalance(proj, sess) {
+  // First check live _chartMetrics
+  const live = window._chartMetrics && window._chartMetrics[proj] && window._chartMetrics[proj][sess];
+  if (live && live.balance && live.balance > 0) return live.balance;
+  // Fall back to legacy
+  return (CVI_BALANCE_LEGACY[proj] && CVI_BALANCE_LEGACY[proj][sess]) || null;
+}
+
+function getCviInflow(proj, sess) {
+  const live = window._chartMetrics && window._chartMetrics[proj] && window._chartMetrics[proj][sess];
+  if (live && live.inflow && live.inflow > 0) return live.inflow;
+  if (window.renderDynamicCharts && typeof legacyData !== 'undefined' && legacyData[proj] && legacyData[proj][sess]) {
+    return legacyData[proj][sess].inflow || null;
+  }
+  return null;
+}
+
+function fmtM(val) {
+  if (val === null || val === undefined) return '—';
+  if (val >= 1000) return '₦' + (val/1000).toFixed(2) + 'B';
+  return '₦' + val.toFixed(1) + 'M';
+}
+
+function renderCVI(proj) {
+  if (typeof Chart === 'undefined') return;
+  const pfx = proj === 'Crossings' ? 'cx' : 'annex';
+  const isCx = proj === 'Crossings';
+  const accentColor = isCx ? '#1b5e20' : '#D32F2F';
+
+  // ── 1. Build ordered session list (oldest → newest) ──
+  const allSessions = Object.keys(CVI_BALANCE_LEGACY[proj]);
+  const liveSessions = [...(availableSessions[proj] || [])].reverse();
+  const merged = [...new Set([...allSessions, ...liveSessions])];
+
+  // Sort chronologically using parseSheetName
+  merged.sort((a, b) => {
+    const pa = parseSheetName(a), pb = parseSheetName(b);
+    if (!pa || !pb) return 0;
+    return (pa.month * 100 + pa.day) - (pb.month * 100 + pb.day);
+  });
+
+  // Build balance + inflow series
+  const balanceSeries = [], inflowSeries = [], labels = [];
+  let lastBal = null, lastInflow = null;
+  merged.forEach(sess => {
+    const b = getCviBalance(proj, sess);
+    const inf = getCviInflow(proj, sess);
+    if (b !== null) lastBal = b;
+    if (inf !== null) lastInflow = inf;
+    if (lastBal !== null) {
+      balanceSeries.push(lastBal);
+      inflowSeries.push(lastInflow || 0);
+      labels.push(formatSheetName(sess));
+    }
+  });
+
+  if (!balanceSeries.length) return;
+
+  // ── 2. Derive key metrics from the two most-recent data points ──
+  const currentBal  = balanceSeries[balanceSeries.length - 1];
+  const prevBal     = balanceSeries.length > 1 ? balanceSeries[balanceSeries.length - 2] : currentBal;
+  const balDelta    = currentBal - prevBal;
+
+  const currentInflow = inflowSeries[inflowSeries.length - 1] || 0;
+  const prevInflow    = inflowSeries.length > 1 ? inflowSeries[inflowSeries.length - 2] : currentInflow;
+  const inflowDelta   = currentInflow - prevInflow;
+
+  // ── 3. Project-specific derived values ──
+  let gapValue, runwayValue, barPct, barCurrentLabel, verdictHtml, statusText, statusClass;
+  let droughtStrip = '';
+
+  if (isCx) {
+    // Crossings: gap to ₦800M civil threshold
+    const gap = Math.max(0, CX_CIVIL_THRESHOLD - currentInflow);
+    gapValue = fmtM(gap);
+    barPct = Math.min(100, Math.round((currentInflow / CX_CIVIL_THRESHOLD) * 100));
+    barCurrentLabel = fmtM(currentInflow) + ' inflow';
+
+    // Weekly inflow pace (average over recent sessions with movement)
+    const recentInflowDeltas = [];
+    for (let i = Math.max(1, inflowSeries.length - 8); i < inflowSeries.length; i++) {
+      const d = inflowSeries[i] - inflowSeries[i-1];
+      if (d > 0) recentInflowDeltas.push(d);
+    }
+    const avgWeeklyInflow = recentInflowDeltas.length
+      ? recentInflowDeltas.reduce((a, b) => a + b, 0) / recentInflowDeltas.length
+      : 0;
+
+    const weeksToThreshold = avgWeeklyInflow > 0 ? Math.ceil(gap / avgWeeklyInflow) : null;
+    runwayValue = weeksToThreshold !== null ? weeksToThreshold + 'w' : '∞';
+
+    // Inflow drought detection: count sessions with zero movement
+    let droughtSessions = 0;
+    for (let i = inflowSeries.length - 1; i > 0; i--) {
+      if (inflowSeries[i] <= inflowSeries[i-1]) droughtSessions++;
+      else break;
+    }
+
+    // Status
+    if (currentBal < 50) { statusText = '⚠ Critical'; statusClass = 'critical'; }
+    else if (gap === 0)  { statusText = '✓ Threshold Met'; statusClass = 'healthy'; }
+    else if (weeksToThreshold !== null && weeksToThreshold <= 12) { statusText = 'In Range'; statusClass = 'warning'; }
+    else { statusText = 'Off Track'; statusClass = 'critical'; }
+
+    // Verdict
+    const paceStr = avgWeeklyInflow > 0 ? `₦${avgWeeklyInflow.toFixed(0)}M/week average inflow` : 'no recent inflow movement';
+    const etsStr  = weeksToThreshold ? `at this pace, the ₦800M civil works trigger will be reached in approximately <strong>${weeksToThreshold} weeks</strong>` : `<strong>the ₦800M civil works trigger cannot be reached at the current pace</strong>`;
+    const balStr  = balDelta < 0 ? `Account balance fell by <strong>${fmtM(Math.abs(balDelta))}</strong> since last session.` : balDelta > 0 ? `Account balance rose by <strong>${fmtM(balDelta)}</strong> since last session.` : `Account balance unchanged since last session.`;
+    verdictHtml = `${balStr} With <strong>${fmtM(gap)}</strong> remaining to the civil mobilisation threshold and ${paceStr}, ${etsStr}. Main civil infrastructure work remains locked until this threshold is crossed.`;
+    if (droughtSessions >= 4) {
+      droughtStrip = `<div class="cvi-drought-strip">🔴 Inflow drought: no new collections recorded for ${droughtSessions} consecutive sessions. Civil works mobilisation is not progressing.</div>`;
+    }
+  } else {
+    // Annexe: collections gap (Value of Sales vs Inflow)
+    const salesVal = (() => {
+      // Try live _chartMetrics (most recent session)
+      const recentLive = liveSessions[liveSessions.length - 1];
+      const live = window._chartMetrics && window._chartMetrics[proj] && window._chartMetrics[proj][recentLive];
+      if (live && live.salesValue && live.salesValue > 0) return live.salesValue;
+      // Fall back to legacyData (exposed as window._cviLegacySalesRef)
+      if (window._cviLegacySalesRef && window._cviLegacySalesRef[proj]) {
+        const ref = window._cviLegacySalesRef[proj];
+        // Walk merged from end to find last non-null salesValue
+        for (let i = merged.length - 1; i >= 0; i--) {
+          const d = ref[merged[i]];
+          if (d && d.salesValue && d.salesValue > 0) return d.salesValue;
+        }
+      }
+      return null;
+    })();
+
+    const collectionsGap = salesVal ? Math.max(0, salesVal - currentInflow) : null;
+    gapValue = collectionsGap !== null ? fmtM(collectionsGap) : '—';
+    barPct = salesVal ? Math.min(100, Math.round((currentInflow / salesVal) * 100)) : 0;
+    barCurrentLabel = fmtM(currentInflow) + ' collected';
+
+    // Runway at burn rate
+    const runwayWks = currentBal > 0 ? (currentBal / ANNEX_BURN_RATE).toFixed(1) : '< 0.5';
+    runwayValue = runwayWks + 'w';
+
+    // Status
+    if (currentBal < 50)      { statusText = '⚠ Critical'; statusClass = 'critical'; }
+    else if (currentBal < 100){ statusText = 'Low Balance'; statusClass = 'warning'; }
+    else                       { statusText = 'Stable';      statusClass = 'healthy'; }
+
+    // Verdict
+    const balStr = balDelta < 0 ? `Account balance fell by <strong>${fmtM(Math.abs(balDelta))}</strong> since last session — burn rate exceeds collections.`
+      : balDelta > 0 ? `Account balance rose by <strong>${fmtM(balDelta)}</strong> since last session.`
+      : `Account balance unchanged since last session.`;
+    const gapStr = collectionsGap !== null ? `The outstanding collections gap is <strong>${fmtM(collectionsGap)}</strong> — money committed in sales but not yet received.` : '';
+    verdictHtml = `${balStr} Current balance gives approximately <strong>${runwayWks} weeks</strong> of runway at ₦${ANNEX_BURN_RATE}M/week contractor burn rate. ${gapStr} Collections acceleration is the primary lever to sustain site momentum.`;
+  }
+
+  // ── 4. Paint KPI tiles ──
+  const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  const setHtml = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = val; };
+
+  const balClass = currentBal < 50 ? 'cvi-kpi-danger' : currentBal < 100 ? 'cvi-kpi-warn' : 'cvi-kpi-green';
+  const balEl = document.getElementById(`cvi-${pfx}-balance`);
+  if (balEl) { balEl.textContent = fmtM(currentBal); balEl.className = `cvi-kpi-value ${balClass}`; }
+
+  const balSubEl = document.getElementById(`cvi-${pfx}-balance-sub`);
+  if (balSubEl) {
+    if (balDelta < 0) { balSubEl.textContent = `↓ ${fmtM(Math.abs(balDelta))} vs prev`; balSubEl.style.color = 'var(--status-red)'; }
+    else if (balDelta > 0) { balSubEl.textContent = `↑ ${fmtM(balDelta)} vs prev`; balSubEl.style.color = 'var(--status-green)'; }
+    else { balSubEl.textContent = 'No change vs prev'; balSubEl.style.color = ''; }
+  }
+
+  const inflowDeltaEl = document.getElementById(`cvi-${pfx}-inflow-delta`);
+  if (inflowDeltaEl) {
+    inflowDeltaEl.textContent = inflowDelta > 0 ? '+' + fmtM(inflowDelta) : inflowDelta < 0 ? fmtM(inflowDelta) : 'Flat';
+    inflowDeltaEl.className = `cvi-kpi-value ${inflowDelta > 0 ? 'cvi-kpi-green' : inflowDelta < 0 ? 'cvi-kpi-danger' : ''}`;
+  }
+
+  const inflowSubEl = document.getElementById(`cvi-${pfx}-inflow-sub`);
+  if (inflowSubEl) inflowSubEl.textContent = `Total: ${fmtM(currentInflow)}`;
+
+  setEl(`cvi-${pfx}-gap`, gapValue);
+  setEl(`cvi-${pfx}-runway`, runwayValue);
+  setEl(`cvi-${pfx}-threshold-pct`, barPct + '%');
+  setEl(`cvi-${pfx}-bar-current`, barCurrentLabel);
+
+  const barEl = document.getElementById(`cvi-${pfx}-bar`);
+  if (barEl) {
+    barEl.style.width = barPct + '%';
+    if (currentBal < 50) barEl.classList.add('danger');
+    else barEl.classList.remove('danger');
+  }
+
+  // Status chip
+  const chipEl = document.getElementById(`cvi-${pfx}-status-chip`);
+  if (chipEl) { chipEl.textContent = statusText; chipEl.className = `cvi-status-chip ${statusClass}`; }
+
+  // Verdict
+  const verdictEl = document.getElementById(`cvi-${pfx}-verdict`);
+  const verdictTxtEl = document.getElementById(`cvi-${pfx}-verdict-text`);
+  if (verdictEl)    verdictEl.className = `cvi-verdict ${statusClass}`;
+  if (verdictTxtEl) verdictTxtEl.innerHTML = verdictHtml;
+
+  // Drought strip
+  const panelEl = document.getElementById(`cvi-${pfx}`);
+  if (panelEl) {
+    let existing = panelEl.querySelector('.cvi-drought-strip');
+    if (existing) existing.remove();
+    if (droughtStrip) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = droughtStrip;
+      panelEl.insertBefore(tmp.firstChild, panelEl.querySelector('.cvi-verdict'));
+    }
+  }
+
+  // ── 5. Balance trend chart ──
+  const canvasId = `cvi-${pfx}-chart`;
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+
+  const chartRef = isCx ? '_cviCxChart' : '_cviAnnexChart';
+  if (window[chartRef]) { try { window[chartRef].destroy(); } catch(e){} }
+
+  // Thin the label set for readability (show at most 16)
+  const step = labels.length > 16 ? Math.ceil(labels.length / 16) : 1;
+  const thinLabels = labels.map((l, i) => i % step === 0 ? l : '');
+
+  // Build danger zone annotation (horizontal band)
+  const dangerZone = 50; // ₦50M
+
+  // Point colours: red if below danger zone
+  const pointColors = balanceSeries.map(v => v < dangerZone ? '#c62828' : accentColor);
+  const borderColors = balanceSeries.map(v => v < dangerZone ? '#c62828' : accentColor);
+
+  // Segment colour: draw line red when balance is below 50M
+  function segmentColor(ctx) {
+    const v1 = balanceSeries[ctx.p0DataIndex];
+    const v2 = balanceSeries[ctx.p1DataIndex];
+    return (v1 < dangerZone || v2 < dangerZone) ? '#c62828' : accentColor;
+  }
+
+  window[chartRef] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: thinLabels,
+      datasets: [
+        {
+          label: 'Account Balance (₦M)',
+          data: balanceSeries,
+          borderColor: accentColor,
+          segment: { borderColor: segmentColor },
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: balanceSeries.map((v, i) => {
+            // Show point only at key transitions or endpoints
+            const isLast = i === balanceSeries.length - 1;
+            const isDrop = i > 0 && balanceSeries[i] < dangerZone && balanceSeries[i-1] >= dangerZone;
+            const isRise = i > 0 && balanceSeries[i] >= dangerZone && balanceSeries[i-1] < dangerZone;
+            return (isLast || isDrop || isRise) ? 5 : (balanceSeries.length > 30 ? 0 : 2);
+          }),
+          pointBackgroundColor: pointColors,
+          pointBorderColor: borderColors,
+          tension: 0.3,
+          fill: false
+        },
+        // Danger threshold reference line
+        {
+          label: 'Danger zone (₦50M)',
+          data: Array(balanceSeries.length).fill(dangerZone),
+          borderColor: 'rgba(198,40,40,0.35)',
+          borderWidth: 1.5,
+          borderDash: [5, 4],
+          pointRadius: 0,
+          fill: {
+            target: 'origin',
+            above: 'rgba(198,40,40,0)',
+            below: 'rgba(198,40,40,0.07)'
+          },
+          tension: 0
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              if (ctx.datasetIndex === 1) return null;
+              return `Balance: ${fmtM(ctx.parsed.y)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#999', font: { size: 9, weight: '600' }, maxRotation: 45, autoSkip: false },
+          grid: { display: false }
+        },
+        y: {
+          ticks: {
+            color: '#999', font: { size: 9 },
+            callback: v => fmtM(v)
+          },
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          min: 0
+        }
+      }
+    }
+  });
+}
+
+// Call both CVIs
+function renderAllCVIs() {
+  try { renderCVI('Crossings'); } catch(e) { console.warn('[CVI] Crossings:', e); }
+  try { renderCVI('Annexe'); } catch(e) { console.warn('[CVI] Annexe:', e); }
+}
+
 function renderDynamicCharts() {
   if (typeof Chart === 'undefined') return;
 
   // THE HYBRID OVERRIDE: Tracking Inflow vs Value of Sales (Gap in Receivables)
   // Hoisted to renderDynamicCharts scope so both getChartMetrics AND buildChartData can see it.
   // All values are in Millions (e.g., 1.3B = 1300)
-  const legacyData = {
+  const legacyData = window._cviLegacySalesRef = {
     'Crossings': {
       'Sept 29':  { inflow: 380, salesValue: 683 },
       'Sept 29 -':{ inflow: 380, salesValue: 683 },
@@ -5758,7 +6535,7 @@ label = '₦' + (bVal.endsWith('.00') ? bVal.slice(0, -3) : bVal) + 'Bn';
     };
     Chart.register(lastPointPlugin);
     
-    setTimeout(renderDynamicCharts, 500);
+    setTimeout(renderDynamicCharts, 500); setTimeout(renderAllCVIs, 700);
 
   } catch(e) {
     console.warn('Chart initialisation failed:', e);
