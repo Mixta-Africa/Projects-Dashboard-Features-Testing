@@ -1597,6 +1597,28 @@ function initFirebase() {
       _fbDb   = firebase.database();
       _fbReady = true;
 
+      // Listen for metric updates and paint the DOM instantly
+      _fbDb.ref('metrics').on('value', snap => {
+        window._firebaseMetrics = snap.val() || {};
+        
+        if (currentProject) {
+          const sessionToView = (viewingSessionDate === 'current' || !viewingSessionDate) 
+            ? (availableSessions[currentProject]?.[0] || 'latest') 
+            : viewingSessionDate;
+            
+          const data = window._firebaseMetrics[currentProject]?.[sessionToView];
+          if (data) {
+            const pfx = currentProject === 'Crossings' ? 'cx' : 'annex';
+            setMetric(`val-${pfx}-inflow`, data.inflow);
+            setMetric(`val-${pfx}-sales`, data.sales);
+            setMetric(`val-${pfx}-balance`, data.balance);
+            setMetric(`val-${pfx}-units`, data.units);
+            setMetric(`val-${pfx}-offers`, data.offers);
+            applyPriorityColors();
+          }
+        }
+      });
+      
       _fbDb.ref('status_overrides').on('value', snap => {
         const fbOverrides = snap.val() || {};
         const local = getStatusOverrides();
@@ -1930,6 +1952,32 @@ let availableSessions = { Crossings: [], Annexe: [] };
 let sheetDiag = {};
 let sessionTargets = {}; // keyed by 'proj:session' → array of HTML strings
 
+  // ── UNIFIED METRIC EXTRACTION DICTIONARY ──
+const METRIC_PATTERNS = {
+  inflow: /(?:total\s+)?(?:sales\s+)?(?:inflow|received)(?:\s+to\s+date)?[\s:\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?(?:n|N|mn|MN)?)/i,
+  sales: /(?:total\s+)?value\s+of\s+sales[\s:\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?(?:n|N|mn|MN)?)/i,
+  balance: /(?:account\s+)?bal(?:ance)?[\s:\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?(?:n|N|mn|MN)?)/i,
+  units: /(?:sales|units\s*sold|no\.?\s*of\s*sales)[\s:\-]+(\d{1,4})\b|\b(\d{1,4})\s+units/i,
+  offers: /(?:active\s*)?offer(?:s| letters?)?[\s:\-]+(\d{1,4})\b|\b(\d{1,4})\s*(?:active\s*)?offer/i
+};
+
+function parseExtractedMetric(matchResult, isCurrency) {
+  if (!matchResult) return null;
+  let val = matchResult[1] || matchResult[2]; 
+  if (!val) return null;
+  
+  if (isCurrency) {
+    let raw = val.trim().toUpperCase().replace(/[, ]/g, '');
+    raw = raw.replace(/BN$/, 'B').replace(/MN$/, 'M');
+    if (!raw.startsWith('₦')) raw = raw.replace(/^N(?=\d)/, '₦');
+    if (!raw.startsWith('₦')) raw = '₦' + raw;
+    return raw;
+  }
+  return val.trim();
+}
+
+window._firebaseMetrics = {}; // Global cache for instant reads
+
 // ── TOP-LEVEL DEPT NORMALIZATION MAP (referenced by both processSheet and loadSeedData) ──
 const DEPT_NORMALIZE_MAP = {
   'ipd': 'IPD', 'pmu': 'IPD', 'pmo': 'IPD',
@@ -1984,22 +2032,7 @@ function loadSeedData() {
   // Extract metrics immediately from seed Operations rows
   (function() {
     ['Crossings','Annexe'].forEach(proj => {
-      const latest = availableSessions[proj]?.[0]; if (!latest) return;
-      const pfx = proj==='Crossings'; let offerFound=false;
-      taskDatabase.filter(t=>t.project===proj&&t.session===latest&&/operations|fincon/i.test(t.dept)).forEach(t=>{
-        const txt=(t.action||'')+' '+(t.explanation||'')+' '+(t.resultToAchieve||'');
-        if (!/[₦N][\d,]+|sales[-:\s]+\d|\d+\s*units|offer letter/i.test(txt)) return;
-        let m;
-        m=txt.match(/(?:total\\s+inflow\\s+to\\s+date|total\\s+inflow|\\binflow)[:\\s\\-]+([\xe2\x82\xa6N]?\\s*[\\d,.]+\\s*[BMKbmk]?(?:mn|MN)?)/i);
-        if(m){let v=m[1].trim().toUpperCase().replace(/MN$/,'M').replace(/^N(?=\d)/,'₦');if(!v.startsWith('₦'))v='₦'+v;document.getElementById(pfx?'val-cx-inflow':'val-annex-inflow').textContent=v;}
-        m=txt.match(/value of sales[:\s\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?)/i);
-        if(m){let v=m[1].trim().toUpperCase().replace(/^N(?=\d)/,'₦');if(!v.startsWith('₦'))v='₦'+v;document.getElementById(pfx?'val-cx-sales':'val-annex-sales').textContent=v;}
-        m=txt.match(/(?:account\\s+balance|account\\s+bal|\\bbalance)[:\\s\\-]+([\xe2\x82\xa6N]?\\s*[\\d,.]+\\s*[BMKbmk]?(?:mn|MN)?)/i);
-        if(m){let v=m[1].trim().toUpperCase().replace(/^N(?=\d)/,'₦');if(!v.startsWith('₦'))v='₦'+v;document.getElementById(pfx?'val-cx-balance':'val-annex-balance').textContent=v;}
-        m=txt.match(/sales[:\s\-]+(\d{1,4})/i)||txt.match(/(\d{1,4})\s+units/i);
-        if(m)document.getElementById(pfx?'val-cx-units':'val-annex-units').textContent=m[1];
-        if(!offerFound){m=txt.match(/offer letters?[:\s\-]+(\d{1,4})/i)||txt.match(/active offer[:\s\-]+(\d{1,4})/i);if(m){document.getElementById(pfx?'val-cx-offers':'val-annex-offers').textContent=m[1];offerFound=true;}}
-      });
+      
     });
   })();
   // Update UI
@@ -2519,24 +2552,31 @@ if (/operations|fincon/i.test(lastDept)) {
     const hasMetricData = /[₦N][\d,]+|\bsales[-:\s]+\d|\d+\s*units|\d+\s*offer/i.test(actionText);
 
     if (hasMetricData) {
-      // 1. THE FLEXIBILITY RULES
-      // We added more keywords here so it catches variations like "Total Inflow to Date"
-      const inflow = extractLabeled(actionText, ['total inflow to date', 'total inflow', 'sales inflow', 'inflow']);
-      const units = extractLabeledCount(actionText, ['sales', 'units sold', 'no\\.?\\s*of\\s*sales']);
-      const salesVal = extractLabeled(actionText, ['total value of sales', 'value of sales', 'tvs']);
-      const balance = extractLabeled(actionText, ['account balance', 'account bal', 'bal(?!lard|lot|c)']);
-      const offers = extractLabeledCount(actionText, ['offer letters?', 'active offer', 'offer letter']);
+      const inflow = parseExtractedMetric(actionText.match(METRIC_PATTERNS.inflow), true);
+      const salesVal = parseExtractedMetric(actionText.match(METRIC_PATTERNS.sales), true);
+      const balance = parseExtractedMetric(actionText.match(METRIC_PATTERNS.balance), true);
+      const units = parseExtractedMetric(actionText.match(METRIC_PATTERNS.units), false);
+      const offers = parseExtractedMetric(actionText.match(METRIC_PATTERNS.offers), false);
 
-      if (isLatest) {
-        if (inflow) setMetric(proj === 'Crossings' ? 'val-cx-inflow' : 'val-annex-inflow', inflow);
-        if (units) setMetric(proj === 'Crossings' ? 'val-cx-units' : 'val-annex-units', units);
-        if (salesVal) setMetric(proj === 'Crossings' ? 'val-cx-sales' : 'val-annex-sales', salesVal);
-        if (balance) setMetric(proj === 'Crossings' ? 'val-cx-balance' : 'val-annex-balance', balance);
-        if (!operationsOfferFound && offers !== null) { 
-            setMetric(proj==='Crossings'?'val-cx-offers':'val-annex-offers', offers); 
-            operationsOfferFound = true; 
+      // Save chart metrics locally for the chart engine
+      if (inflow) window._chartMetrics[proj][sheetName].inflow = parseNairaToM(inflow);
+      if (salesVal) window._chartMetrics[proj][sheetName].salesValue = parseNairaToM(salesVal);
+
+      // Write to Firebase (Firebase handles DOM updates via the listener)
+      if (_fbReady && _fbDb) {
+        const updates = {};
+        if (inflow) updates.inflow = inflow;
+        if (salesVal) updates.sales = salesVal;
+        if (balance) updates.balance = balance;
+        if (units) updates.units = units;
+        if (offers) updates.offers = offers;
+        
+        if (Object.keys(updates).length > 0) {
+            updates.updatedAt = firebase.database.ServerValue.TIMESTAMP;
+            _fbDb.ref(`metrics/${proj}/${sheetName}`).update(updates);
         }
       }
+    }
 
       // 2. THE CHART SWAP
       // Notice below: We kept inflow, but we deleted 'balance' and replaced it with 'salesVal'
@@ -4615,51 +4655,13 @@ function refreshDashboardForSession() {
   const proj = currentProject;
   const pfx = proj === 'Crossings';
 
-  function extractSessionMetrics(targetSession) {
-    let m = {};
-    // Validation for debugging metrics extraction
-    const relevantTasks = taskDatabase.filter(t => 
-      t.project === proj && 
-      t.session === targetSession && 
-      /operations|fincon/i.test(t.dept)
-    );
-    
-    if (relevantTasks.length === 0) {
-      console.warn(`⚠️ extractSessionMetrics: No Operations/Fincon tasks found for ${proj} / ${targetSession}`);
-      console.warn(`Available depts:`, [...new Set(taskDatabase.filter(t => t.project === proj && t.session === targetSession).map(t => t.dept))]);
-    } else {
-      console.debug(`✓ Found ${relevantTasks.length} Operations/Fincon tasks for ${proj} / ${targetSession}`);
-    }
-    let offerFound = false;
-    taskDatabase.filter(t => t.project === proj && t.session === targetSession && /operations|fincon/i.test(t.dept)).forEach(t => {
-      const txt = (t.action||'') + ' ' + (t.explanation||'') + ' ' + (t.resultToAchieve||'');
-      if (!/[₦N][\d,]+|\bsales[-:\s]+\d|\d+\s*units|offer letter/i.test(txt)) return;
-      
-      let match;
-      match = txt.match(/\binflow[:\s\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?(?:mn|MN)?)/i);
-      if (match) { let v=match[1].trim().toUpperCase().replace(/MN$/,'M').replace(/^N(?=\d)/,'₦'); if(!v.startsWith('₦'))v='₦'+v; m.inflow=v; }
-      
-      match = txt.match(/value of sales[:\s\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?)/i);
-      if (match) { let v=match[1].trim().toUpperCase().replace(/^N(?=\d)/,'₦'); if(!v.startsWith('₦'))v='₦'+v; m.sales=v; }
-      
-      match = txt.match(/(?:account\\s+balance|account\\s+bal|\\bbalance)[:\\s\\-]+([\xe2\x82\xa6N]?\\s*[\\d,.]+\\s*[BMKbmk]?(?:mn|MN)?)/i);
-      if (match) { let v=match[1].trim().toUpperCase().replace(/^N(?=\d)/,'₦'); if(!v.startsWith('₦'))v='₦'+v; m.balance=v; }
-      
-      match = txt.match(/\bsales[:\s\-]+(\d{1,4})\b/i) || txt.match(/\b(\d{1,4})\s+units/i);
-      if (match) m.units = match[1];
-      
-      if (!offerFound) {
-        match = txt.match(/(\d{1,4})\s*(?:active\s*)?offer letters?/i) || txt.match(/(?:active\s*)?offer letters?[\s:\-]+(\d{1,4})\b/i);
-        if (match) { m.offers = match[1]; offerFound = true; }
-      }
-    });
-    return m;
-  }
-
   const latestSession = availableSessions[proj][0];
-  const selectedMetrics = extractSessionMetrics(session);
-  const latestMetrics = extractSessionMetrics(latestSession);
+  
+  // Pull directly from our Firebase cache safely
+  const selectedMetrics = (window._firebaseMetrics && window._firebaseMetrics[proj]) ? window._firebaseMetrics[proj][session] || {} : {};
+  const latestMetrics = (window._firebaseMetrics && window._firebaseMetrics[proj]) ? window._firebaseMetrics[proj][latestSession] || {} : {};
 
+  // Fallbacks: Use selected -> then latest -> then '...'
   const finalInflow = selectedMetrics.inflow || latestMetrics.inflow || '...';
   const finalUnits = selectedMetrics.units || latestMetrics.units || '...';
   const finalSales = selectedMetrics.sales || latestMetrics.sales || '...';
@@ -4669,32 +4671,6 @@ function refreshDashboardForSession() {
   document.getElementById(pfx?'val-cx-inflow':'val-annex-inflow').textContent = finalInflow;
   document.getElementById(pfx?'val-cx-units':'val-annex-units').textContent = finalUnits;
   document.getElementById(pfx?'val-cx-sales':'val-annex-sales').textContent = finalSales;
-
-  // ── Unit Conversion Helper for Balance Comparison ──
-  function normalizeBalanceToMillions(balanceStr) {
-    // Converts balance strings to millions for threshold comparison
-    // Input examples: "₦614K" (Crossings), "₦29.468M" (Annexe), "₦1.76B"
-    // Output: numeric value in millions
-    
-    if (!balanceStr || balanceStr.includes('...') || balanceStr === '') return 0;
-    
-    const match = balanceStr.match(/([\d,]+\.?\d*)/);
-    if (!match) return 0;
-    
-    let value = parseFloat(match[0].replace(/,/g, ''));
-    
-    // Detect unit and convert
-    if (/K$/i.test(balanceStr)) {
-      return value / 1000;  // 614K → 0.614M
-    } else if (/M$/i.test(balanceStr)) {
-      return value;  // 29.468M → 29.468M (already in millions)
-    } else if (/B(?:n)?$/i.test(balanceStr)) {
-      return value * 1000;  // 1.76Bn → 1760M
-    }
-    
-    return value;  // fallback
-  }
-
   document.getElementById(pfx?'val-cx-balance':'val-annex-balance').textContent = finalBalance;
   document.getElementById(pfx?'val-cx-offers':'val-annex-offers').textContent = finalOffers;
 
