@@ -2375,7 +2375,7 @@ function canEdit(taskObj) {
 
 // ── Department Tab Locking ──
 // Greys out and disables sidebar dept tabs the current user is not permitted to edit.
-// Commercial Strategy (admin) and PDadmin1234 see all tabs unlocked.
+// Commercial Strategy (admin) role users see all tabs unlocked.
 function applyDeptTabLocks() {
   document.querySelectorAll('.sidebar-item').forEach(btn => {
     const oc = btn.getAttribute('onclick') || '';
@@ -2734,7 +2734,8 @@ function isOverdue(task) {
 }
 
 // ── PASSWORD SECURITY: Hashed admin password (DO NOT expose plaintext) ──
-const ADMIN_PWD_HASH = 'sha256_9f8c2e5d7a1b4c6f3e9a2d5b8c1e4a7f'; // Hash of actual password, never store plaintext
+// Admin password injected at build time — never stored in plaintext in the repo
+// GitHub Actions replaces __ADMIN_PASSWORD__ with the real value from secrets
 const ADMIN_EMAIL = 'o.olasunkanmi@mixtafrica.com';
 function hashPassword(pwd) { let hash = 0; for (let i = 0; i < pwd.length; i++) { const char = pwd.charCodeAt(i); hash = ((hash << 5) - hash) + char; hash = hash & hash; } return 'sha256_' + Math.abs(hash).toString(16).padStart(32, '0'); }
 function openDiagAuth() { 
@@ -2762,18 +2763,23 @@ function toggleForgotPassword() {
     forgotForm.style.display = 'none';
   }
 }
-function submitAdmin() { 
-  const pwd = document.getElementById('admin-pwd').value; 
-  const hash = hashPassword(pwd);
-  // Verify against hashed password (in production, never compare hashes directly — use bcrypt/argon2)
-  if (hash === ADMIN_PWD_HASH || pwd === 'PDadmin1234') { 
-    diagUnlocked = true; 
-    closeAdminModal(); 
-    renderDiagPanel(); 
-    document.getElementById('diag-panel').classList.add('open'); 
-  } else { 
-    alert('Incorrect admin password.'); 
-  } 
+function submitAdmin() {
+  const pwd = document.getElementById('admin-pwd').value;
+  // ADMIN_PASSWORD is injected at build time by GitHub Actions from the ADMIN_PASSWORD secret.
+  // Falls back to localStorage for local development.
+  const correctPwd = window.ADMIN_PASSWORD || localStorage.getItem('ADMIN_PASSWORD') || '';
+  if (!correctPwd) {
+    alert('Admin password not configured. Add ADMIN_PASSWORD to GitHub Secrets.');
+    return;
+  }
+  if (pwd === correctPwd) {
+    diagUnlocked = true;
+    closeAdminModal();
+    renderDiagPanel();
+    document.getElementById('diag-panel').classList.add('open');
+  } else {
+    alert('Incorrect admin password.');
+  }
 }
 function submitForgotPassword() {
   const email = document.getElementById('admin-recovery-email').value.trim();
@@ -5215,7 +5221,7 @@ function sendReminderEmail() {
     if (idx >= emailsToSend.length) {
       var currentMode = document.getElementById('reminder-mode').value;
       if (failed === 0) {
-        statusEl.textContent = '✓ ' + dispatched + ' email' + (dispatched !== 1 ? 's' : '') + ' queued — delivering within 30 seconds' + (currentMode === 'test' ? ' (test mode)' : '');
+        statusEl.textContent = '✓ ' + dispatched + ' email' + (dispatched !== 1 ? 's' : '') + ' queued — delivering within 60 seconds' + (currentMode === 'test' ? ' (test mode)' : '');
       } else {
         statusEl.textContent = dispatched + ' queued, ' + failed + ' failed. Check that GH_WORKFLOW_TOKEN has workflow scope.';
       }
@@ -5225,6 +5231,12 @@ function sendReminderEmail() {
     }
 
     var emailGroup = emailsToSend[idx];
+
+    // Skip groups with no HTML content (empty departments)
+    if (!emailGroup.html || emailGroup.html.trim().length < 100) {
+      dispatchNext(idx + 1);
+      return;
+    }
 
     fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/' + WORKFLOW + '/dispatches', {
       method: 'POST',
@@ -5247,8 +5259,9 @@ function sendReminderEmail() {
     .then(function(res) {
       if (res.status === 204) {
         dispatched++;
-        statusEl.textContent = 'Queuing... ' + dispatched + ' of ' + emailsToSend.length;
-        dispatchNext(idx + 1);
+        statusEl.textContent = 'Queuing... ' + dispatched + ' of ' + emailsToSend.length + ' (' + emailGroup.dept + ')';
+        // Wait 3 seconds between each dispatch to avoid GitHub rate limiting
+        setTimeout(function() { dispatchNext(idx + 1); }, 3000);
       } else {
         return res.json().then(function(data) {
           throw new Error(data.message || 'HTTP ' + res.status);
@@ -5258,7 +5271,8 @@ function sendReminderEmail() {
     .catch(function(err) {
       failed++;
       console.error('[GH Dispatch] Failed for', emailGroup.dept, err.message);
-      dispatchNext(idx + 1);
+      // Still wait before retrying next to avoid cascading rate limit failures
+      setTimeout(function() { dispatchNext(idx + 1); }, 3000);
     });
   }
 
@@ -6619,6 +6633,11 @@ window.onload = function () {
     const _gh = '__GH_WORKFLOW_TOKEN__';
     if (_gh && !_gh.startsWith('__')) window.GH_WORKFLOW_TOKEN = _gh;
     else window.GH_WORKFLOW_TOKEN = localStorage.getItem('GH_WORKFLOW_TOKEN') || '';
+  }
+  if (!window.ADMIN_PASSWORD) {
+    const _ap = '__ADMIN_PASSWORD__';
+    if (_ap && !_ap.startsWith('__')) window.ADMIN_PASSWORD = _ap;
+    else window.ADMIN_PASSWORD = localStorage.getItem('ADMIN_PASSWORD') || '';
   }
   
   updateTargetHeaders();
