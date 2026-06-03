@@ -500,7 +500,7 @@ body.users-bar-visible .dept-sidebar {
   .chart-wrap { height: 170px; }
   .dept-container { padding: 0 12px 24px; }
   .dept-layout { grid-template-columns: 1fr !important; gap: 12px; }
-  .dept-sidebar { display: none !important; }
+  .dept-sidebar { display: none; }
   .mobile-dept-scroller { display: flex; }
   .step-card { padding: 14px; }
   .step-text { font-size: 13px; }
@@ -4153,30 +4153,38 @@ Output EXACTLY these HTML blocks (using the exact class names provided) to injec
 
 Output ONLY the HTML, nothing else before or after it.`;
 
-  // ── Use Groq (CORS-friendly, fast) ──
+  // ── Use Groq primary / Cerebras fallback ──
   const GROQ_KEY = window.GROQ_API_KEY || localStorage.getItem('GROQ_API_KEY');
-  if (!GROQ_KEY) {
-    if (loadEl) loadEl.innerHTML = '<span style="color:var(--status-orange);font-size:12px">⚠ GROQ_API_KEY not configured as environment secret.</span>';
+  const CEREBRAS_KEY = window.CEREBRAS_API_KEY || localStorage.getItem('CEREBRAS_API_KEY');
+  if (!GROQ_KEY && !CEREBRAS_KEY) {
+    if (loadEl) loadEl.innerHTML = '<span style="color:var(--status-orange);font-size:12px">⚠ No AI API key configured (GROQ_API_KEY or CEREBRAS_API_KEY).</span>';
     return;
   }
+  const _piMessages1 = [
+    { role: 'system', content: 'You are a sharp business strategy associate at a real estate development firm. Write punchy, direct executive intelligence. Output only valid HTML using the exact class names given. No markdown, no preamble.' },
+    { role: 'user', content: prompt }
+  ];
   try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        max_tokens: 1400,
-        temperature: 0.3,
-        messages: [
-          { role: 'system', content: 'You are a sharp business strategy associate at a real estate development firm. Write punchy, direct executive intelligence. Output only valid HTML using the exact class names given. No markdown, no preamble.' },
-          { role: 'user', content: prompt }
-        ]
-      })
-    });
+    let res;
+    if (GROQ_KEY) {
+      res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
+        body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 1400, temperature: 0.3, messages: _piMessages1 })
+      });
+    }
+    if (!GROQ_KEY || !res.ok) {
+      if (!CEREBRAS_KEY) throw new Error('Groq failed and no Cerebras key available');
+      res = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CEREBRAS_KEY },
+        body: JSON.stringify({ model: 'llama-3.3-70b', max_tokens: 1400, temperature: 0.3, messages: _piMessages1 })
+      });
+    }
     const data = await res.json();
     const text = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content
       ? data.choices[0].message.content.trim() : '';
-    if (!text) throw new Error('Empty response from Groq');
+    if (!text) throw new Error('Empty response from AI provider');
 
     // Strip any accidental markdown fences
     const clean = text.replace(/^```html?\n?/i,'').replace(/\n?```$/,'').trim();
@@ -5462,34 +5470,38 @@ Write a comprehensive executive performance report with these sections:
 Write in a direct, analytical tone for executive leadership. Use specific numbers. Draw conclusions, not just descriptions. Format tables clearly using | pipe notation.`;
 
   try {
-    // Use Groq API — fast, reliable, no CORS issues from static HTML
+    // Use Groq primary / Cerebras fallback
     const groqKey = window.GROQ_API_KEY || localStorage.getItem('GROQ_API_KEY');
-    if (!groqKey) {
-      statusEl.textContent = '⚠ Groq API key not configured. Set GROQ_API_KEY in GitHub secrets or localStorage.';
-      console.error('GROQ_API_KEY not found in environment or localStorage');
+    const cerebrasKey = window.CEREBRAS_API_KEY || localStorage.getItem('CEREBRAS_API_KEY');
+    if (!groqKey && !cerebrasKey) {
+      statusEl.textContent = '⚠ No AI API key configured (GROQ_API_KEY or CEREBRAS_API_KEY).';
       return;
     }
-    
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + groqKey
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        max_tokens: 4096,
-        temperature: 0.3,
-        messages: [
-          { role: 'system', content: 'You are a senior real estate project analyst. Write precise, data-driven executive reports. Always use the exact numbers provided. Format all tables with pipe notation.' },
-          { role: 'user', content: prompt }
-        ]
-      })
-    });
+    const _reportMessages = [
+      { role: 'system', content: 'You are a senior real estate project analyst. Write precise, data-driven executive reports. Always use the exact numbers provided. Format all tables with pipe notation.' },
+      { role: 'user', content: prompt }
+    ];
+    let res;
+    if (groqKey) {
+      res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + groqKey },
+        body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 4096, temperature: 0.3, messages: _reportMessages })
+      });
+    }
+    if (!groqKey || !res.ok) {
+      if (!cerebrasKey) throw new Error('Groq failed and no Cerebras key available');
+      statusEl.textContent = 'Groq unavailable, switching to Cerebras...';
+      res = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cerebrasKey },
+        body: JSON.stringify({ model: 'llama-3.3-70b', max_tokens: 4096, temperature: 0.3, messages: _reportMessages })
+      });
+    }
 
     if (!res.ok) {
       const err = await res.text();
-      throw new Error('Groq API error ' + res.status + ': ' + err.substring(0,200));
+      throw new Error('AI API error ' + res.status + ': ' + err.substring(0,200));
     }
 
     const data = await res.json();
@@ -5497,7 +5509,7 @@ Write in a direct, analytical tone for executive leadership. Use specific number
       ? data.choices[0].message.content.trim()
       : '';
 
-    if (!text) throw new Error('Empty response from Groq');
+    if (!text) throw new Error('Empty response from AI provider');
 
     _reportContent = text;
     document.getElementById('report-outline-preview').textContent = text;
@@ -6514,14 +6526,26 @@ async function sendChatMessage() {
   } catch(e) {
     try {
       const groqKey = window.GROQ_API_KEY || localStorage.getItem('GROQ_API_KEY');
-      if (!groqKey) throw new Error('No API key. Set GROQ_API_KEY in localStorage to enable the chatbot.');
-      const gr = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+groqKey},
-        body: JSON.stringify({ model:'llama-3.3-70b-versatile', max_tokens:1200,
-          messages:[{role:'system',content:systemPrompt},...messages] })
-      });
-      if (!gr.ok) throw new Error('Groq ' + gr.status);
+      const cerebrasKey = window.CEREBRAS_API_KEY || localStorage.getItem('CEREBRAS_API_KEY');
+      if (!groqKey && !cerebrasKey) throw new Error('No fallback API key configured.');
+      const _chatMsgs = [{role:'system',content:systemPrompt},...messages];
+      let gr;
+      if (groqKey) {
+        gr = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+groqKey},
+          body: JSON.stringify({ model:'llama-3.3-70b-versatile', max_tokens:1200, messages:_chatMsgs })
+        });
+      }
+      if (!groqKey || !gr.ok) {
+        if (!cerebrasKey) throw new Error('Groq ' + (gr ? gr.status : 'unavailable') + ' and no Cerebras key.');
+        gr = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+cerebrasKey},
+          body: JSON.stringify({ model:'llama-3.3-70b', max_tokens:1200, messages:_chatMsgs })
+        });
+      }
+      if (!gr.ok) throw new Error('All AI providers failed (' + gr.status + ')');
       const gd = await gr.json();
       answer = gd.choices?.[0]?.message?.content || 'No response.';
     } catch(e2) { answer = '\u26a0\ufe0f ' + e2.message; }
@@ -6552,6 +6576,9 @@ function removeChatMsg(id) { const el=document.getElementById(id); if(el) el.rem
 window.onload = function () {
   if (!window.GROQ_API_KEY && typeof process !== 'undefined' && process.env && process.env.GROQ_API_KEY) {
     window.GROQ_API_KEY = process.env.GROQ_API_KEY;
+  }
+  if (!window.CEREBRAS_API_KEY && typeof process !== 'undefined' && process.env && process.env.CEREBRAS_API_KEY) {
+    window.CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;
   }
   
   updateTargetHeaders();
