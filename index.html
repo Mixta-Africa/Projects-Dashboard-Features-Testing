@@ -3137,11 +3137,9 @@ function toggleMilestones(id) {
 let _milestonesLoaded = { Crossings: false, Annexe: false };
 
 async function fetchAndRenderMilestones() {
-  // Fetch both workbooks in parallel — they're already in memory from syncWithGoogleSheet
-  // but we need specific tabs (KD P for Crossings, KD for Annexe) that aren't in the
-  // date-session filter, so we re-fetch the same workbook URLs and pull those tabs.
+  // Corrected tabPatterns: Crossings uses "KD P", Annexe uses "KD"
   const jobs = [
-    { proj: 'Crossings', url: SHEET_CROSSINGS, tabPattern: /^KD$/i, hasActual: false, contentEl: 'ms-cx-content', loadEl: 'ms-cx-loading', accentVar: '--cx-color' },
+    { proj: 'Crossings', url: SHEET_CROSSINGS, tabPattern: /^KD P$/i, hasActual: false, contentEl: 'ms-cx-content', loadEl: 'ms-cx-loading', accentVar: '--cx-color' },
     { proj: 'Annexe',    url: SHEET_ANNEXE,    tabPattern: /^KD$/i,      hasActual: true,  contentEl: 'ms-annex-content', loadEl: 'ms-annex-loading', accentVar: '--annex-color' }
   ];
 
@@ -3150,14 +3148,13 @@ async function fetchAndRenderMilestones() {
       const buf = await fetch(job.url).then(r => r.arrayBuffer());
       const wb  = XLSX.read(buf, { type: 'array', cellDates: true });
 
-      // Find the right tab — try exact then fallback to partial
+      // Find the right tab
       let sheetName = wb.SheetNames.find(n => job.tabPattern.test(n.trim()));
       if (!sheetName) {
-        // Try broader match
         sheetName = wb.SheetNames.find(n => /KD/i.test(n.trim()) && (job.hasActual ? !/P$/i.test(n) : /P$/i.test(n)));
       }
       if (!sheetName) {
-        document.getElementById(job.loadEl).innerHTML = `<span style="color:var(--status-orange)">⚠ "${job.proj === 'Crossings' ? 'KD P' : 'KD'}" tab not found in sheet. Available tabs: ${wb.SheetNames.join(', ')}</span>`;
+        document.getElementById(job.loadEl).innerHTML = `<span style="color:var(--status-orange)">⚠ Tab matching "${job.proj === 'Crossings' ? 'KD P' : 'KD'}" not found. Available: ${wb.SheetNames.join(', ')}</span>`;
         return;
       }
 
@@ -3172,40 +3169,43 @@ async function fetchAndRenderMilestones() {
 }
 
 function renderMilestonesPanel(rows, job) {
-  // 1. ROBUST EXTRACTION LOGIC
   let projected = 0;
   let actual = 0;
 
-  // Use Regex to find "Last Update" even if there are colons or weird casing
+  // 1. EXTRACT OVERALL TIMELINE / TOP-LEVEL VARIANCE
   const updateRow = rows.find(r => r && r.some && r.some(cell => /Last Update|Overall/i.test(String(cell))));
 
   if (updateRow) {
-      // Extract all cells containing '%' and parse them into clean numbers
-      const percentages = updateRow
-          .map(cell => String(cell))
-          .filter(cell => cell.includes('%'))
-          .map(cell => parseFloat(cell.replace(/[^0-9.-]+/g, '')))
-          .filter(n => !isNaN(n));
-
-      if (job.proj === 'Annexe') {
-          projected = percentages[0] || 0;
-          actual = percentages[1] || 0;
-      } else {
-          projected = percentages[0] || 0;
+      const values = [];
+      for (let i = 1; i < updateRow.length; i++) {
+          const cell = updateRow[i];
+          if (typeof cell === 'number' && cell <= 2) {
+              values.push(cell * 100);
+          } else if (typeof cell === 'string' && cell.includes('%')) {
+              const n = parseFloat(cell.replace(/[^0-9.-]+/g, ''));
+              if (!isNaN(n)) values.push(n);
+          }
+      }
+      
+      if (job.hasActual) { // Annexe
+          projected = values[0] || 0;
+          actual = values[1] || 0;
+      } else { // Crossings KD P only has progress to date
+          projected = values[0] || 0; 
       }
   }
 
-  // 2. DOM RENDERING (GAP ANALYSIS UI)
   const panel = document.getElementById(job.contentEl);
   if (!panel) return;
 
+  // 2. RENDER SUMMARY CARDS
   let html = `
       <div style="margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
           <h3 style="margin: 0; font-size: 13px; font-weight: 800; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.05em;">Timeline Variance</h3>
       </div>
       <div class="milestones-body" style="padding: 0;">`;
 
-  if (job.proj === 'Annexe') {
+  if (job.hasActual) {
       const gap = projected - actual;
       const gapColor = gap > 0 ? 'var(--status-red)' : 'var(--status-green)';
       const gapBg = gap > 0 ? 'var(--status-red-bg)' : 'var(--status-green-bg)';
@@ -3220,7 +3220,7 @@ function renderMilestonesPanel(rows, job) {
               <div class="progress-container" style="margin-bottom: 16px;">
                   <div style="display:flex; justify-content: space-between; font-size: 11px; font-weight:700; text-transform:uppercase; margin-bottom: 6px;">
                       <span style="color: var(--text-muted);">Projected Plan</span>
-                      <span style="color: var(--text-primary); font-family: 'DM Mono', monospace; font-size: 13px;">${projected}%</span>
+                      <span style="color: var(--text-primary); font-family: 'DM Mono', monospace; font-size: 13px;">${projected.toFixed(1)}%</span>
                   </div>
                   <div style="background: var(--border-md); height: 8px; border-radius: 4px; overflow: hidden;">
                       <div style="background: var(--status-orange); width: ${projected}%; height: 100%; border-radius: 4px;"></div>
@@ -3230,7 +3230,7 @@ function renderMilestonesPanel(rows, job) {
               <div class="progress-container">
                   <div style="display:flex; justify-content: space-between; font-size: 11px; font-weight:700; text-transform:uppercase; margin-bottom: 6px;">
                       <span style="color: var(--text-muted);">Actual Progress</span>
-                      <span style="color: var(--text-primary); font-family: 'DM Mono', monospace; font-size: 13px;">${actual}%</span>
+                      <span style="color: var(--text-primary); font-family: 'DM Mono', monospace; font-size: 13px;">${actual.toFixed(1)}%</span>
                   </div>
                   <div style="background: var(--border-md); height: 8px; border-radius: 4px; overflow: hidden;">
                       <div style="background: var(--status-green); width: ${actual}%; height: 100%; border-radius: 4px;"></div>
@@ -3239,94 +3239,69 @@ function renderMilestonesPanel(rows, job) {
           </div>
       `;
   } else {
-      // Crossings (Projected Only)
       html += `
           <div class="gap-analysis-card" style="background: var(--bg); padding: 16px; border-radius: 8px; border: 1px solid var(--border);">
               <div style="display: flex; justify-content: space-between; margin-bottom: 16px; align-items: center;">
-                  <span style="font-weight: 800; color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Deficit / Surplus</span>
-                  <span style="color: var(--text-muted); font-size: 11px; font-style: italic;">(Actuals offline)</span>
+                  <span style="font-weight: 800; color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Project Progress</span>
+                  <span style="color: var(--status-blue); background: var(--status-blue-bg); padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 800; border: 1px solid var(--status-blue-border)">${projected.toFixed(1)}% to date</span>
               </div>
               
               <div class="progress-container">
                   <div style="display:flex; justify-content: space-between; font-size: 11px; font-weight:700; text-transform:uppercase; margin-bottom: 6px;">
-                      <span style="color: var(--text-muted);">Projected Plan</span>
-                      <span style="color: var(--text-primary); font-family: 'DM Mono', monospace; font-size: 13px;">${projected}%</span>
+                      <span style="color: var(--text-muted);">Progress to Date</span>
+                      <span style="color: var(--text-primary); font-family: 'DM Mono', monospace; font-size: 13px;">${projected.toFixed(1)}%</span>
                   </div>
                   <div style="background: var(--border-md); height: 8px; border-radius: 4px; overflow: hidden;">
-                      <div style="background: var(--status-orange); width: ${projected}%; height: 100%; border-radius: 4px;"></div>
+                      <div style="background: var(--status-blue); width: ${projected}%; height: 100%; border-radius: 4px;"></div>
                   </div>
               </div>
           </div>
       `;
   }
-
   html += `</div>`;
 
-  // 3. DETAILED MILESTONE TABLE GENERATION
-const milestones = [];
+  // 3. UNIFIED TABLE PARSER (Dynamically maps columns based on sheet headers)
+  const milestones = [];
+  let colName = 1, colStatus = 2, colProj = 5, colAct = 6, colDate = 3; 
 
-if (job.proj === 'Crossings') {
-  // ---------------------------------------------------------
-  // CROSSINGS: VERTICAL PARSING (Works as intended)
-  // ---------------------------------------------------------
-  let colName = 1, colProj = 4, colAct = 5, colDate = 3, colStatus = 2;
-  const headerRow = rows.find(r => r && r.some && r.some(c => /Activity|Milestone/i.test(String(c))));
+  const headerRow = rows.find(r => r && r.some && r.some(c => /ACTION|Activity/i.test(String(c))));
 
   if (headerRow) {
-    colName = headerRow.findIndex(c => /Activity|Milestone|Description/i.test(String(c)));
-    colProj = headerRow.findIndex(c => /Projected|Plan/i.test(String(c)));
-    colAct = headerRow.findIndex(c => /Actual/i.test(String(c)));
-    colDate = headerRow.findIndex(c => /Date|Target/i.test(String(c)));
-    colStatus = headerRow.findIndex(c => /Status/i.test(String(c)));
+    colName = headerRow.findIndex(c => /ACTION|Activity/i.test(String(c)));
+    colStatus = headerRow.findIndex(c => /STATUS/i.test(String(c)));
+    colProj = headerRow.findIndex(c => /PROJECTED/i.test(String(c)));
+    colAct = headerRow.findIndex(c => /PROGRESS TO DATE/i.test(String(c)));
+    colDate = headerRow.findIndex(c => /COMPLETION|END/i.test(String(c)));
+    
     if (colName === -1) colName = 1;
+    if (colStatus === -1) colStatus = 2;
   }
 
   for (let r = 0; r < rows.length; r++) {
     const row = rows[r];
     if (!row || row.every(c => !c)) continue;
 
-    const name = String(row[colName] || '').trim();
+    const name = String(row[colName] || row[1] || '').trim();
     if (!name || name.length < 3) continue;
     if (/^(action|status|last update|construction|progress|lakowe|overall|actual|target|legend|road progress)/i.test(name)) continue;
 
-    const projPct = parsePct(colProj >= 0 ? row[colProj] : null);
-    const actPct  = (job.hasActual && colAct >= 0) ? parsePct(row[colAct]) : null;
-    const dateStr = formatMilestoneDate(colDate >= 0 ? row[colDate] : null);
-    const status  = String(colStatus >= 0 ? row[colStatus] : '').trim();
-
-    if (projPct === null && actPct === null && !status) continue;
-    milestones.push({ name, dateStr, projPct, actPct, status });
+    const status = String(colStatus >= 0 ? row[colStatus] : '').trim();
+    
+    if (job.hasActual) { // Annexe
+       let projPct = parsePct(colProj >= 0 ? row[colProj] : null);
+       let actPct = parsePct(colAct >= 0 ? row[colAct] : null);
+       let dateStr = formatMilestoneDate(colDate >= 0 ? row[colDate] : null);
+       
+       if (projPct === null && actPct === null && !status) continue;
+       milestones.push({ name, dateStr, projPct, actPct, status });
+    } else { // Crossings
+       // KD P has "PROGRESS TO DATE". Map to projPct so the single-bar UI renders correctly
+       let actPct = parsePct(colAct >= 0 ? row[colAct] : null);
+       if (actPct === null && !status) continue;
+       milestones.push({ name, dateStr: '', projPct: actPct, actPct: null, status });
+    }
   }
-} else if (job.proj === 'Annexe') {
-  // ---------------------------------------------------------
-  // ANNEXE: HORIZONTAL GANTT PARSING
-  // ---------------------------------------------------------
-  // Because the Gantt chart is visually horizontal but split into two tables 
-  // (ALMOG vs BAFF), we map the specific standard columns.
-  // Typically: col 1 = ID, col 2 = Task, col 3 = Duration, col 4 = Start, col 5 = Finish
 
-  for (let r = 0; r < rows.length; r++) {
-    const row = rows[r];
-    if (!row || row.length < 5) continue;
-
-    const taskName = String(row[2] || '').trim(); // Adjust column index if Task is elsewhere
-    if (!taskName || /^(Task|Description|ALMOG|BAFF)/i.test(taskName)) continue;
-
-    const duration = String(row[3] || '').trim();
-    const finishDate = formatMilestoneDate(row[5] || null);
-
-    // Push to milestones array using Gantt data to fit the table structure safely
-    milestones.push({ 
-      name: taskName, 
-      dateStr: finishDate, 
-      projPct: null, // Gantt doesn't have percentages inherently
-      actPct: null, 
-      status: duration ? duration + ' Days' : 'Pending'
-    });
-  }
-}
-
-  // Inject Table HTML if tasks are found
   if (milestones.length > 0) {
     html += '<div class="milestone-table-wrap" style="margin-top:20px;"><table class="milestone-table"><thead><tr>';
     html += '<th>Milestone / Activity</th>';
@@ -3335,31 +3310,30 @@ if (job.proj === 'Crossings') {
     html += '</tr></thead><tbody>';
 
     milestones.forEach(m => {
-      const gap = (job.hasActual && m.actPct !== null && m.projPct !== null) ? (m.actPct - m.projPct) : null;
-      const gapClass = gap === null ? 'nodata' : (gap < -5 ? 'behind' : gap > 5 ? 'ahead' : 'ontrack');
-      const gapLabel = gap === null ? '&#8212;' : (gap >= 0 ? '+' + gap.toFixed(1) + 'pp' : gap.toFixed(1) + 'pp');
-      const barClass = job.hasActual ? gapClass : (m.projPct === null ? 'ontrack' : m.projPct >= 90 ? 'ahead' : m.projPct >= 40 ? 'ontrack' : 'behind');
-      
-      let statusColor = 'var(--text-secondary)';
-      if (/complet|done/i.test(m.status)) statusColor = 'var(--status-green)';
-      else if (/ongoing|in.?progress/i.test(m.status)) statusColor = 'var(--status-blue)';
-      else if (/delayed|off.?track|behind/i.test(m.status)) statusColor = 'var(--status-red)';
-
-      html += '<tr><td class="ms-name">' + escHtml(m.name) + '</td>';
-      
       if (job.hasActual) {
+        const gap = (m.actPct !== null && m.projPct !== null) ? (m.actPct - m.projPct) : null;
+        const gapClass = gap === null ? 'nodata' : (gap < -5 ? 'behind' : gap > 5 ? 'ahead' : 'ontrack');
+        const gapLabel = gap === null ? '&#8212;' : (gap >= 0 ? '+' + gap.toFixed(1) + 'pp' : gap.toFixed(1) + 'pp');
+        
+        html += '<tr><td class="ms-name">' + escHtml(m.name) + '</td>';
         html += '<td class="ms-date" style="color:var(--text-muted);white-space:nowrap">' + (m.dateStr || '&#8212;') + '</td>';
         const pw = m.projPct !== null ? m.projPct : 0;
-        html += `<td><div style="display:flex;align-items:center;gap:8px"><div class="ms-bar-wrap"><div class="ms-bar-track"><div class="ms-bar-proj" style="width:${pw}%"></div></div></div><span class="ms-pct" style="color:var(--text-muted);flex-shrink:0">${m.projPct !== null ? m.projPct + '%' : '&#8212;'}</span></div></td>`;
+        html += `<td><div style="display:flex;align-items:center;gap:8px"><div class="ms-bar-wrap"><div class="ms-bar-track"><div class="ms-bar-proj" style="width:${pw}%"></div></div></div><span class="ms-pct" style="color:var(--text-muted);flex-shrink:0">${m.projPct !== null ? m.projPct.toFixed(0) + '%' : '&#8212;'}</span></div></td>`;
         const aw = m.actPct !== null ? m.actPct : 0;
-        html += `<td><div style="display:flex;align-items:center;gap:8px"><div class="ms-bar-wrap"><div class="ms-bar-track"><div class="ms-bar-actual ${barClass}" style="width:${aw}%"></div></div></div><span class="ms-pct" style="color:var(--text-secondary);flex-shrink:0">${m.actPct !== null ? m.actPct + '%' : '&#8212;'}</span></div></td>`;
-        html += `<td><span class="ms-gap ${gapClass}">${gapLabel}</span></td>`;
+        html += `<td><div style="display:flex;align-items:center;gap:8px"><div class="ms-bar-wrap"><div class="ms-bar-track"><div class="ms-bar-actual ${gapClass}" style="width:${aw}%"></div></div></div><span class="ms-pct" style="color:var(--text-secondary);flex-shrink:0">${m.actPct !== null ? m.actPct.toFixed(0) + '%' : '&#8212;'}</span></div></td>`;
+        html += `<td><span class="ms-gap ${gapClass}">${gapLabel}</span></td></tr>`;
       } else {
-        html += `<td style="font-size:11px;font-weight:600;color:${statusColor}">${escHtml(m.status)}</td>`;
+        let statusColor = 'var(--text-secondary)';
+        if (/complet|done/i.test(m.status)) statusColor = 'var(--status-green)';
+        else if (/ongoing|in.?progress/i.test(m.status)) statusColor = 'var(--status-blue)';
+        else if (/delayed|off.?track|behind/i.test(m.status)) statusColor = 'var(--status-red)';
+
+        html += '<tr><td class="ms-name">' + escHtml(m.name) + '</td>';
+        html += `<td style="font-size:11px;font-weight:700;color:${statusColor};white-space:nowrap">${escHtml(m.status)}</td>`;
         const pw = m.projPct !== null ? m.projPct : 0;
-        html += `<td><div style="display:flex;align-items:center;gap:8px"><div class="ms-bar-wrap" style="flex:1"><div class="ms-bar-track"><div class="ms-bar-actual ${barClass}" style="width:${pw}%"></div></div></div><span class="ms-pct" style="color:var(--text-secondary);flex-shrink:0;min-width:32px;text-align:right">${m.projPct !== null ? m.projPct + '%' : '&#8212;'}</span></div></td>`;
+        const barClass = m.projPct === null ? 'ontrack' : m.projPct >= 100 ? 'ahead' : m.projPct >= 40 ? 'ontrack' : 'behind';
+        html += `<td><div style="display:flex;align-items:center;gap:8px"><div class="ms-bar-wrap" style="flex:1"><div class="ms-bar-track"><div class="ms-bar-actual ${barClass}" style="width:${pw}%"></div></div></div><span class="ms-pct" style="color:var(--text-secondary);flex-shrink:0;min-width:32px;text-align:right">${m.projPct !== null ? m.projPct.toFixed(0) + '%' : '&#8212;'}</span></div></td></tr>`;
       }
-      html += '</tr>';
     });
     html += '</tbody></table></div>';
   }
@@ -3369,24 +3343,34 @@ if (job.proj === 'Crossings') {
   panel.style.display = 'block';
   _milestonesLoaded[job.proj] = true;
 }
-  
+
 function parsePct(val) {
   if (val === '' || val === null || val === undefined) return null;
+  if (typeof val === 'number') {
+      if (val > 1000) return null; // Reject Excel dates
+      return val <= 1 ? val * 100 : val;
+  }
   const s = String(val).replace('%','').trim();
+  if (/^[a-zA-Z]/.test(s)) return null; 
   const n = parseFloat(s);
   if (isNaN(n)) return null;
-  // If the value is 0–1 range (decimal), multiply by 100
-  return n > 1 ? n : n * 100;
+  return n <= 1 ? n * 100 : n;
 }
 
 function formatMilestoneDate(val) {
   if (!val) return '';
   if (val instanceof Date) return val.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  if (typeof val === 'number') {
+      if (val > 20000 && val < 60000) {
+          const d = new Date((val - 25569) * 86400 * 1000);
+          return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+      }
+      return '';
+  }
   const s = String(val).trim();
-  // Try parse as date string
   const d = new Date(s);
   if (!isNaN(d.getTime()) && s.length > 4) return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
-  return s; // Return as-is (e.g. "Q3 2026", "Jun 2026")
+  return s; 
 }
 
 function escHtml(s) {
