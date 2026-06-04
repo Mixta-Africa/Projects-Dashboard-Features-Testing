@@ -36,15 +36,15 @@ jobs:
           CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
         run: sed -i "s|__CEREBRAS_API_KEY__|${CEREBRAS_API_KEY}|g" index.html
 
-      - name: Inject Resend API key
+      - name: Inject Apps Script URL
         env:
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-        run: sed -i "s|__RESEND_API_KEY__|${RESEND_API_KEY}|g" index.html
+          APPS_SCRIPT_URL: ${{ secrets.APPS_SCRIPT_URL }}
+        run: sed -i "s|__APPS_SCRIPT_URL__|${APPS_SCRIPT_URL}|g" index.html
 
-      - name: Inject GitHub Workflow Token
+      - name: Inject Apps Script Token
         env:
-          GH_WORKFLOW_TOKEN: ${{ secrets.GH_WORKFLOW_TOKEN }}
-        run: sed -i "s|__GH_WORKFLOW_TOKEN__|${GH_WORKFLOW_TOKEN}|g" index.html
+          APPS_SCRIPT_TOKEN: ${{ secrets.APPS_SCRIPT_TOKEN }}
+        run: sed -i "s|__APPS_SCRIPT_TOKEN__|${APPS_SCRIPT_TOKEN}|g" index.html
 
       - name: Inject Admin Password
         env:
@@ -53,16 +53,13 @@ jobs:
 
       - name: Verify injections
         run: |
-          grep -q '__GROQ_API_KEY__'      index.html && echo "WARNING: GROQ key not injected"          || echo "✓ GROQ_API_KEY injected"
-          grep -q '__CEREBRAS_API_KEY__'  index.html && echo "WARNING: CEREBRAS key not injected"      || echo "✓ CEREBRAS_API_KEY injected"
-          grep -q '__RESEND_API_KEY__'    index.html && echo "WARNING: RESEND key not injected"        || echo "✓ RESEND_API_KEY injected"
-          grep -q '__GH_WORKFLOW_TOKEN__' index.html && echo "WARNING: GH_WORKFLOW_TOKEN not injected" || echo "✓ GH_WORKFLOW_TOKEN injected"
-          grep -q '__ADMIN_PASSWORD__'    index.html && echo "WARNING: ADMIN_PASSWORD not injected"    || echo "✓ ADMIN_PASSWORD injected"
+          grep -q '__GROQ_API_KEY__'     index.html && echo "WARNING: GROQ key not injected"         || echo "✓ GROQ_API_KEY injected"
+          grep -q '__CEREBRAS_API_KEY__' index.html && echo "WARNING: CEREBRAS key not injected"     || echo "✓ CEREBRAS_API_KEY injected"
+          grep -q '__APPS_SCRIPT_URL__'  index.html && echo "WARNING: APPS_SCRIPT_URL not injected"  || echo "✓ APPS_SCRIPT_URL injected"
+          grep -q '__APPS_SCRIPT_TOKEN__' index.html && echo "WARNING: APPS_SCRIPT_TOKEN not injected" || echo "✓ APPS_SCRIPT_TOKEN injected"
+          grep -q '__ADMIN_PASSWORD__'   index.html && echo "WARNING: ADMIN_PASSWORD not injected"   || echo "✓ ADMIN_PASSWORD injected"
 
-      - name: Setup GitHub Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload site to Pages
+      - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
