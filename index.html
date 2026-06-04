@@ -874,6 +874,8 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
 .milestones-panel.expanded .milestones-toggle { transform: rotate(180deg); }
 .milestones-body { display: none; padding: 20px; }
 .milestones-panel.expanded .milestones-body { display: block; animation: fadeUp 0.25s ease; }
+/* On the standalone Milestones page the body is always visible — no collapse panel parent */
+.analytics-card .milestones-body { display: block !important; animation: none; padding: 0; }
 .milestones-loading { color: #a1a1aa; font-size: 13px; padding: 8px 0; display: flex; align-items: center; gap: 10px; }
 .milestones-loading-dot { width: 8px; height: 8px; border-radius: 50%; border: 2px solid #e4e4e7; border-top-color: currentColor; animation: piSpin 0.8s linear infinite; }
 .milestone-gap-summary { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
