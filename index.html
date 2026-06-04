@@ -471,7 +471,175 @@ body.users-bar-visible .dept-sidebar {
 .admin-modal-actions button { padding: 10px 18px; border-radius: var(--radius-sm); border: none; font-weight: 700; cursor: pointer; flex: 1; font-family: inherit; font-size: 13px; transition: opacity 0.2s; }
 .admin-modal-actions button:hover { opacity: 0.85; }
 
-/* ── Admin Management Panel ── */
+/* ══════════════════════════════════════════════════════
+   HAMBURGER BUTTON
+   ══════════════════════════════════════════════════════ */
+.hamburger-btn {
+  display: none;
+  align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  background: none; border: 1px solid var(--border-md);
+  border-radius: var(--radius-sm); cursor: pointer;
+  color: var(--text-primary); flex-shrink: 0;
+  transition: background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.hamburger-btn:hover { background: var(--brand-grey-light); }
+
+/* ══════════════════════════════════════════════════════
+   MOBILE DRAWER
+   ══════════════════════════════════════════════════════ */
+.mobile-drawer-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45); z-index: 1100;
+  backdrop-filter: blur(2px);
+}
+.mobile-drawer-overlay.open { display: block; animation: fadeIn 0.2s ease; }
+
+.mobile-drawer {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: 260px; z-index: 1200;
+  background: var(--white);
+  box-shadow: 4px 0 24px rgba(0,0,0,0.18);
+  display: flex; flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.mobile-drawer.open { transform: translateX(0); }
+
+.mobile-drawer-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 18px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--text-primary);
+}
+.mobile-drawer-logo {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 14px; font-weight: 800; color: #fff;
+  letter-spacing: -0.02em;
+}
+.mobile-drawer-close {
+  background: rgba(255,255,255,0.12); border: none;
+  border-radius: 6px; width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: #fff;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-drawer-section-label {
+  font-size: 9px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--text-muted);
+  padding: 14px 18px 6px;
+}
+
+.mobile-drawer-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 18px; background: none; border: none;
+  border-left: 3px solid transparent;
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  color: var(--text-secondary); cursor: pointer; width: 100%;
+  text-align: left; transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-drawer-item:hover { background: var(--bg); color: var(--text-primary); }
+.mobile-drawer-item.active {
+  background: var(--bg); color: var(--active-theme-color, var(--cx-color));
+  border-left-color: var(--active-theme-color, var(--cx-color));
+}
+.mobile-drawer-icon {
+  width: 20px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; opacity: 0.7;
+}
+.mobile-drawer-item.active .mobile-drawer-icon { opacity: 1; }
+
+/* ══════════════════════════════════════════════════════
+   ANALYTICS PAGES (Milestones / Predictive / Trends)
+   ══════════════════════════════════════════════════════ */
+.analytics-page-container {
+  max-width: 1100px; margin: 0 auto;
+  padding: 28px 24px 40px;
+}
+
+.analytics-page-header {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 24px;
+  margin-bottom: 24px; box-shadow: var(--shadow);
+  gap: 16px;
+}
+.analytics-page-header-left { display: flex; align-items: center; gap: 16px; }
+.analytics-page-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ms-page-icon { background: var(--cx-color); }
+.pi-page-icon { background: #18181b; }
+.ti-page-icon { background: var(--cx-color); }
+
+.analytics-page-title {
+  font-size: 18px; font-weight: 800; color: var(--text-primary);
+  letter-spacing: -0.02em; margin-bottom: 3px;
+}
+.analytics-page-sub {
+  font-size: 12px; color: var(--text-muted); font-weight: 500;
+}
+.analytics-page-header-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+.analytics-live-chip {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 700;
+  padding: 5px 12px; border-radius: var(--radius-pill);
+  background: var(--status-green-bg); color: var(--status-green);
+  border: 1px solid var(--status-green-border);
+  letter-spacing: 0.02em;
+}
+.analytics-live-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--status-green);
+  animation: piPulse 2s ease-in-out infinite;
+}
+
+.analytics-section-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text-muted);
+  margin-bottom: 10px; padding: 0 2px;
+}
+.analytics-section-label.cx { color: var(--cx-color); }
+.analytics-section-label.annex { color: var(--annex-color); }
+.analytics-section-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.analytics-section-dot.cx { background: var(--cx-color); }
+.analytics-section-dot.annex { background: var(--annex-color); }
+
+.analytics-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px;
+  box-shadow: var(--shadow); margin-bottom: 24px;
+}
+
+/* PI page — body always visible (no collapse toggle needed) */
+.pi-page-card { padding: 0; overflow: hidden; }
+.pi-expanded-body { display: block !important; animation: none !important; }
+.ti-expanded-body { display: block !important; animation: none !important; }
+.ti-page-panel { margin: 0 !important; }
+
+/* Annexe theme — swap page icon color when Annexe is active */
+body.project-annexe .ms-page-icon { background: var(--annex-color); }
+body.project-annexe .ti-page-icon { background: var(--annex-color); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .hamburger-btn { display: flex; }
+  .analytics-page-container { padding: 16px 14px 32px; }
+  .analytics-page-header { padding: 14px 16px; }
+  .analytics-page-title { font-size: 15px; }
+  .analytics-page-icon { width: 36px; height: 36px; border-radius: 10px; }
+}
+
 .mgmt-overlay { display:none; position:fixed; inset:0; z-index:6000; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; backdrop-filter:blur(4px); padding:16px; }
 .mgmt-overlay.open { display:flex; animation:fadeInScale 0.2s ease; }
 .mgmt-panel { background:#fff; border-radius:var(--radius); width:100%; max-width:680px; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.2); overflow:hidden; font-family:'DM Sans',sans-serif; }
@@ -518,6 +686,7 @@ body.users-bar-visible .dept-sidebar {
   .sync-btn-text { display: none; }
   nav { padding: 0 14px; gap: 12px; }
   .nav-brand { font-size: 14px; }
+  .hamburger-btn { display: flex; }
   .landing-buttons { flex-direction: column; width: 100%; max-width: 320px; }
   .landing-btn { width: 100%; justify-content: center; }
   .dash-container { padding: 0 12px 24px; }
@@ -1432,6 +1601,8 @@ body.users-bar-visible .dept-sidebar {
 #bnav-updates.admin-visible { display: flex; }
 #page-updates { display: none; margin-top: var(--nav-h); min-height: calc(100vh - var(--nav-h)); background: var(--bg); }
 #page-updates.active { display: block; }
+#page-milestones, #page-predictive, #page-trends { display: none; margin-top: var(--nav-h); min-height: calc(100vh - var(--nav-h)); background: var(--bg); }
+#page-milestones.active, #page-predictive.active, #page-trends.active { display: block; }
 
 /* toolbar above the document */
 .uh-toolbar {
@@ -1609,6 +1780,10 @@ body.users-bar-visible .dept-sidebar {
 <body>
 
 <nav>
+  <!-- Mobile hamburger -->
+  <button class="hamburger-btn" id="hamburger-btn" onclick="toggleMobileDrawer()" aria-label="Menu" style="display:none;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
   <div class="nav-brand" onclick="showLanding()" title="Return to selection">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
     Projects <span>Tracker</span>
@@ -1616,6 +1791,9 @@ body.users-bar-visible .dept-sidebar {
   <div class="nav-tabs" id="nav-tabs-group" style="display:none;">
     <button class="nav-tab active" onclick="showPage('dashboard',this)">Dashboard</button>
     <button class="nav-tab" onclick="showPage('departments',this)">Departments</button>
+    <button class="nav-tab" onclick="showPage('milestones',this)">Milestones</button>
+    <button class="nav-tab" onclick="showPage('predictive',this)">Predictive</button>
+    <button class="nav-tab" onclick="showPage('trends',this)">Trends</button>
   </div>
   <div class="nav-right">
     <span class="nav-date" id="last-updated-text">Last updated: Waiting for Sync</span>
@@ -1642,7 +1820,40 @@ body.users-bar-visible .dept-sidebar {
   </div>
 </nav>
 
-<!-- ── Active Users Bar ── -->
+<!-- ── Mobile Navigation Drawer ── -->
+<div class="mobile-drawer-overlay" id="mobile-drawer-overlay" onclick="closeMobileDrawer()"></div>
+<div class="mobile-drawer" id="mobile-drawer">
+  <div class="mobile-drawer-header">
+    <div class="mobile-drawer-logo">
+      <img src="Mixta Africa.jpg" alt="Mixta Africa" style="width:28px;height:28px;border-radius:6px;object-fit:contain;">
+      <span>Projects Tracker</span>
+    </div>
+    <button class="mobile-drawer-close" onclick="closeMobileDrawer()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="mobile-drawer-section-label">Navigation</div>
+  <button class="mobile-drawer-item active" id="mdrawer-dashboard" onclick="mobileDrawerNav('dashboard',this)">
+    <span class="mobile-drawer-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+    <span>Overview</span>
+  </button>
+  <button class="mobile-drawer-item" id="mdrawer-departments" onclick="mobileDrawerNav('departments',this)">
+    <span class="mobile-drawer-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3h16a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M4 10h16a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2z"/><path d="M4 17h16a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2z"/></svg></span>
+    <span>Departments</span>
+  </button>
+  <button class="mobile-drawer-item" id="mdrawer-milestones" onclick="mobileDrawerNav('milestones',this)">
+    <span class="mobile-drawer-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></span>
+    <span>Milestones</span>
+  </button>
+  <button class="mobile-drawer-item" id="mdrawer-predictive" onclick="mobileDrawerNav('predictive',this)">
+    <span class="mobile-drawer-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+    <span>Predictive</span>
+  </button>
+  <button class="mobile-drawer-item" id="mdrawer-trends" onclick="mobileDrawerNav('trends',this)">
+    <span class="mobile-drawer-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
+    <span>Trends</span>
+  </button>
+</div>
 <div id="active-users-bar" class="hidden">
   <span class="active-users-label">🟢 Online now</span>
   <div class="active-users-list" id="active-users-list"></div>
@@ -1655,6 +1866,10 @@ body.users-bar-visible .dept-sidebar {
     <button class="bottom-nav-btn" id="bnav-departments" onclick="mobileNavClick('departments',this)"><span class="bnav-dot"></span><span class="bnav-icon"><svg width="1em" height="1em" xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'><path d='M4 3h16a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm4 2v2h10V5H8zM4 10h16a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2zm12 2v2h2v-2h-2zM4 17h16a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2zm7 2v2h7v-2h-7z'/></svg></span><span class="bnav-label">Tasks</span></button>
     <button class="bottom-nav-btn" id="bnav-ask-ai" onclick="openChatbot()"><span class="bnav-icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span class="bnav-label">Ask AI</span></button>
     <button class="bottom-nav-btn" id="bnav-updates" onclick="openUpdatesHub()"><span class="bnav-dot"></span><span class="bnav-icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span><span class="bnav-label">Updates</span></button>
+    <!-- Hidden anchor buttons for showPage() active-state tracking on new pages -->
+    <button class="bottom-nav-btn" id="bnav-milestones"  style="display:none;"></button>
+    <button class="bottom-nav-btn" id="bnav-predictive"  style="display:none;"></button>
+    <button class="bottom-nav-btn" id="bnav-trends"      style="display:none;"></button>
   </div>
 </div>
 
@@ -1781,106 +1996,17 @@ body.users-bar-visible .dept-sidebar {
 <!-- ╔══════════════════════════════════════════════════════╗ -->
 <!-- ║  PROJECT MILESTONES — LAKOWE CROSSINGS (KD P sheet) ║ -->
 <!-- ╚══════════════════════════════════════════════════════╝ -->
-<div class="milestones-panel" id="milestones-crossings">
-  <div class="milestones-header" onclick="toggleMilestones('milestones-crossings')">
-    <div class="milestones-header-left">
-      <div class="milestones-badge cx">📐</div>
-      <div>
-        <div class="milestones-title">Project Milestones & Gap Analysis</div>
-        <div class="milestones-sub">Lakowe Crossings · KD P Sheet · Projected vs. Plan</div>
-      </div>
-    </div>
-    <div class="milestones-toggle">▼</div>
-  </div>
-  <div class="milestones-body">
-    <div class="milestones-loading" id="ms-cx-loading"><span class="milestones-loading-dot" style="color:var(--cx-color)"></span>Loading milestone data from sheet…</div>
-    <div id="ms-cx-content" style="display:none;"></div>
-  </div>
-</div>
+<div id="milestones-crossings-anchor"></div>
 
 <!-- ╔══════════════════════════════════════════════════════╗ -->
 <!-- ║  PREDICTIVE INTELLIGENCE PANEL — LAKOWE CROSSINGS   ║ -->
 <!-- ╚══════════════════════════════════════════════════════╝ -->
-<div class="pi-panel" id="pi-crossings">
-  <div class="pi-header" onclick="togglePI('pi-crossings')">
-    <div class="pi-header-left">
-      <div class="pi-header-badge">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      </div>
-      <div>
-        <span class="pi-header-label">Predictive Intelligence</span>
-        <span class="pi-header-sub">Lakowe Crossings · Cash · Velocity · Schedule · Scenarios · Risk</span>
-      </div>
-    </div>
-    <div class="pi-header-right">
-      <div class="pi-live-badge"><div class="pi-pulse"></div>Live</div>
-      <div class="pi-toggle">▼</div>
-    </div>
-  </div>
-
-  <div class="pi-body" id="pi-cx-body">
-    <div class="pi-loading" id="pi-cx-loading">
-      <div class="pi-loading-spinner"></div>
-      <span>Generating strategic intelligence from live data…</span>
-    </div>
-    <div id="pi-cx-dynamic" style="display:none;"></div>
-    <div class="pi-footer" id="pi-cx-footer" style="display:none;">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-      <span id="pi-cx-footer-text">Strategic analysis generated from live dashboard data. Refreshes on every sync.</span>
-    </div>
-  </div>
-</div>
+<div id="pi-crossings-anchor"></div>
 
 <!-- ╔══════════════════════════════════════════════════════╗ -->
 <!-- ║  TREND INTELLIGENCE ENGINE — LAKOWE CROSSINGS        ║ -->
 <!-- ╚══════════════════════════════════════════════════════╝ -->
-<div class="ti-panel" id="ti-crossings" style="--ti-accent: var(--cx-color);">
-  <div class="ti-header" onclick="toggleTI('ti-crossings')">
-    <div class="ti-header-left">
-      <div class="ti-header-badge" style="background:var(--cx-color);">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M5 20V8l7-5 7 5v12"/><path d="M9 20v-5h6v5"/></svg>
-      </div>
-      <div>
-        <span class="ti-header-label">Trend Intelligence</span>
-        <span class="ti-header-sub">Lakowe Crossings · Repeated Tasks · Velocity · Risk Escalation · Time-Grouped</span>
-      </div>
-    </div>
-    <div class="ti-header-right">
-      <span class="ti-alert-badge" id="ti-cx-badge" style="display:none;"></span>
-      <div class="ti-toggle">▼</div>
-    </div>
-  </div>
-  <div class="ti-body" id="ti-cx-body">
-    <!-- Stat summary row -->
-    <div class="ti-section">
-      <div class="ti-section-title">Cross-Session Summary</div>
-      <div class="ti-stat-row" id="ti-cx-stats">
-        <div class="ti-stat"><div class="ti-stat-label">Sessions Analysed</div><div class="ti-stat-value" id="ti-cx-sessions">—</div><div class="ti-stat-sub">Historical snapshots</div></div>
-        <div class="ti-stat"><div class="ti-stat-label">Repeated Tasks</div><div class="ti-stat-value ti-warning" id="ti-cx-recurring">—</div><div class="ti-stat-sub">Same task, multiple meetings</div></div>
-        <div class="ti-stat"><div class="ti-stat-label">Escalated Risks</div><div class="ti-stat-value ti-danger" id="ti-cx-escalated">—</div><div class="ti-stat-sub">Stuck or escalating</div></div>
-      </div>
-    </div>
-
-    <!-- Alert digest -->
-    <div class="ti-section">
-      <div class="ti-section-title">Intelligence Alerts</div>
-    </div>
-    <div class="ti-digest" id="ti-cx-digest">
-      <div class="ti-digest-empty">Sync data to generate trend analysis across sessions.</div>
-    </div>
-
-    <!-- Completion velocity per session -->
-    <div class="ti-section">
-      <div class="ti-section-title">Completion Velocity — Sessions</div>
-    </div>
-    <div class="ti-velocity-list" id="ti-cx-velocity"></div>
-
-    <div class="ti-footer">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-      <span id="ti-cx-footer-text">Trend analysis runs across all available session snapshots. Refreshes on sync.</span>
-    </div>
-  </div>
-</div>
+<div id="ti-crossings-anchor"></div>
 
   </div><!-- /block-crossings -->
 
@@ -1992,106 +2118,17 @@ body.users-bar-visible .dept-sidebar {
 <!-- ╔══════════════════════════════════════════════════════╗ -->
 <!-- ║  PROJECT MILESTONES — LAKOWE ANNEXE (KD sheet)      ║ -->
 <!-- ╚══════════════════════════════════════════════════════╝ -->
-<div class="milestones-panel" id="milestones-annexe">
-  <div class="milestones-header" onclick="toggleMilestones('milestones-annexe')">
-    <div class="milestones-header-left">
-      <div class="milestones-badge annex">📐</div>
-      <div>
-        <div class="milestones-title">Project Milestones & Gap Analysis</div>
-        <div class="milestones-sub">Lakowe Annexe · KD Sheet · Projected vs. Actual</div>
-      </div>
-    </div>
-    <div class="milestones-toggle">▼</div>
-  </div>
-  <div class="milestones-body">
-    <div class="milestones-loading" id="ms-annex-loading"><span class="milestones-loading-dot" style="color:var(--annex-color)"></span>Loading milestone data from sheet…</div>
-    <div id="ms-annex-content" style="display:none;"></div>
-  </div>
-</div>
+<div id="milestones-annexe-anchor"></div>
 
 <!-- ╔══════════════════════════════════════════════════════╗ -->
 <!-- ║  PREDICTIVE INTELLIGENCE PANEL — LAKOWE ANNEXE      ║ -->
 <!-- ╚══════════════════════════════════════════════════════╝ -->
-<div class="pi-panel" id="pi-annexe">
-  <div class="pi-header" onclick="togglePI('pi-annexe')">
-    <div class="pi-header-left">
-      <div class="pi-header-badge">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      </div>
-      <div>
-        <span class="pi-header-label">Predictive Intelligence</span>
-        <span class="pi-header-sub">Lakowe Annexe · Cash · Velocity · Schedule · Scenarios · Risk</span>
-      </div>
-    </div>
-    <div class="pi-header-right">
-      <div class="pi-live-badge"><div class="pi-pulse"></div>Live</div>
-      <div class="pi-toggle">▼</div>
-    </div>
-  </div>
-
-  <div class="pi-body" id="pi-ann-body">
-    <div class="pi-loading" id="pi-ann-loading">
-      <div class="pi-loading-spinner"></div>
-      <span>Generating strategic intelligence from live data…</span>
-    </div>
-    <div id="pi-ann-dynamic" style="display:none;"></div>
-    <div class="pi-footer" id="pi-ann-footer" style="display:none;">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-      <span id="pi-ann-footer-text">Strategic analysis generated from live dashboard data. Refreshes on every sync.</span>
-    </div>
-  </div>
-</div>
+<div id="pi-annexe-anchor"></div>
 
 <!-- ╔══════════════════════════════════════════════════════╗ -->
 <!-- ║  TREND INTELLIGENCE ENGINE — LAKOWE ANNEXE           ║ -->
 <!-- ╚══════════════════════════════════════════════════════╝ -->
-<div class="ti-panel" id="ti-annexe" style="--ti-accent: var(--annex-color);">
-  <div class="ti-header" onclick="toggleTI('ti-annexe')">
-    <div class="ti-header-left">
-      <div class="ti-header-badge" style="background:var(--annex-color);">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M5 20V8l7-5 7 5v12"/><path d="M9 20v-5h6v5"/></svg>
-      </div>
-      <div>
-        <span class="ti-header-label">Trend Intelligence</span>
-        <span class="ti-header-sub">Lakowe Annexe · Repeated Tasks · Velocity · Risk Escalation · Time-Grouped</span>
-      </div>
-    </div>
-    <div class="ti-header-right">
-      <span class="ti-alert-badge" id="ti-annex-badge" style="display:none;"></span>
-      <div class="ti-toggle">▼</div>
-    </div>
-  </div>
-  <div class="ti-body" id="ti-annex-body">
-    <!-- Stat summary row -->
-    <div class="ti-section">
-      <div class="ti-section-title">Cross-Session Summary</div>
-      <div class="ti-stat-row" id="ti-annex-stats">
-        <div class="ti-stat"><div class="ti-stat-label">Sessions Analysed</div><div class="ti-stat-value" id="ti-annex-sessions">—</div><div class="ti-stat-sub">Historical snapshots</div></div>
-        <div class="ti-stat"><div class="ti-stat-label">Repeated Tasks</div><div class="ti-stat-value ti-warning" id="ti-annex-recurring">—</div><div class="ti-stat-sub">Same task, multiple meetings</div></div>
-        <div class="ti-stat"><div class="ti-stat-label">Escalated Risks</div><div class="ti-stat-value ti-danger" id="ti-annex-escalated">—</div><div class="ti-stat-sub">Stuck or escalating</div></div>
-      </div>
-    </div>
-
-    <!-- Alert digest -->
-    <div class="ti-section">
-      <div class="ti-section-title">Intelligence Alerts</div>
-    </div>
-    <div class="ti-digest" id="ti-annex-digest">
-      <div class="ti-digest-empty">Sync data to generate trend analysis across sessions.</div>
-    </div>
-
-    <!-- Completion velocity per session -->
-    <div class="ti-section">
-      <div class="ti-section-title">Completion Velocity — Sessions</div>
-    </div>
-    <div class="ti-velocity-list" id="ti-annex-velocity"></div>
-
-    <div class="ti-footer">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-      <span id="ti-annex-footer-text">Trend analysis runs across all available session snapshots. Refreshes on sync.</span>
-    </div>
-  </div>
-</div>
+<div id="ti-annexe-anchor"></div>
 
   </div><!-- /block-annexe -->
 
@@ -2116,6 +2153,7 @@ body.users-bar-visible .dept-sidebar {
         <button class="sidebar-item" onclick="showDept(this,'Crossings','MCC')">MCC <span class="dept-count">0</span></button>
         <button class="sidebar-item" onclick="showDept(this,'Crossings','Legal')">Legal <span class="dept-count">0</span></button>
         <button class="sidebar-item" onclick="showDept(this,'Crossings','General')">General <span class="dept-count">0</span></button>
+        <button class="sidebar-item" onclick="showDept(this,'Crossings','Collections')">Collections <span class="dept-count">0</span></button>
       </div>
       <div class="sidebar-section" id="sidebar-annexe" style="display:none;">
         <div class="sidebar-section-label annexe">Lakowe Annexe</div>
@@ -2128,6 +2166,7 @@ body.users-bar-visible .dept-sidebar {
         <button class="sidebar-item annexe-btn" onclick="showDept(this,'Annexe','MCC')">MCC <span class="dept-count">0</span></button>
         <button class="sidebar-item annexe-btn" onclick="showDept(this,'Annexe','Sales')">Sales <span class="dept-count">0</span></button>
         <button class="sidebar-item annexe-btn" onclick="showDept(this,'Annexe','Legal')">Legal <span class="dept-count">0</span></button>
+        <button class="sidebar-item annexe-btn" onclick="showDept(this,'Annexe','Collections')">Collections <span class="dept-count">0</span></button>
       </div>
     </div>
     <div class="dept-main">
@@ -2187,6 +2226,198 @@ body.users-bar-visible .dept-sidebar {
 </div>
 </div>
 
+
+<!-- ══ MILESTONES PAGE ══ -->
+<div id="page-milestones" class="page">
+<div class="analytics-page-container">
+
+  <!-- Page header -->
+  <div class="analytics-page-header">
+    <div class="analytics-page-header-left">
+      <div class="analytics-page-icon ms-page-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+      </div>
+      <div>
+        <div class="analytics-page-title">Project Milestones</div>
+        <div class="analytics-page-sub" id="ms-page-sub">KD Sheet · Projected vs. Actual · Gap Analysis</div>
+      </div>
+    </div>
+    <div class="analytics-page-header-right">
+      <div class="analytics-live-chip"><div class="analytics-live-dot"></div>Live Data</div>
+    </div>
+  </div>
+
+  <!-- Crossings milestones block -->
+  <div id="ms-page-crossings-block" style="display:none;">
+    <div class="analytics-section-label cx">
+      <span class="analytics-section-dot cx"></span>Lakowe Crossings · KD P Sheet · Projected vs. Plan
+    </div>
+    <div class="analytics-card">
+      <div class="milestones-loading" id="ms-cx-loading"><span class="milestones-loading-dot" style="color:var(--cx-color)"></span>Loading milestone data from sheet…</div>
+      <div id="ms-cx-content" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- Annexe milestones block -->
+  <div id="ms-page-annexe-block" style="display:none;">
+    <div class="analytics-section-label annex">
+      <span class="analytics-section-dot annex"></span>Lakowe Annexe · KD Sheet · Projected vs. Actual
+    </div>
+    <div class="analytics-card">
+      <div class="milestones-loading" id="ms-annex-loading"><span class="milestones-loading-dot" style="color:var(--annex-color)"></span>Loading milestone data from sheet…</div>
+      <div id="ms-annex-content" style="display:none;"></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ══ PREDICTIVE INTELLIGENCE PAGE ══ -->
+<div id="page-predictive" class="page">
+<div class="analytics-page-container">
+
+  <!-- Page header -->
+  <div class="analytics-page-header">
+    <div class="analytics-page-header-left">
+      <div class="analytics-page-icon pi-page-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div>
+        <div class="analytics-page-title">Predictive Intelligence</div>
+        <div class="analytics-page-sub">Cash · Velocity · Schedule · Scenarios · Risk</div>
+      </div>
+    </div>
+    <div class="analytics-page-header-right">
+      <div class="analytics-live-chip"><div class="analytics-live-dot"></div>AI-Powered</div>
+    </div>
+  </div>
+
+  <!-- Crossings PI block -->
+  <div id="pi-page-crossings-block" style="display:none;">
+    <div class="analytics-section-label cx">
+      <span class="analytics-section-dot cx"></span>Lakowe Crossings · Strategic Intelligence
+    </div>
+    <div class="analytics-card pi-page-card" id="pi-crossings">
+      <div class="pi-body pi-expanded-body" id="pi-cx-body">
+        <div class="pi-loading" id="pi-cx-loading">
+          <div class="pi-loading-spinner"></div>
+          <span>Generating strategic intelligence from live data…</span>
+        </div>
+        <div id="pi-cx-dynamic" style="display:none;"></div>
+        <div class="pi-footer" id="pi-cx-footer" style="display:none;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span id="pi-cx-footer-text">Strategic analysis generated from live dashboard data. Refreshes on every sync.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Annexe PI block -->
+  <div id="pi-page-annexe-block" style="display:none;">
+    <div class="analytics-section-label annex">
+      <span class="analytics-section-dot annex"></span>Lakowe Annexe · Strategic Intelligence
+    </div>
+    <div class="analytics-card pi-page-card" id="pi-annexe">
+      <div class="pi-body pi-expanded-body" id="pi-ann-body">
+        <div class="pi-loading" id="pi-ann-loading">
+          <div class="pi-loading-spinner"></div>
+          <span>Generating strategic intelligence from live data…</span>
+        </div>
+        <div id="pi-ann-dynamic" style="display:none;"></div>
+        <div class="pi-footer" id="pi-ann-footer" style="display:none;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span id="pi-ann-footer-text">Strategic analysis generated from live dashboard data. Refreshes on every sync.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ══ TRENDS PAGE ══ -->
+<div id="page-trends" class="page">
+<div class="analytics-page-container">
+
+  <!-- Page header -->
+  <div class="analytics-page-header">
+    <div class="analytics-page-header-left">
+      <div class="analytics-page-icon ti-page-icon" id="ti-page-icon-el">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      </div>
+      <div>
+        <div class="analytics-page-title">Trend Intelligence</div>
+        <div class="analytics-page-sub">Repeated Tasks · Velocity · Risk Escalation · Time-Grouped</div>
+      </div>
+    </div>
+    <div class="analytics-page-header-right">
+      <div class="analytics-live-chip"><div class="analytics-live-dot"></div>Multi-Session</div>
+    </div>
+  </div>
+
+  <!-- Crossings TI block -->
+  <div id="ti-page-crossings-block" style="display:none;">
+    <div class="analytics-section-label cx">
+      <span class="analytics-section-dot cx"></span>Lakowe Crossings · Cross-Session Analysis
+    </div>
+    <div class="analytics-card" style="padding:0;overflow:hidden;">
+      <div class="ti-panel ti-page-panel" id="ti-crossings" style="--ti-accent:var(--cx-color);margin:0;border:none;box-shadow:none;">
+        <div class="ti-body ti-expanded-body" id="ti-cx-body">
+          <div class="ti-section">
+            <div class="ti-section-title">Cross-Session Summary</div>
+            <div class="ti-stat-row" id="ti-cx-stats">
+              <div class="ti-stat"><div class="ti-stat-label">Sessions Analysed</div><div class="ti-stat-value" id="ti-cx-sessions">—</div><div class="ti-stat-sub">Historical snapshots</div></div>
+              <div class="ti-stat"><div class="ti-stat-label">Repeated Tasks</div><div class="ti-stat-value ti-warning" id="ti-cx-recurring">—</div><div class="ti-stat-sub">Same task, multiple meetings</div></div>
+              <div class="ti-stat"><div class="ti-stat-label">Escalated Risks</div><div class="ti-stat-value ti-danger" id="ti-cx-escalated">—</div><div class="ti-stat-sub">Stuck or escalating</div></div>
+            </div>
+          </div>
+          <div class="ti-section"><div class="ti-section-title">Intelligence Alerts</div></div>
+          <div class="ti-digest" id="ti-cx-digest"><div class="ti-digest-empty">Sync data to generate trend analysis across sessions.</div></div>
+          <div class="ti-section"><div class="ti-section-title">Completion Velocity — Sessions</div></div>
+          <div class="ti-velocity-list" id="ti-cx-velocity"></div>
+          <div class="ti-footer">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span id="ti-cx-footer-text">Trend analysis runs across all available session snapshots. Refreshes on sync.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Alert badge preserved for injectTrendBadges() -->
+    <span class="ti-alert-badge" id="ti-cx-badge" style="display:none;position:absolute;"></span>
+  </div>
+
+  <!-- Annexe TI block -->
+  <div id="ti-page-annexe-block" style="display:none;">
+    <div class="analytics-section-label annex">
+      <span class="analytics-section-dot annex"></span>Lakowe Annexe · Cross-Session Analysis
+    </div>
+    <div class="analytics-card" style="padding:0;overflow:hidden;">
+      <div class="ti-panel ti-page-panel" id="ti-annexe" style="--ti-accent:var(--annex-color);margin:0;border:none;box-shadow:none;">
+        <div class="ti-body ti-expanded-body" id="ti-annex-body">
+          <div class="ti-section">
+            <div class="ti-section-title">Cross-Session Summary</div>
+            <div class="ti-stat-row" id="ti-annex-stats">
+              <div class="ti-stat"><div class="ti-stat-label">Sessions Analysed</div><div class="ti-stat-value" id="ti-annex-sessions">—</div><div class="ti-stat-sub">Historical snapshots</div></div>
+              <div class="ti-stat"><div class="ti-stat-label">Repeated Tasks</div><div class="ti-stat-value ti-warning" id="ti-annex-recurring">—</div><div class="ti-stat-sub">Same task, multiple meetings</div></div>
+              <div class="ti-stat"><div class="ti-stat-label">Escalated Risks</div><div class="ti-stat-value ti-danger" id="ti-annex-escalated">—</div><div class="ti-stat-sub">Stuck or escalating</div></div>
+            </div>
+          </div>
+          <div class="ti-section"><div class="ti-section-title">Intelligence Alerts</div></div>
+          <div class="ti-digest" id="ti-annex-digest"><div class="ti-digest-empty">Sync data to generate trend analysis across sessions.</div></div>
+          <div class="ti-section"><div class="ti-section-title">Completion Velocity — Sessions</div></div>
+          <div class="ti-velocity-list" id="ti-annex-velocity"></div>
+          <div class="ti-footer">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span id="ti-annex-footer-text">Trend analysis runs across all available session snapshots. Refreshes on sync.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <span class="ti-alert-badge" id="ti-annex-badge" style="display:none;position:absolute;"></span>
+  </div>
+
+</div>
+</div>
 
 <!-- ══ UPDATES HUB PAGE — admin-only ══ -->
 <div id="page-updates">
@@ -2312,6 +2543,8 @@ function openUpdatesHub() {
   document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
   const btn = document.getElementById('bnav-updates');
   if (btn) btn.classList.add('active');
+  // Sync drawer
+  document.querySelectorAll('.mobile-drawer-item').forEach(b => b.classList.remove('active'));
   renderUpdatesDoc();
 }
 
@@ -2812,6 +3045,9 @@ const USER_ROLES = {
   // ── TELEMARKETING — appears in both projects ──
   'm.apuh@mixtafrica.com':        { name: 'M. Apuh',         dept: 'Telemarketing', project: 'Both',  role: 'editor' },
 
+  // ── COLLECTIONS — appears in both projects ──
+  'o.odumade@mixtafrica.com':        { name: 'O. Odumade',         dept: 'Collections', project: 'Both',  role: 'editor' },
+
   // ── Legacy placeholder logins (kept for backward compat) ──
   'admin@mixta.ng':               { name: 'Admin',           dept: null,          project: 'Both',      role: 'admin'  },
 };
@@ -3231,6 +3467,7 @@ const DEPT_NORMALIZE_MAP = {
   'general': 'General', 'amc': 'AMC',
   'da': 'DA', 'mrs h': 'Mrs H', 'risk': 'Risk',
   'financial planning': 'Financial Planning',
+  'Collections': 'collections',
 };
 
 
@@ -4160,31 +4397,129 @@ document.addEventListener('click', function(e) {
 function setFilter(f, btn) { currentFilter = f; document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderCurrentDept(); }
 
 function showPage(id, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active')); document.getElementById('page-' + id).classList.add('active');
-  if (btn) btn.classList.add('active'); document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active')); const bnav = document.getElementById('bnav-' + id); if (bnav) bnav.classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
+  const bnav = document.getElementById('bnav-' + id);
+  if (bnav) bnav.classList.add('active');
+  // On new analytical pages, show the correct project block and trigger render
+  if (id === 'milestones') _onShowMilestones();
+  if (id === 'predictive') _onShowPredictive();
+  if (id === 'trends') _onShowTrends();
 }
-function mobileNavClick(id, btn) { const fakeBtn = document.querySelector(`.nav-tab[onclick*="${id}"]`); showPage(id, fakeBtn); document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
+function mobileNavClick(id, btn) {
+  const fakeBtn = document.querySelector(`.nav-tab[onclick*="'${id}'"]`) || document.querySelector(`.nav-tab[onclick*='"${id}"']`);
+  showPage(id, fakeBtn);
+  document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── Mobile Drawer ──
+function toggleMobileDrawer() {
+  const drawer = document.getElementById('mobile-drawer');
+  const overlay = document.getElementById('mobile-drawer-overlay');
+  const isOpen = drawer.classList.contains('open');
+  if (isOpen) {
+    drawer.classList.remove('open');
+    overlay.classList.remove('open');
+  } else {
+    drawer.classList.add('open');
+    overlay.classList.add('open');
+  }
+}
+function closeMobileDrawer() {
+  document.getElementById('mobile-drawer').classList.remove('open');
+  document.getElementById('mobile-drawer-overlay').classList.remove('open');
+}
+function mobileDrawerNav(id, btn) {
+  closeMobileDrawer();
+  // Update drawer active state
+  document.querySelectorAll('.mobile-drawer-item').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Navigate
+  const fakeNavBtn = document.querySelector(`.nav-tab[onclick*="${id}"]`);
+  showPage(id, fakeNavBtn);
+  // Sync bottom nav
+  document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
+  const bnav = document.getElementById('bnav-' + id);
+  if (bnav) bnav.classList.add('active');
+}
+
+// ── Analytics page renderers (called by showPage) ──
+function _onShowMilestones() {
+  const proj = currentProject;
+  if (!proj) return;
+  document.getElementById('ms-page-crossings-block').style.display = proj === 'Crossings' ? 'block' : 'none';
+  document.getElementById('ms-page-annexe-block').style.display   = proj === 'Annexe'    ? 'block' : 'none';
+  const sub = proj === 'Crossings'
+    ? 'KD P Sheet · Projected vs. Plan · Gap Analysis'
+    : 'KD Sheet · Projected vs. Actual · Gap Analysis';
+  const subEl = document.getElementById('ms-page-sub');
+  if (subEl) subEl.textContent = sub;
+  // Fetch milestones if not yet loaded
+  setTimeout(function() {
+    try { if (!_milestonesLoaded[proj]) fetchAndRenderMilestones(); } catch(e) {}
+  }, 100);
+}
+function _onShowPredictive() {
+  const proj = currentProject;
+  if (!proj) return;
+  document.getElementById('pi-page-crossings-block').style.display = proj === 'Crossings' ? 'block' : 'none';
+  document.getElementById('pi-page-annexe-block').style.display   = proj === 'Annexe'    ? 'block' : 'none';
+  // Auto-generate if not yet done this session
+  if (!_piGenerated[proj]) {
+    setTimeout(function() {
+      try { generateDynamicPI(proj); } catch(e) { console.warn('PI error:', e); }
+    }, 200);
+  }
+}
+function _onShowTrends() {
+  const proj = currentProject;
+  if (!proj) return;
+  document.getElementById('ti-page-crossings-block').style.display = proj === 'Crossings' ? 'block' : 'none';
+  document.getElementById('ti-page-annexe-block').style.display   = proj === 'Annexe'    ? 'block' : 'none';
+  // Update page icon color
+  const iconEl = document.getElementById('ti-page-icon-el');
+  if (iconEl) iconEl.style.background = proj === 'Crossings' ? 'var(--cx-color)' : 'var(--annex-color)';
+  // Render TI if cached, else run
+  if (_tiCache[proj]) renderTrendPanel(proj, _tiCache[proj]);
+  else setTimeout(function() { try { runAndRenderTrend(proj); } catch(e) {} }, 300);
+}
+
 function showLanding() {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-landing').classList.add('active');
   document.getElementById('nav-tabs-group').style.display = 'none'; document.getElementById('bottom-nav').style.display = 'none';
+  const hbtn = document.getElementById('hamburger-btn'); if (hbtn) hbtn.style.display = 'none';
   document.querySelectorAll('.nav-project-btn').forEach(b => b.classList.remove('active')); currentProject = null; currentDept = null;
 }
 function selectProject(proj) {
   currentProject = proj; currentDept = null; viewingSessionDate = 'current'; currentFilter = 'all';
   const themeColor = proj === 'Crossings' ? '#1b5e20' : '#D32F2F'; document.documentElement.style.setProperty('--active-theme-color', themeColor);
+  // Body class for CSS theming of analytical pages
+  document.body.classList.toggle('project-annexe', proj === 'Annexe');
   document.querySelectorAll('.nav-project-btn').forEach(b => b.classList.remove('active')); document.getElementById(proj === 'Crossings' ? 'btn-nav-cx' : 'btn-nav-annex').classList.add('active');
   document.getElementById('block-crossings').style.display = proj === 'Crossings' ? 'block' : 'none'; document.getElementById('block-annexe').style.display = proj === 'Annexe' ? 'block' : 'none';
   document.getElementById('sidebar-crossings').style.display = proj === 'Crossings' ? 'block' : 'none'; document.getElementById('sidebar-annexe').style.display = proj === 'Annexe' ? 'block' : 'none';
   document.getElementById('nav-tabs-group').style.display = 'flex'; document.getElementById('bottom-nav').style.display = 'block';
+  // Show hamburger on mobile
+  const hbtn = document.getElementById('hamburger-btn'); if (hbtn) hbtn.style.display = '';
   const dashTab = document.querySelector('.nav-tab'); showPage('dashboard', dashTab);
+  // Sync drawer active state to Dashboard
+  document.querySelectorAll('.mobile-drawer-item').forEach(b => b.classList.remove('active'));
+  const mdDash = document.getElementById('mdrawer-dashboard'); if (mdDash) mdDash.classList.add('active');
   document.getElementById('panel-placeholder').style.display = ''; document.getElementById('dynamic-dept-container').style.display = 'none'; document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
   updateTargetHeaders(); updateSidebarCounts(); applyPriorityColors(); renderAlertStrips(); renderOverduePanels(); rebuildMobilePills(); _dashboardSession='latest'; populateSessionPicker(); refreshDashboardForSession(); _dashboardSession='latest'; populateSessionPicker(); refreshDashboardForSession();
-  piAutoExpand(proj);
-  // Re-render Trend Intelligence panel for the selected project (use cached result if available)
-  if (_tiCache[proj]) renderTrendPanel(proj, _tiCache[proj]);
-  else setTimeout(function() { try { runAndRenderTrend(proj); } catch(e){} }, 500);
+  // Reset PI generated flag so new project auto-generates on next visit to Predictive page
+  _piGenerated[proj] = false;
   // Render Commercial Velocity Indicator for selected project
   setTimeout(function() { try { renderCVI(proj); } catch(e) { console.warn('[CVI]', e); } }, 300);
+  // Pre-warm TI cache in background (non-blocking)
+  setTimeout(function() {
+    if (!_tiCache[proj]) { try { runAndRenderTrend(proj); } catch(e) {} }
+    else renderTrendPanel(proj, _tiCache[proj]);
+  }, 500);
   applyDeptTabLocks();
 }
 function updateDashboardDates() {
@@ -4232,8 +4567,8 @@ function renderDiagPanel() {
 
 function renderAdminUpdatesFeed() {
   const ALL_DEPTS = {
-    Crossings: ['Design','Costing','AMC','IPD','Landscape','Operations','Fincon','Sales','MCC','Legal','General'],
-    Annexe: ['Design','Costing','IPD','Operations','Fincon','Telemarketing','MCC','Sales','Legal']
+    Crossings: ['Design','Costing','AMC','IPD','Landscape','Operations','Fincon','Sales','MCC','Legal','General', 'Collections'],
+    Annexe: ['Design','Costing','IPD','Operations','Fincon','Telemarketing','MCC','Sales','Legal', 'Collections']
   };
 
   let allUpdates = [];
@@ -4890,32 +5225,21 @@ function renderPICharts_REMOVED_STATIC() {
 
 // Auto-expand panels, generate dynamic PI, and load milestones when project switches
 function piAutoExpand(proj) {
+  // Panels have moved to dedicated pages (always visible there).
+  // This function now just pre-warms the PI and Milestones caches in the background
+  // so the Predictive and Milestones pages render instantly when first opened.
   setTimeout(function() {
-    const annexPanel = document.getElementById('pi-annexe');
-    const cxPanel    = document.getElementById('pi-crossings');
-    if (proj === 'Annexe' && annexPanel && !annexPanel.classList.contains('pi-expanded')) {
-      annexPanel.classList.add('pi-expanded');
+    // ── Pre-generate PI if not yet done ──
+    if (!_piGenerated[proj]) {
+      setTimeout(function() {
+        try { generateDynamicPI(proj); } catch(e) { console.warn('PI pre-warm error:', e); }
+      }, 400);
     }
-    if (proj === 'Crossings' && cxPanel && !cxPanel.classList.contains('pi-expanded')) {
-      cxPanel.classList.add('pi-expanded');
-    }
-
-    // ── Auto-expand the milestones panel ──
-    const msPanel = document.getElementById(proj === 'Crossings' ? 'milestones-crossings' : 'milestones-annexe');
-    if (msPanel && !msPanel.classList.contains('expanded')) {
-      msPanel.classList.add('expanded');
-    }
-
-    // ── Generate dynamic PI (deferred so UI renders first) ──
-    setTimeout(function() {
-      try { generateDynamicPI(proj); } catch(e) { console.warn('PI generation error:', e); }
-    }, 400);
-
-    // ── Fetch milestones (deferred) ──
+    // ── Pre-fetch milestones ──
     setTimeout(function() {
       try {
         if (!_milestonesLoaded[proj]) fetchAndRenderMilestones();
-      } catch(e) { console.warn('Milestones error:', e); }
+      } catch(e) { console.warn('Milestones pre-warm error:', e); }
     }, 600);
   }, 200);
 }
@@ -5390,6 +5714,7 @@ const MAILING_LIST = {
     Legal:      ['legal@mixtafrica.com'],
     FINCON:     ['mixta_fincon@mixtafrica.com'],
     Operations: ['realestateoperations_nigeria@mixtafrica.com'],
+    Collections:['o.odumade@mixtafrica.com'],
   },
   Annexe: {
     Design:        ['dcs_nigeria@mixtafrica.com'],
@@ -5401,7 +5726,8 @@ const MAILING_LIST = {
     Legal:         ['legal@mixtafrica.com'],
     FINCON:        ['mixta_fincon@mixtafrica.com'],
     Operations:    ['realestateoperations_nigeria@mixtafrica.com'],
-    Telemarketing: ['m.apuh@mixtafrica.com']
+    Telemarketing: ['m.apuh@mixtafrica.com'],
+    Collections:['o.odumade@mixtafrica.com']
   }
 };
 
