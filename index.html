@@ -2674,11 +2674,10 @@ function loadSeedData() {
 
 const STATUS_KEY = 'lakowe_status_v5';
 
-// ── Resend Configuration ──
-// API key is injected at build time by GitHub Actions from the RESEND_API_KEY secret.
+// ── Gmail Apps Script Email Configuration ──
+// URL and token injected at build time by GitHub Actions.
 // Falls back to localStorage for local development.
-const RESEND_FROM = 'Mixta Africa Projects <onboarding@resend.dev>';
-const RESEND_REPLY_TO = 'o.olasunkanmi@mixtafrica.com';
+const GMAIL_REPLY_TO = 'o.olasunkanmi@mixtafrica.com';
 function getStatusOverrides() { try { return JSON.parse(localStorage.getItem(STATUS_KEY)) || {}; } catch { return {}; } }
 function saveStatus(taskId, status) { const o = getStatusOverrides(); o[taskId] = status; localStorage.setItem(STATUS_KEY, JSON.stringify(o)); }
 function taskId(t) { return (t.project + '_' + t.dept + '_' + t.session + '_' + t.action).replace(/\W+/g,'_').substring(0, 60); }
@@ -5155,10 +5154,12 @@ function sendReminderEmail() {
   const statusEl = document.getElementById('reminder-status-text');
   const btn = document.getElementById('reminder-send-btn');
 
-  // Resolve GitHub workflow token — injected at build time or localStorage for local dev
-  const GH_TOKEN = window.GH_WORKFLOW_TOKEN || localStorage.getItem('GH_WORKFLOW_TOKEN');
-  if (!GH_TOKEN) {
-    statusEl.textContent = '⚠ GH_WORKFLOW_TOKEN not configured. Add it to GitHub Secrets.';
+  // Resolve Apps Script URL and token — injected at build time or localStorage for local dev
+  const SCRIPT_URL   = window.APPS_SCRIPT_URL   || localStorage.getItem('APPS_SCRIPT_URL');
+  const SCRIPT_TOKEN = window.APPS_SCRIPT_TOKEN  || localStorage.getItem('APPS_SCRIPT_TOKEN');
+
+  if (!SCRIPT_URL || !SCRIPT_TOKEN) {
+    statusEl.textContent = '⚠ APPS_SCRIPT_URL or APPS_SCRIPT_TOKEN not configured.';
     return;
   }
 
@@ -5205,26 +5206,19 @@ function sendReminderEmail() {
   if (emailsToSend.length === 0) { statusEl.textContent = 'No emails to send.'; return; }
 
   btn.disabled = true;
-  btn.innerHTML = '<span class="tool-spinner"></span> Queuing emails...';
+  btn.innerHTML = '<span class="tool-spinner"></span> Sending...';
   statusEl.textContent = '';
 
-  // GitHub Actions workflow dispatch API — runs server-side, no CORS issues
-  const REPO = 'Mixta-Africa/Projects-Dashboard-Features-Testing';
-  const WORKFLOW = 'send-email.yml';
+  var sentCount  = 0;
+  var failCount  = 0;
 
-  // Dispatch one workflow run per email group
-  // GitHub Actions inputs are strings so we JSON-encode the email payload
-  var dispatched = 0;
-  var failed = 0;
-
-  function dispatchNext(idx) {
+  // Send each email group sequentially via Apps Script — no CORS, no domain restriction
+  function sendNext(idx) {
     if (idx >= emailsToSend.length) {
       var currentMode = document.getElementById('reminder-mode').value;
-      if (failed === 0) {
-        statusEl.textContent = '✓ ' + dispatched + ' email' + (dispatched !== 1 ? 's' : '') + ' queued — delivering within 60 seconds' + (currentMode === 'test' ? ' (test mode)' : '');
-      } else {
-        statusEl.textContent = dispatched + ' queued, ' + failed + ' failed. Check that GH_WORKFLOW_TOKEN has workflow scope.';
-      }
+      statusEl.textContent = failCount === 0
+        ? '✓ ' + sentCount + ' email' + (sentCount !== 1 ? 's' : '') + ' sent successfully' + (currentMode === 'test' ? ' (test mode)' : '')
+        : sentCount + ' sent, ' + failCount + ' failed. Check browser console for details.';
       btn.innerHTML = '📨 Send Email' + (emailsToSend.length > 1 ? 's' : '');
       btn.disabled = false;
       return;
@@ -5232,51 +5226,42 @@ function sendReminderEmail() {
 
     var emailGroup = emailsToSend[idx];
 
-    // Skip groups with no HTML content (empty departments)
+    // Skip empty groups
     if (!emailGroup.html || emailGroup.html.trim().length < 100) {
-      dispatchNext(idx + 1);
+      sendNext(idx + 1);
       return;
     }
 
-    fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/' + WORKFLOW + '/dispatches', {
+    fetch(SCRIPT_URL, {
       method: 'POST',
-      headers: {
-        'Accept': 'application/vnd.github+json',
-        'Authorization': 'Bearer ' + GH_TOKEN,
-        'X-GitHub-Api-Version': '2022-11-28',
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'text/plain' }, // Apps Script requires text/plain to avoid CORS preflight
       body: JSON.stringify({
-        ref: 'main',
-        inputs: {
-          to:      JSON.stringify(emailGroup.to),
-          subject: emailGroup.subject,
-          html:    emailGroup.html,
-          dept:    emailGroup.dept
-        }
+        token:    SCRIPT_TOKEN,
+        to:       emailGroup.to,
+        subject:  emailGroup.subject,
+        html:     emailGroup.html,
+        reply_to: GMAIL_REPLY_TO
       })
     })
-    .then(function(res) {
-      if (res.status === 204) {
-        dispatched++;
-        statusEl.textContent = 'Queuing... ' + dispatched + ' of ' + emailsToSend.length + ' (' + emailGroup.dept + ')';
-        // Wait 3 seconds between each dispatch to avoid GitHub rate limiting
-        setTimeout(function() { dispatchNext(idx + 1); }, 3000);
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.success) {
+        sentCount++;
+        statusEl.textContent = 'Sending... ' + sentCount + ' of ' + emailsToSend.length + ' (' + emailGroup.dept + ')';
       } else {
-        return res.json().then(function(data) {
-          throw new Error(data.message || 'HTTP ' + res.status);
-        });
+        failCount++;
+        console.error('[Email] Failed for', emailGroup.dept, data.error);
       }
+      setTimeout(function() { sendNext(idx + 1); }, 500);
     })
     .catch(function(err) {
-      failed++;
-      console.error('[GH Dispatch] Failed for', emailGroup.dept, err.message);
-      // Still wait before retrying next to avoid cascading rate limit failures
-      setTimeout(function() { dispatchNext(idx + 1); }, 3000);
+      failCount++;
+      console.error('[Email] Failed for', emailGroup.dept, err.message);
+      setTimeout(function() { sendNext(idx + 1); }, 500);
     });
   }
 
-  dispatchNext(0);
+  sendNext(0);
 }
 
 // Fallback: open mailto if EmailJS not set up
@@ -6624,15 +6609,15 @@ window.onload = function () {
     if (_ck && !_ck.startsWith('__')) window.CEREBRAS_API_KEY = _ck;
     else window.CEREBRAS_API_KEY = localStorage.getItem('CEREBRAS_API_KEY') || '';
   }
-  if (!window.RESEND_API_KEY) {
-    const _rk = '__RESEND_API_KEY__';
-    if (_rk && !_rk.startsWith('__')) window.RESEND_API_KEY = _rk;
-    else window.RESEND_API_KEY = localStorage.getItem('RESEND_API_KEY') || '';
+  if (!window.APPS_SCRIPT_URL) {
+    const _su = '__APPS_SCRIPT_URL__';
+    if (_su && !_su.startsWith('__')) window.APPS_SCRIPT_URL = _su;
+    else window.APPS_SCRIPT_URL = localStorage.getItem('APPS_SCRIPT_URL') || '';
   }
-  if (!window.GH_WORKFLOW_TOKEN) {
-    const _gh = '__GH_WORKFLOW_TOKEN__';
-    if (_gh && !_gh.startsWith('__')) window.GH_WORKFLOW_TOKEN = _gh;
-    else window.GH_WORKFLOW_TOKEN = localStorage.getItem('GH_WORKFLOW_TOKEN') || '';
+  if (!window.APPS_SCRIPT_TOKEN) {
+    const _st = '__APPS_SCRIPT_TOKEN__';
+    if (_st && !_st.startsWith('__')) window.APPS_SCRIPT_TOKEN = _st;
+    else window.APPS_SCRIPT_TOKEN = localStorage.getItem('APPS_SCRIPT_TOKEN') || '';
   }
   if (!window.ADMIN_PASSWORD) {
     const _ap = '__ADMIN_PASSWORD__';
