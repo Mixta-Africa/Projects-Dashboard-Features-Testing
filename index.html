@@ -112,15 +112,16 @@
   --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
 }
 body { font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text-primary); font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 200; height: var(--nav-h); background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; gap: 20px; }
-.nav-brand { font-size: 15px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.03em; white-space: nowrap; cursor: pointer; transition: opacity 0.2s; user-select: none; display: flex; align-items: center; gap: 6px; }
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 200; height: var(--nav-h); background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; gap: 20px; overflow: hidden; }
+.nav-brand { font-size: 15px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.03em; white-space: nowrap; cursor: pointer; transition: opacity 0.2s; user-select: none; display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .nav-brand:hover { opacity: 0.7; }
 .nav-brand span { color: var(--brand-red); }
-.nav-tabs { display: flex; gap: 6px; }
+.nav-tabs { display: flex; gap: 6px; flex-shrink: 1; overflow: hidden; }
 .nav-tab { padding: 7px 16px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-secondary); border: 1px solid transparent; background: none; transition: all 0.2s; font-family: inherit; }
 .nav-tab:hover { background: var(--brand-grey-light); color: var(--text-primary); }
 .nav-tab.active { background: var(--active-theme-color, var(--cx-color)); color: #fff; border-color: var(--active-theme-color, var(--cx-color)); }
-.nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; overflow: visible; flex-shrink: 0; flex-wrap: nowrap; }
+.nav-right > * { flex-shrink: 0; }
 .nav-date { font-size: 11px; color: var(--text-muted); font-weight: 600; white-space: nowrap; }
 .nav-badge { font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: var(--radius-pill); letter-spacing: 0.04em; text-transform: uppercase; }
 
@@ -3773,17 +3774,54 @@ function renderUpdatesList() {
     return;
   }
   list.innerHTML = [...updates].reverse().map(u =>
-    `<div class="update-item">
+    `<div class="update-item" style="position:relative;">
       <div class="update-meta">
         <strong>${u.author||'Anonymous'}</strong> \u2014 ${new Date(u.timestamp).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}
         ${u.linkedTask ? `<span class="update-task-tag">📌 ${u.linkedTask}</span>` : ''}
       </div>
       <div style="white-space:pre-wrap;word-break:break-word;">${u.text}</div>
+      ${diagUnlocked ? `<button onclick="deleteUpdate('${u.timestamp}')" title="Delete this update" style="position:absolute;top:8px;right:8px;background:rgba(211,47,47,0.08);border:1px solid rgba(211,47,47,0.2);color:var(--brand-red);border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700;cursor:pointer;line-height:1.4;" onmouseover="this.style.background='rgba(211,47,47,0.18)'" onmouseout="this.style.background='rgba(211,47,47,0.08)'">✕</button>` : ''}
     </div>`
   ).join('');
 }
 
-async function syncWithGoogleSheet() {
+function deleteUpdate(timestamp) {
+  if (!diagUnlocked) return;
+  if (!confirm('Delete this update? This cannot be undone.')) return;
+
+  const sessionKey = (viewingSessionDate && viewingSessionDate !== 'current')
+    ? viewingSessionDate
+    : ((availableSessions[currentProject] && availableSessions[currentProject][0]) || 'current');
+
+  // ── Remove from all localStorage keys (scoped + legacy) ──
+  const keysToCheck = [
+    'deptupdate:' + currentProject + ':' + currentDept + ':' + sessionKey,
+    'fb_dept:'    + currentProject + ':' + currentDept + ':' + sessionKey,
+    'deptupdate:' + currentProject + ':' + currentDept,
+    'fb_dept:'    + currentProject + ':' + currentDept,
+  ];
+  keysToCheck.forEach(key => {
+    try {
+      const arr = JSON.parse(localStorage.getItem(key) || '[]');
+      const filtered = arr.filter(u => u.timestamp !== timestamp);
+      if (filtered.length !== arr.length) localStorage.setItem(key, JSON.stringify(filtered));
+    } catch(e) {}
+  });
+
+  // ── Remove from Firebase ──
+  if (_fbReady && _fbDb) {
+    const ref = _fbDb.ref('dept_updates/' + currentProject + '/' + currentDept + '/' + sessionKey);
+    ref.once('value').then(snap => {
+      snap.forEach(child => {
+        if (child.val().timestamp === timestamp) child.ref.remove();
+      });
+    }).catch(e => console.warn('[Firebase] delete update failed:', e));
+  }
+
+  renderUpdatesList();
+}
+
+
   try {
     document.querySelectorAll('.sync-btn').forEach(btn => btn.classList.add('syncing'));
     const fetches = [];
