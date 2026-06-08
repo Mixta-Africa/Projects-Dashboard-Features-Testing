@@ -3733,7 +3733,54 @@ function submitTeamUpdate() {
   document.getElementById('new-update-text').value = '';
   if (taskLinkEl) taskLinkEl.value = '';
   renderUpdatesList();
+
+  // ── Email alert to admin ──
+  sendUpdateAlertEmail(author, currentDept, currentProject, text, linkedTask);
 }
+
+function sendUpdateAlertEmail(author, dept, project, text, linkedTask) {
+  const SCRIPT_URL   = window.APPS_SCRIPT_URL   || localStorage.getItem('APPS_SCRIPT_URL');
+  const SCRIPT_TOKEN = window.APPS_SCRIPT_TOKEN  || localStorage.getItem('APPS_SCRIPT_TOKEN');
+  if (!SCRIPT_URL || !SCRIPT_TOKEN) return; // silently skip if GAS not configured
+
+  const now = new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const projectLabel = project === 'Crossings' ? 'Lakowe Crossings' : 'Lakowe Annexe';
+  const linkedLine = linkedTask ? `<p style="margin:0 0 8px;"><strong>Linked Task:</strong> ${linkedTask}</p>` : '';
+
+  const html = `
+<div style="font-family:'DM Sans',Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb;">
+  <div style="background:#D32F2F;padding:18px 24px;">
+    <p style="margin:0;color:#fff;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Mixta Africa — Projects Tracker</p>
+    <h2 style="margin:4px 0 0;color:#fff;font-size:18px;font-weight:800;">New Team Update Posted</h2>
+  </div>
+  <div style="padding:24px;">
+    <p style="margin:0 0 8px;"><strong>Project:</strong> ${projectLabel}</p>
+    <p style="margin:0 0 8px;"><strong>Department:</strong> ${dept}</p>
+    <p style="margin:0 0 8px;"><strong>Posted by:</strong> ${author}</p>
+    <p style="margin:0 0 16px;"><strong>Time:</strong> ${now}</p>
+    ${linkedLine}
+    <div style="background:#f9fafb;border-left:3px solid #D32F2F;border-radius:4px;padding:14px 16px;font-size:14px;line-height:1.6;color:#1a1a1a;">
+      ${text.replace(/\n/g, '<br>')}
+    </div>
+  </div>
+  <div style="padding:12px 24px;background:#f3f4f6;font-size:11px;color:#9ca3af;text-align:center;">
+    Mixta Africa Projects Tracker — automated alert
+  </div>
+</div>`;
+
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({
+      token:    SCRIPT_TOKEN,
+      to:       ['o.olasunkanmi@mixtafrica.com'],
+      subject:  `[${projectLabel}] New update from ${author} — ${dept}`,
+      html:     html,
+      reply_to: GMAIL_REPLY_TO
+    })
+  }).catch(e => console.warn('[Email alert] Failed to send update notification:', e));
+}
+
 function renderUpdatesList() {
   if (!currentProject || !currentDept) return;
   const list = document.getElementById('updates-list'); if(!list) return;
