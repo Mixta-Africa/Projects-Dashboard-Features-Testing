@@ -1187,21 +1187,21 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
 /* ── AUTH STYLES ── */
 .auth-user-badge {
   display: inline-flex; align-items: center; gap: 5px;
-  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
-  color: #fff; border-radius: 20px; padding: 3px 10px 3px 8px;
-  font-size: 11px; font-weight: 600; white-space: nowrap;
+  background: var(--brand-grey-light); border: 1px solid var(--border);
+  color: var(--text-primary); border-radius: 20px; padding: 3px 10px 3px 8px;
+  font-size: 11px; font-weight: 600; white-space: nowrap; flex-shrink: 0;
 }
 .auth-user-badge::before { content: '●'; font-size: 8px; color: #4ade80; }
 .auth-action-btn {
   display: inline-flex; align-items: center; gap: 5px;
-  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-  color: #fff; border-radius: 6px; padding: 4px 10px;
+  background: var(--brand-grey-light); border: 1px solid var(--border);
+  color: var(--text-secondary); border-radius: 6px; padding: 4px 10px;
   font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap;
-  transition: background 0.15s;
+  transition: background 0.15s; flex-shrink: 0;
 }
-.auth-action-btn:hover { background: rgba(255,255,255,0.22); }
-.auth-logout-btn { background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.3); }
-.auth-logout-btn:hover { background: rgba(239,68,68,0.32); }
+.auth-action-btn:hover { background: var(--border-md); color: var(--text-primary); }
+.auth-logout-btn { background: rgba(239,68,68,0.08); border-color: rgba(211,47,47,0.25); color: var(--brand-red); }
+.auth-logout-btn:hover { background: rgba(239,68,68,0.16); }
 
 /* Auth modal */
 #auth-modal {
