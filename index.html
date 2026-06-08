@@ -228,7 +228,7 @@ body.users-bar-visible .dept-sidebar {
 .sync-btn-text { display: inline; }
 .syncing .sync-icon { animation: spin 1s linear infinite; }
 @keyframes spin { 100% { transform: rotate(360deg); } }
-.admin-btn { background: var(--brand-grey-light); color: var(--text-secondary); border: 1px solid var(--border); position: relative; padding: 7px 10px; }
+.admin-btn { background: var(--brand-grey-light); color: var(--text-secondary); border: 1px solid var(--border); position: relative; padding: 7px 10px; flex-shrink: 0; min-width: 34px; }
 .admin-btn:hover { background: var(--border-md); color: var(--text-primary); }
 .admin-btn .diag-badge-count { position: absolute; top: -5px; right: -5px; background: var(--status-red); color: white; font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 100px; display: none; line-height: 1; }
 .admin-btn .diag-badge-count.has-issues { display: block; }
