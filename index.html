@@ -4458,7 +4458,7 @@ async function syncWithGoogleSheet() {
     // ── Reset PI + milestones so they regenerate with fresh data ──
     _piGenerated = { Crossings: false, Annexe: false };
     _milestonesLoaded = { Crossings: false, Annexe: false };
-    viewingSessionDate = 'current'; updateDashboardDates(); applyPriorityColors(); renderAlertStrips(); updateSidebarCounts(); renderOverduePanels(); if (currentDept) renderCurrentDept(); populateSessionPicker(); if(_dashboardSession!=='latest') refreshDashboardForSession(); renderDynamicCharts(); updateLandingPageMetrics(); setTimeout(renderAllCVIs, 200);
+    viewingSessionDate = 'current'; updateDashboardDates(); applyPriorityColors(); renderAlertStrips(); updateSidebarCounts(); renderOverduePanels(); if (currentDept) renderCurrentDept(); populateSessionPicker(); refreshDashboardForSession(); renderDynamicCharts(); updateLandingPageMetrics(); setTimeout(renderAllCVIs, 200);
     // 25002500 Run Trend Intelligence Engine 25002500
     setTimeout(function() {
       try { runAndRenderTrend('Crossings'); } catch(e) { console.warn('[TI] Crossings:', e); }
@@ -4676,6 +4676,18 @@ if (/operations|fincon/i.test(lastDept)) {
       if (inflow)   window._chartMetrics[proj][sheetName].inflow     = parseNairaToM(inflow);
       if (salesVal) window._chartMetrics[proj][sheetName].salesValue = parseNairaToM(salesVal);
       if (balance)  window._chartMetrics[proj][sheetName].balance    = parseNairaToM(balance);
+
+      // ── LOCAL CACHE: populate window._firebaseMetrics immediately so
+      //    refreshDashboardForSession() can paint tiles even if Firebase
+      //    hasn't initialised yet (avoids permanent "Syncing..." state).
+      window._firebaseMetrics = window._firebaseMetrics || {};
+      window._firebaseMetrics[proj] = window._firebaseMetrics[proj] || {};
+      window._firebaseMetrics[proj][sheetName] = window._firebaseMetrics[proj][sheetName] || {};
+      if (inflow)   window._firebaseMetrics[proj][sheetName].inflow   = inflow;
+      if (salesVal) window._firebaseMetrics[proj][sheetName].sales    = salesVal;
+      if (balance)  window._firebaseMetrics[proj][sheetName].balance  = balance;
+      if (units)    window._firebaseMetrics[proj][sheetName].units    = units;
+      if (offers)   window._firebaseMetrics[proj][sheetName].offers   = offers;
 
       // Write to Firebase (Firebase handles DOM updates via the listener)
       if (_fbReady && _fbDb) {
