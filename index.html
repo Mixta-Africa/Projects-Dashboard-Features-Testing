@@ -3674,14 +3674,21 @@ const METRIC_PATTERNS = {
   inflow: /(?:total\s+)?(?:sales\s+)?(?:inflow|received)(?:\s+to\s+date)?[\s:\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?(?:n|N|mn|MN)?)/i,
   sales: /(?:total\s+)?value\s+of\s+sales[\s:\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?(?:n|N|mn|MN)?)/i,
   balance: /(?:account\s+)?bal(?:ance)?[\s:\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?(?:n|N|mn|MN)?)/i,
-  units: /(?:sales|units\s*sold|no\.?\s*of\s*sales)[\s:\-]+(\d{1,4})\b|\b(\d{1,4})\s+units/i,
-  offers: /(?:active\s*)?offer(?:s| letters?)?[\s:\-]+(\d{1,4})\b|\b(\d{1,4})\s*(?:active\s*)?offer/i
+  // Added "sales" as a suffix to catch "81 sales"
+  units: /(?:sales|units\s*sold|no\.?\s*of\s*sales)[\s:\-]+(\d{1,4})\b|\b(\d{1,4})\s+(?:units|sales)/i,
+  // Added "no" and "zero" to catch "No active offer"
+  offers: /(?:active\s*)?offer(?:s| letters?)?[\s:\-]+(\d{1,4})\b|\b(\d{1,4}|no|zero)\s*(?:active\s*)?offer/i
 };
 
 function parseExtractedMetric(matchResult, isCurrency) {
   if (!matchResult) return null;
   let val = matchResult[1] || matchResult[2]; 
   if (!val) return null;
+  
+  // Convert "No active offer" into "0"
+  if (!isCurrency) {
+      if (val.toLowerCase() === 'no' || val.toLowerCase() === 'zero') return '0';
+  }
   
   if (isCurrency) {
     let raw = val.trim().toUpperCase().replace(/[, ]/g, '');
@@ -4626,85 +4633,13 @@ function processSheet(rows, proj, sheetName, isLatest) {
       if (matched) lastDept = matched; // Update department header
     }
 
-    // ── METRIC EXTRACTION FROM OPERATIONS ──
+   // ── METRIC EXTRACTION FROM OPERATIONS ──
 if (/operations|fincon/i.test(lastDept)) {
     // CROSSINGS: all metrics are packed into the action text as one sentence.
     // ANNEXE: metrics appear as sub-rows with empty action; the value is in the
     //         resultToAchieve (Result) column, e.g. "Total Inflow - ₦6.45Bn".
     //         We therefore always include the result column so both projects work.
     const resultText = String(c[colMap.result] || '').trim();
-    const actionText = action + ' ' + explanationText + ' ' + resultText;
-
-    function extractLabeled(text, labelPatterns) {
-      for (const pat of labelPatterns) {
-        const rx = new RegExp(pat + '(?:[\\s\\w]*?)[:\\s\\-]*([₦N]?\\s*[\\d,]+\\.?\\d*\\s*[BMKbmk]?(?:n|mn|MN|Mn)?)\\b', 'i');
-        const m = text.match(rx);
-        if (m) {
-          let raw = m[1].trim().replace(/,/g,'').toUpperCase();
-          // Normalise "BN" → "B", "MN" → "M" suffix
-          raw = raw.replace(/BN$/, 'B').replace(/MN$/, 'M');
-          if (!raw.startsWith('₦')) raw = raw.replace(/^N(?=\d)/, '₦');
-          if (!raw.startsWith('₦')) raw = '₦' + raw;
-          return raw;
-        }
-      }
-      return null;
-    }
-
-    function extractLabeledCount(text, labelPatterns) {
-      for (const pat of labelPatterns) {
-        let m = text.match(new RegExp(pat + '[:\\s\\-]+(\\d{1,4})\\b', 'i'));
-        if (m) return m[1];
-        m = text.match(new RegExp('(\\d{1,4})\\s+' + pat, 'i'));
-        if (m) return m[1];
-      }
-      return null;
-    }
-
-    // For Annexe sub-rows the action is empty but resultText has the value —
-    // so we test the full combined text, not just action alone.
-    const hasMetricData = /[₦N][\d,]+|\bsales[-:\s]+\d|\d+\s*units|\d+\s*offer/i.test(actionText);
-
-    if (hasMetricData) {
-      const inflow = parseExtractedMetric(actionText.match(METRIC_PATTERNS.inflow), true);
-      const salesVal = parseExtractedMetric(actionText.match(METRIC_PATTERNS.sales), true);
-      const balance = parseExtractedMetric(actionText.match(METRIC_PATTERNS.balance), true);
-      const units = parseExtractedMetric(actionText.match(METRIC_PATTERNS.units), false);
-      const offers = parseExtractedMetric(actionText.match(METRIC_PATTERNS.offers), false);
-
-      // Save chart metrics locally for the chart engine (Inflow vs Value of Sales)
-      if (inflow)   window._chartMetrics[proj][sheetName].inflow     = parseNairaToM(inflow);
-      if (salesVal) window._chartMetrics[proj][sheetName].salesValue = parseNairaToM(salesVal);
-      if (balance)  window._chartMetrics[proj][sheetName].balance    = parseNairaToM(balance);
-
-      // ── LOCAL CACHE: populate window._firebaseMetrics immediately so
-      //    refreshDashboardForSession() can paint tiles even if Firebase
-      //    hasn't initialised yet (avoids permanent "Syncing..." state).
-      window._firebaseMetrics = window._firebaseMetrics || {};
-      window._firebaseMetrics[proj] = window._firebaseMetrics[proj] || {};
-      window._firebaseMetrics[proj][sheetName] = window._firebaseMetrics[proj][sheetName] || {};
-      if (inflow)   window._firebaseMetrics[proj][sheetName].inflow   = inflow;
-      if (salesVal) window._firebaseMetrics[proj][sheetName].sales    = salesVal;
-      if (balance)  window._firebaseMetrics[proj][sheetName].balance  = balance;
-      if (units)    window._firebaseMetrics[proj][sheetName].units    = units;
-      if (offers)   window._firebaseMetrics[proj][sheetName].offers   = offers;
-
-      // Write to Firebase (Firebase handles DOM updates via the listener)
-      if (_fbReady && _fbDb) {
-        const updates = {};
-        if (inflow)   updates.inflow   = inflow;
-        if (salesVal) updates.sales    = salesVal;
-        if (balance)  updates.balance  = balance;
-        if (units)    updates.units    = units;
-        if (offers)   updates.offers   = offers;
-
-        if (Object.keys(updates).length > 0) {
-          updates.updatedAt = firebase.database.ServerValue.TIMESTAMP;
-          _fbDb.ref(`metrics/${proj}/${sheetName}`).update(updates);
-        }
-      }
-    }
-  } // end if (operations|fincon)
     
     // ── TASK VERIFICATION ──
     if (!action || action.length < 4) continue;
