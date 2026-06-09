@@ -421,36 +421,71 @@ body.users-bar-visible .dept-sidebar {
 .btn-onhold:hover { background: var(--status-grey); color: white; }
 .team-updates-section { margin-top: 30px; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
 .team-updates-section h3 { font-size: 14px; font-weight: 800; margin-bottom: 14px; color: var(--text-primary); }
-.updates-list { max-height: 250px; overflow-y: auto; margin-bottom: 16px; display: flex; flex-direction: column; gap: 10px; }
-.update-item { background: var(--bg); padding: 12px; border-radius: var(--radius-sm); font-size: 13px; border-left: 3px solid var(--active-theme-color, var(--cx-color)); }
+.updates-list { max-height: 420px; overflow-y: auto; margin-bottom: 16px; display: flex; flex-direction: column; gap: 10px; padding: 4px 2px; }
 
-/* ── Media attach row (in the form) ── */
-.update-media-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+/* ── Chat bubble rows ── */
+.chat-row { display: flex; gap: 10px; align-items: flex-end; }
+.chat-row.mine  { flex-direction: row-reverse; }
+.chat-row.mine .chat-bubble  { background: var(--active-theme-color, var(--cx-color)); color: #fff; border-bottom-right-radius: 4px; }
+.chat-row.mine .chat-bubble .chat-meta { color: rgba(255,255,255,0.75); }
+.chat-row.mine .chat-bubble .update-task-tag { background: rgba(255,255,255,0.25); color: #fff; }
+.chat-row.theirs { flex-direction: row; }
+.chat-row.theirs .chat-bubble { background: var(--bg); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+
+/* Avatar circle */
+.chat-avatar { width: 30px; height: 30px; min-width: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; letter-spacing: -0.02em; flex-shrink: 0; }
+
+/* Bubble */
+.chat-bubble { max-width: 75%; padding: 10px 13px; border-radius: 14px; font-size: 13px; line-height: 1.5; position: relative; }
+.chat-meta { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.chat-text { white-space: pre-wrap; word-break: break-word; }
+
+/* Quoted reply preview */
+.chat-quote { border-left: 3px solid rgba(0,0,0,0.15); padding: 5px 8px; margin-bottom: 7px; border-radius: 4px; font-size: 11px; opacity: 0.8; background: rgba(0,0,0,0.05); }
+.chat-row.mine .chat-quote { border-left-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.12); }
+
+/* Media grid inside bubble */
+.chat-media-grid { display: grid; gap: 4px; margin-top: 8px; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+.chat-media-grid img { width: 100%; height: 100px; object-fit: cover; border-radius: 6px; cursor: pointer; display: block; }
+.chat-media-grid iframe { width: 100%; height: 110px; border: none; border-radius: 6px; display: block; }
+.chat-media-link { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: inherit; text-decoration: underline; margin-top: 4px; }
+
+/* Reply + admin delete row */
+.chat-actions { display: flex; gap: 8px; margin-top: 6px; align-items: center; }
+.chat-reply-btn { background: none; border: none; font-size: 11px; color: var(--text-muted); cursor: pointer; padding: 0; display: flex; align-items: center; gap: 4px; }
+.chat-reply-btn:hover { color: var(--active-theme-color, var(--cx-color)); }
+.chat-delete-btn { background: none; border: none; font-size: 11px; color: var(--brand-red); cursor: pointer; padding: 0; opacity: 0.7; }
+.chat-delete-btn:hover { opacity: 1; }
+.chat-media-del-btn { background: none; border: none; font-size: 10px; color: var(--brand-red); cursor: pointer; padding: 2px 4px; opacity: 0.7; }
+.chat-media-del-btn:hover { opacity: 1; }
+
+/* ── Input area ── */
+.update-input-group { display: flex; flex-direction: column; gap: 8px; }
+.update-task-select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12px; font-family: inherit; background: var(--white); color: var(--text-primary); }
+.update-input-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; resize: vertical; min-height: 70px; box-sizing: border-box; }
+.update-author-row { display: flex; gap: 8px; align-items: center; }
+.update-author-row input { flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; }
+.update-author-row button { padding: 10px 20px; background: var(--active-theme-color, var(--cx-color)); color: #fff; border: none; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; transition: opacity 0.2s; font-family: inherit; font-size: 13px; white-space: nowrap; }
+.update-author-row button:disabled { opacity: 0.5; cursor: default; }
+.update-author-row button:hover:not(:disabled) { opacity: 0.85; }
+
+/* Reply-to preview strip above input */
+.reply-preview-strip { display: none; background: var(--bg); border: 1px solid var(--border); border-left: 3px solid var(--active-theme-color, var(--cx-color)); border-radius: var(--radius-sm); padding: 7px 10px; font-size: 11px; color: var(--text-muted); position: relative; }
+.reply-preview-strip.active { display: block; }
+.reply-preview-strip strong { color: var(--text-primary); }
+.reply-preview-strip .cancel-reply { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 14px; color: var(--text-muted); line-height: 1; }
+
+/* Media attach row */
+.update-media-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .update-media-label { display: inline-flex; align-items: center; gap: 6px; background: var(--brand-grey-light); border: 1px solid var(--border); color: var(--text-secondary); border-radius: var(--radius-sm); padding: 5px 10px; font-size: 11px; font-weight: 700; cursor: pointer; transition: background 0.15s; white-space: nowrap; }
 .update-media-label:hover { background: var(--border-md); color: var(--text-primary); }
-.update-media-filename { font-size: 11px; color: var(--text-muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#update-media-clear { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 13px; padding: 2px 4px; line-height: 1; }
-#update-media-clear:hover { color: var(--brand-red); }
+.media-file-chips { display: flex; flex-wrap: wrap; gap: 5px; flex: 1; }
+.media-chip { display: inline-flex; align-items: center; gap: 4px; background: var(--border-md); border-radius: 20px; padding: 2px 8px; font-size: 10px; color: var(--text-secondary); }
+.media-chip button { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 11px; padding: 0; line-height: 1; }
+.media-chip button:hover { color: var(--brand-red); }
 
-/* ── Media preview (inside update items) ── */
-.update-media-preview { margin-top: 10px; }
-.update-media-preview img { max-width: 100%; max-height: 260px; border-radius: var(--radius-sm); border: 1px solid var(--border); display: block; cursor: pointer; object-fit: cover; }
-.update-media-preview iframe { width: 100%; height: 220px; border: 1px solid var(--border); border-radius: var(--radius-sm); display: block; }
-.update-media-uploading { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; margin-top: 8px; }
-.update-media-link { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 11px; font-weight: 700; color: var(--active-theme-color, var(--cx-color)); text-decoration: none; }
-.update-media-link:hover { text-decoration: underline; }
-.update-media-delete-btn { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; background: rgba(211,47,47,0.08); border: 1px solid rgba(211,47,47,0.2); color: var(--brand-red); border-radius: 4px; padding: 3px 8px; font-size: 10px; font-weight: 700; cursor: pointer; }
-.update-media-delete-btn:hover { background: rgba(211,47,47,0.18); }
-.update-task-tag { display: inline-block; margin-left: 8px; background: var(--active-theme-color, var(--cx-color)); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; vertical-align: middle; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.update-task-select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12px; font-family: inherit; background: var(--white); color: var(--text-primary); margin-bottom: 8px; }
-.update-author-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
-.update-author-row input { flex: 1; min-width: 0; }
-.update-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
-.update-input-group { display: flex; flex-direction: column; gap: 10px; }
-.update-input-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; resize: vertical; min-height: 70px; }
+.update-task-tag { display: inline-block; margin-left: 6px; background: var(--active-theme-color, var(--cx-color)); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; vertical-align: middle; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .update-input-group input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; }
-.update-input-group button { align-self: flex-start; padding: 10px 20px; background: var(--active-theme-color, var(--cx-color)); color: #fff; border: none; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; transition: opacity 0.2s; font-family: inherit; font-size: 13px; }
-.update-input-group button:hover { opacity: 0.85; }
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 60px 24px; color: var(--text-muted); background: var(--white); border: 1px dashed var(--border-md); border-radius: var(--radius); }
 .empty-state h3 { font-size: 16px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 700; }
 .empty-state p { font-size: 13px; }
@@ -2231,23 +2266,27 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
           <h3 id="team-updates-heading">Team Updates & Pre-Meeting Notes</h3>
           <div id="updates-list" class="updates-list"></div>
           <div class="update-input-group">
+            <!-- Reply-to preview strip -->
+            <div class="reply-preview-strip" id="reply-preview-strip">
+              Replying to <strong id="reply-preview-author"></strong>: <span id="reply-preview-text"></span>
+              <button class="cancel-reply" onclick="cancelReply()" title="Cancel reply">✕</button>
+            </div>
             <select id="new-update-task-link" class="update-task-select">
               <option value="">📌 Link to a task (optional)</option>
             </select>
-            <textarea id="new-update-text" placeholder="Type your pre-meeting update or note here..."></textarea>
-            <!-- Media attach -->
+            <textarea id="new-update-text" placeholder="Type your update or reply here..."></textarea>
+            <!-- Multi-file attach -->
             <div class="update-media-row">
-              <label class="update-media-label" for="new-update-media" title="Attach image or video (max 50 MB)">
+              <label class="update-media-label" for="new-update-media" title="Attach images or videos (max 50 MB each)">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                Attach Photo / Video
+                Attach Photos / Videos
               </label>
-              <input type="file" id="new-update-media" accept="image/*,video/*" style="display:none;" onchange="onMediaFileSelected(this)">
-              <span id="update-media-filename" class="update-media-filename"></span>
-              <button id="update-media-clear" onclick="clearMediaAttachment()" style="display:none;" title="Remove attachment">&#x2715;</button>
+              <input type="file" id="new-update-media" accept="image/*,video/*" multiple style="display:none;" onchange="onMediaFilesSelected(this)">
+              <div class="media-file-chips" id="media-file-chips"></div>
             </div>
             <div class="update-author-row">
               <input type="text" id="new-update-author" placeholder="Your Name (auto-filled if logged in)" readonly style="background:var(--bg);color:var(--text-muted);cursor:default;">
-              <button onclick="submitTeamUpdate()">Submit Update</button>
+              <button id="submit-update-btn" onclick="submitTeamUpdate()">Submit Update</button>
             </div>
           </div>
         </div>
@@ -3725,70 +3764,145 @@ function autoFillAuthorName() {
   }
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// CHAT UPDATES SYSTEM
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Avatar colour palette — deterministic per author name
+const AVATAR_PALETTE = ['#1565C0','#6A1B9A','#2E7D32','#E65100','#00838F','#AD1457','#4527A0','#558B2F','#37474F','#6D4C41'];
+function _avatarColor(name) {
+  let h = 0;
+  for (let i = 0; i < (name||'').length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return AVATAR_PALETTE[h % AVATAR_PALETTE.length];
+}
+function _initials(name) {
+  const parts = (name||'?').trim().split(/\s+/);
+  return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+}
+
+// Reply state
+let _replyingTo = null; // { timestamp, author, text }
+
+function setReply(timestamp, author, text) {
+  _replyingTo = { timestamp, author, text };
+  const strip = document.getElementById('reply-preview-strip');
+  const authorEl = document.getElementById('reply-preview-author');
+  const textEl   = document.getElementById('reply-preview-text');
+  if (strip)    strip.classList.add('active');
+  if (authorEl) authorEl.textContent = author;
+  if (textEl)   textEl.textContent   = text.length > 80 ? text.slice(0, 80) + '…' : text;
+  document.getElementById('new-update-text').focus();
+}
+
+function cancelReply() {
+  _replyingTo = null;
+  const strip = document.getElementById('reply-preview-strip');
+  if (strip) strip.classList.remove('active');
+}
+
+// ── Pending media files (array, cleared on dept switch) ──
+let _pendingMediaFiles = []; // array of File objects
+
+function onMediaFilesSelected(input) {
+  const MAX = 50 * 1024 * 1024;
+  const chipsEl = document.getElementById('media-file-chips');
+  Array.from(input.files).forEach(file => {
+    if (file.size > MAX) { alert(file.name + ' is too large (' + (file.size/1024/1024).toFixed(1) + ' MB). Max 50 MB per file.'); return; }
+    if (_pendingMediaFiles.length >= 6) { alert('Maximum 6 files per update.'); return; }
+    _pendingMediaFiles.push(file);
+  });
+  input.value = ''; // reset so same file can be re-added if needed
+  _renderMediaChips();
+}
+
+function _renderMediaChips() {
+  const chipsEl = document.getElementById('media-file-chips');
+  if (!chipsEl) return;
+  chipsEl.innerHTML = _pendingMediaFiles.map((f, i) =>
+    `<span class="media-chip">${f.name.length > 22 ? f.name.slice(0,20)+'…' : f.name}
+      <button onclick="_removeMediaFile(${i})" title="Remove">✕</button>
+    </span>`
+  ).join('');
+}
+
+function _removeMediaFile(idx) {
+  _pendingMediaFiles.splice(idx, 1);
+  _renderMediaChips();
+}
+
+function _clearMediaState() {
+  _pendingMediaFiles = [];
+  const chipsEl = document.getElementById('media-file-chips');
+  if (chipsEl) chipsEl.innerHTML = '';
+  const input = document.getElementById('new-update-media');
+  if (input) input.value = '';
+}
+
+// ── Submit ──
 function submitTeamUpdate() {
   const text = document.getElementById('new-update-text').value.trim();
   if (!text) return;
 
-  // Use logged-in user name; fall back to the name field; then 'Anonymous'
   const resolvedUser = _resolveUpdater();
   const nameField = document.getElementById('new-update-author');
   const author = (resolvedUser.name && resolvedUser.name !== 'Unknown')
     ? resolvedUser.name
     : (nameField ? nameField.value.trim() || 'Anonymous' : 'Anonymous');
 
-  // Linked task (optional)
+  // Store poster email for admin reply targeting
+  const authorEmail = (currentUser && currentUser.email) ? currentUser.email : null;
+
   const taskLinkEl = document.getElementById('new-update-task-link');
   const linkedTask = taskLinkEl ? taskLinkEl.value : '';
 
-  // Determine the session key this update belongs to
   const sessionKey = (viewingSessionDate && viewingSessionDate !== 'current')
     ? viewingSessionDate
     : ((availableSessions[currentProject] && availableSessions[currentProject][0]) || 'current');
 
-  // ── If a file is pending, upload it first, then save ──
-  const mediaFile = _pendingMediaFile;
-  if (mediaFile) {
-    // Show uploading state
-    const submitBtn = document.querySelector('.update-author-row button');
-    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Uploading…'; }
+  const replyRef = _replyingTo ? { timestamp: _replyingTo.timestamp, author: _replyingTo.author, preview: _replyingTo.text.slice(0, 120) } : null;
 
-    uploadMediaToGAS(mediaFile, currentProject, currentDept)
-      .then(mediaData => {
-        const media = {
-          fileId:   mediaData.fileId,
-          fileName: mediaData.fileName,
-          mimeType: mediaData.mimeType,
-          viewUrl:  mediaData.viewUrl,
-          thumbUrl: mediaData.thumbUrl,
-          embedUrl: mediaData.embedUrl
-        };
-        _saveUpdate(author, text, linkedTask, sessionKey, media);
+  // Clear inputs immediately
+  document.getElementById('new-update-text').value = '';
+  if (taskLinkEl) taskLinkEl.value = '';
+  cancelReply();
+
+  const filesToUpload = [..._pendingMediaFiles];
+  _clearMediaState();
+
+  const btn = document.getElementById('submit-update-btn');
+
+  if (filesToUpload.length > 0) {
+    if (btn) { btn.disabled = true; btn.textContent = 'Uploading…'; }
+    Promise.all(filesToUpload.map(f => uploadOneFileToGAS(f, currentProject, currentDept)))
+      .then(results => {
+        const mediaItems = results.filter(r => r && r.success).map(r => ({
+          fileId: r.fileId, fileName: r.fileName, mimeType: r.mimeType,
+          viewUrl: r.viewUrl, thumbUrl: r.thumbUrl, embedUrl: r.embedUrl
+        }));
+        _saveUpdate(author, authorEmail, text, linkedTask, sessionKey, mediaItems.length ? mediaItems : null, replyRef);
       })
       .catch(err => {
         console.warn('[Media upload failed]', err);
-        // Save update anyway without media
-        _saveUpdate(author, text, linkedTask, sessionKey, null);
+        _saveUpdate(author, authorEmail, text, linkedTask, sessionKey, null, replyRef);
       })
-      .finally(() => {
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Update'; }
-        clearMediaAttachment();
-      });
+      .finally(() => { if (btn) { btn.disabled = false; btn.textContent = 'Submit Update'; } });
   } else {
-    _saveUpdate(author, text, linkedTask, sessionKey, null);
+    _saveUpdate(author, authorEmail, text, linkedTask, sessionKey, null, replyRef);
   }
-
-  // Clear text immediately for responsiveness
-  document.getElementById('new-update-text').value = '';
-  if (taskLinkEl) taskLinkEl.value = '';
 }
 
-function _saveUpdate(author, text, linkedTask, sessionKey, media) {
-  const update = { text, author, timestamp: new Date().toISOString(), session: sessionKey, linkedTask };
-  if (media) update.media = media;
+function _saveUpdate(author, authorEmail, text, linkedTask, sessionKey, mediaItems, replyRef) {
+  const update = {
+    text, author, authorEmail: authorEmail || null,
+    timestamp: new Date().toISOString(),
+    session: sessionKey, linkedTask,
+    replyTo: replyRef || null,
+    mediaItems: mediaItems || null
+  };
 
   if (_fbReady && _fbDb) {
-    _fbDb.ref('dept_updates/' + currentProject + '/' + currentDept + '/' + sessionKey).push(update)
-      .catch(e => console.warn('[Firebase] dept update failed:', e));
+    _fbDb.ref('dept_updates/' + currentProject + '/' + currentDept + '/' + sessionKey)
+      .push(update).catch(e => console.warn('[Firebase] dept update failed:', e));
   }
   const key = 'deptupdate:' + currentProject + ':' + currentDept + ':' + sessionKey;
   let updates = JSON.parse(localStorage.getItem(key) || '[]');
@@ -3796,10 +3910,270 @@ function _saveUpdate(author, text, linkedTask, sessionKey, media) {
   localStorage.setItem(key, JSON.stringify(updates));
 
   renderUpdatesList();
-
-  // ── Email alert to admin ──
   sendUpdateAlertEmail(author, currentDept, currentProject, text, linkedTask);
+  maybeSendAdminReplyEmail(author, replyRef, text, currentDept, currentProject);
 }
+
+// ── Render as chat bubbles ──
+function renderUpdatesList() {
+  if (!currentProject || !currentDept) return;
+  const list = document.getElementById('updates-list'); if (!list) return;
+
+  const sessionKey = (viewingSessionDate && viewingSessionDate !== 'current')
+    ? viewingSessionDate
+    : ((availableSessions[currentProject] && availableSessions[currentProject][0]) || 'current');
+
+  const fbKey    = 'fb_dept:' + currentProject + ':' + currentDept + ':' + sessionKey;
+  const localKey = 'deptupdate:' + currentProject + ':' + currentDept + ':' + sessionKey;
+  const legacyFb    = 'fb_dept:' + currentProject + ':' + currentDept;
+  const legacyLocal = 'deptupdate:' + currentProject + ':' + currentDept;
+
+  let updates = JSON.parse(localStorage.getItem(fbKey) || localStorage.getItem(localKey) || '[]');
+  if (!updates.length) {
+    const legacy = JSON.parse(localStorage.getItem(legacyFb) || localStorage.getItem(legacyLocal) || '[]');
+    updates = legacy.filter(u => !u.session || u.session === sessionKey);
+  }
+
+  const heading = document.getElementById('team-updates-heading');
+  if (heading) {
+    heading.textContent = (viewingSessionDate === 'current' || !viewingSessionDate)
+      ? 'Team Updates & Pre-Meeting Notes — Current Session'
+      : 'Team Updates & Pre-Meeting Notes — ' + formatSheetName(sessionKey);
+  }
+
+  if (!updates.length) {
+    list.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:8px 0;">No updates for this session yet. Be the first to post.</div>';
+    return;
+  }
+
+  // Determine current user identity
+  const myEmail = currentUser ? currentUser.email : null;
+  const myName  = currentUser ? (currentUser.displayName || '').split(' ')[0] : null;
+
+  const ADMIN_EMAIL = 'o.olasunkanmi@mixtafrica.com';
+
+  list.innerHTML = updates.map(u => {
+    const isMe = myEmail && (u.authorEmail === myEmail || (!u.authorEmail && myName && u.author && u.author.toLowerCase().includes(myName.toLowerCase())));
+    const side  = isMe ? 'mine' : 'theirs';
+    const color = _avatarColor(u.author || 'A');
+    const initials = _initials(u.author || 'A');
+    const ts = new Date(u.timestamp).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    const tsAttr = u.timestamp.replace(/'/g, '');
+
+    // Quote block
+    let quoteHtml = '';
+    if (u.replyTo) {
+      quoteHtml = `<div class="chat-quote"><strong>${_esc(u.replyTo.author)}</strong><br>${_esc(u.replyTo.preview)}</div>`;
+    }
+
+    // Task tag
+    const taskTag = u.linkedTask ? `<span class="update-task-tag">📌 ${_esc(u.linkedTask)}</span>` : '';
+
+    // Media grid — supports both old single `media` and new `mediaItems` array
+    let mediaHtml = '';
+    const mediaArr = u.mediaItems || (u.media ? [u.media] : []);
+    if (mediaArr.length) {
+      const tiles = mediaArr.map((m, mi) => {
+        const delBtn = diagUnlocked
+          ? `<button class="chat-media-del-btn" onclick="deleteMediaItem('${tsAttr}',${mi},'${m.fileId}')" title="Remove">🗑</button>`
+          : '';
+        if (m.mimeType && m.mimeType.startsWith('image/')) {
+          return `<div style="position:relative;"><a href="${m.viewUrl}" target="_blank"><img src="${m.thumbUrl}" alt="${_esc(m.fileName)}" loading="lazy"></a>${delBtn}</div>`;
+        } else if (m.mimeType && m.mimeType.startsWith('video/')) {
+          return `<div style="position:relative;"><iframe src="${m.embedUrl}" allowfullscreen></iframe>${delBtn}<a class="chat-media-link" href="${m.viewUrl}" target="_blank">▶ ${_esc(m.fileName)}</a></div>`;
+        } else {
+          return `<div><a class="chat-media-link" href="${m.viewUrl}" target="_blank">📎 ${_esc(m.fileName)}</a>${delBtn}</div>`;
+        }
+      }).join('');
+      mediaHtml = `<div class="chat-media-grid">${tiles}</div>`;
+    }
+
+    // Actions row
+    const replyPreview = (u.text||'').slice(0,80).replace(/'/g, '&#39;');
+    const replyBtn = `<button class="chat-reply-btn" onclick="setReply('${tsAttr}','${_esc(u.author||'Anonymous').replace(/'/g,"&#39;")}','${replyPreview}')">↩ Reply</button>`;
+    const deleteBtn = diagUnlocked
+      ? `<button class="chat-delete-btn" onclick="deleteUpdate('${tsAttr}')" title="Delete message">🗑 Delete</button>`
+      : '';
+    const actionsHtml = `<div class="chat-actions">${replyBtn}${deleteBtn}</div>`;
+
+    const avatar = `<div class="chat-avatar" style="background:${color};">${initials}</div>`;
+    const bubble = `<div class="chat-bubble">
+      <div class="chat-meta"><strong>${_esc(u.author||'Anonymous')}</strong> — ${ts}${taskTag}</div>
+      ${quoteHtml}
+      <div class="chat-text">${_esc(u.text)}</div>
+      ${mediaHtml}
+      ${actionsHtml}
+    </div>`;
+
+    return `<div class="chat-row ${side}">${avatar}${bubble}</div>`;
+  }).join('');
+
+  // Auto-scroll to bottom
+  list.scrollTop = list.scrollHeight;
+}
+
+function _esc(str) {
+  return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function deleteUpdate(timestamp) {
+  if (!diagUnlocked) return;
+  if (!confirm('Delete this message? This cannot be undone.')) return;
+
+  const sessionKey = (viewingSessionDate && viewingSessionDate !== 'current')
+    ? viewingSessionDate
+    : ((availableSessions[currentProject] && availableSessions[currentProject][0]) || 'current');
+
+  const keysToCheck = [
+    'deptupdate:' + currentProject + ':' + currentDept + ':' + sessionKey,
+    'fb_dept:'    + currentProject + ':' + currentDept + ':' + sessionKey,
+    'deptupdate:' + currentProject + ':' + currentDept,
+    'fb_dept:'    + currentProject + ':' + currentDept,
+  ];
+  keysToCheck.forEach(key => {
+    try {
+      const arr = JSON.parse(localStorage.getItem(key) || '[]');
+      const filtered = arr.filter(u => u.timestamp !== timestamp);
+      if (filtered.length !== arr.length) localStorage.setItem(key, JSON.stringify(filtered));
+    } catch(e) {}
+  });
+
+  if (_fbReady && _fbDb) {
+    const ref = _fbDb.ref('dept_updates/' + currentProject + '/' + currentDept + '/' + sessionKey);
+    ref.once('value').then(snap => {
+      snap.forEach(child => { if (child.val().timestamp === timestamp) child.ref.remove(); });
+    }).catch(e => console.warn('[Firebase] delete update failed:', e));
+  }
+  renderUpdatesList();
+}
+
+function deleteMediaItem(updateTimestamp, mediaIndex, fileId) {
+  if (!diagUnlocked) return;
+  if (!confirm('Remove this media? It will be moved to Drive trash.')) return;
+
+  const SCRIPT_URL   = window.APPS_SCRIPT_URL   || localStorage.getItem('APPS_SCRIPT_URL');
+  const SCRIPT_TOKEN = window.APPS_SCRIPT_TOKEN  || localStorage.getItem('APPS_SCRIPT_TOKEN');
+
+  const sessionKey = (viewingSessionDate && viewingSessionDate !== 'current')
+    ? viewingSessionDate
+    : ((availableSessions[currentProject] && availableSessions[currentProject][0]) || 'current');
+
+  const keysToCheck = [
+    'deptupdate:' + currentProject + ':' + currentDept + ':' + sessionKey,
+    'fb_dept:'    + currentProject + ':' + currentDept + ':' + sessionKey,
+    'deptupdate:' + currentProject + ':' + currentDept,
+    'fb_dept:'    + currentProject + ':' + currentDept,
+  ];
+  keysToCheck.forEach(key => {
+    try {
+      const arr = JSON.parse(localStorage.getItem(key) || '[]');
+      let changed = false;
+      arr.forEach(u => {
+        if (u.timestamp !== updateTimestamp) return;
+        if (u.mediaItems) { u.mediaItems.splice(mediaIndex, 1); changed = true; }
+        else if (u.media)  { delete u.media; changed = true; }
+      });
+      if (changed) localStorage.setItem(key, JSON.stringify(arr));
+    } catch(e) {}
+  });
+
+  if (_fbReady && _fbDb) {
+    const ref = _fbDb.ref('dept_updates/' + currentProject + '/' + currentDept + '/' + sessionKey);
+    ref.once('value').then(snap => {
+      snap.forEach(child => {
+        if (child.val().timestamp === updateTimestamp) {
+          const cur = child.val();
+          if (cur.mediaItems) { cur.mediaItems.splice(mediaIndex, 1); child.ref.child('mediaItems').set(cur.mediaItems); }
+          else if (cur.media) child.ref.child('media').remove();
+        }
+      });
+    }).catch(e => console.warn('[Firebase] delete media failed:', e));
+  }
+
+  if (SCRIPT_URL && SCRIPT_TOKEN) {
+    fetch(SCRIPT_URL, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'deleteMedia', token: SCRIPT_TOKEN, fileId })
+    }).catch(e => console.warn('[GAS] Drive trash failed:', e));
+  }
+  renderUpdatesList();
+}
+
+async function uploadOneFileToGAS(file, project, dept) {
+  const SCRIPT_URL   = window.APPS_SCRIPT_URL   || localStorage.getItem('APPS_SCRIPT_URL');
+  const SCRIPT_TOKEN = window.APPS_SCRIPT_TOKEN  || localStorage.getItem('APPS_SCRIPT_TOKEN');
+  if (!SCRIPT_URL || !SCRIPT_TOKEN) return null;
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async e => {
+      const base64 = e.target.result.split(',')[1];
+      try {
+        const res  = await fetch(SCRIPT_URL, {
+          method: 'POST', headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'uploadMedia', token: SCRIPT_TOKEN,
+            fileName: file.name, mimeType: file.type, base64Data: base64, project, dept })
+        });
+        const data = await res.json();
+        if (data.success) resolve(data); else reject(new Error(data.error || 'Upload failed'));
+      } catch(err) { reject(err); }
+    };
+    reader.onerror = () => reject(new Error('FileReader error'));
+    reader.readAsDataURL(file);
+  });
+}
+
+// Admin reply email — only fires when admin (o.olasunkanmi) posts a reply
+function maybeSendAdminReplyEmail(author, replyRef, text, dept, project) {
+  const ADMIN_EMAIL = 'o.olasunkanmi@mixtafrica.com';
+  const myEmail = currentUser ? currentUser.email : null;
+  if (!myEmail || myEmail.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) return;
+  if (!replyRef) return; // only send for replies, not fresh posts
+
+  // Find the original poster's email from localStorage
+  const sessionKey = (viewingSessionDate && viewingSessionDate !== 'current')
+    ? viewingSessionDate
+    : ((availableSessions[currentProject] && availableSessions[currentProject][0]) || 'current');
+  const key = 'deptupdate:' + project + ':' + dept + ':' + sessionKey;
+  let updates = JSON.parse(localStorage.getItem(key) || '[]');
+  const original = updates.find(u => u.timestamp === replyRef.timestamp);
+  const toEmail  = original && original.authorEmail ? original.authorEmail : null;
+  if (!toEmail || toEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase()) return;
+
+  const SCRIPT_URL   = window.APPS_SCRIPT_URL   || localStorage.getItem('APPS_SCRIPT_URL');
+  const SCRIPT_TOKEN = window.APPS_SCRIPT_TOKEN  || localStorage.getItem('APPS_SCRIPT_TOKEN');
+  if (!SCRIPT_URL || !SCRIPT_TOKEN) return;
+
+  const projectLabel = project === 'Crossings' ? 'Lakowe Crossings' : 'Lakowe Annexe';
+  const now = new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  const html = `
+<div style="font-family:'DM Sans',Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb;">
+  <div style="background:#1b5e20;padding:18px 24px;">
+    <p style="margin:0;color:#fff;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Mixta Africa — Projects Tracker</p>
+    <h2 style="margin:4px 0 0;color:#fff;font-size:18px;font-weight:800;">O. Olasunkanmi replied to your update</h2>
+  </div>
+  <div style="padding:24px;">
+    <p style="margin:0 0 8px;"><strong>Project:</strong> ${projectLabel} — ${dept}</p>
+    <p style="margin:0 0 16px;color:#666;font-size:12px;">${now}</p>
+    <div style="background:#f0f4f0;border-left:3px solid #9e9e9e;border-radius:4px;padding:10px 14px;font-size:12px;color:#666;margin-bottom:14px;">
+      <strong>Your message:</strong> ${replyRef.preview}
+    </div>
+    <div style="background:#f9fafb;border-left:3px solid #1b5e20;border-radius:4px;padding:14px 16px;font-size:14px;line-height:1.6;color:#1a1a1a;">
+      ${text.replace(/\n/g,'<br>')}
+    </div>
+    <p style="margin:16px 0 0;font-size:12px;color:#999;">Reply on the dashboard to continue the conversation.</p>
+  </div>
+</div>`;
+
+  fetch(SCRIPT_URL, {
+    method: 'POST', headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'sendEmail', token: SCRIPT_TOKEN,
+      to: [toEmail], subject: `[${projectLabel} — ${dept}] O. Olasunkanmi replied to your update`,
+      html, reply_to: ADMIN_EMAIL })
+  }).catch(e => console.warn('[Reply email] failed:', e));
+}
+
 
 function sendUpdateAlertEmail(author, dept, project, text, linkedTask) {
   const SCRIPT_URL   = window.APPS_SCRIPT_URL   || localStorage.getItem('APPS_SCRIPT_URL');
@@ -3843,246 +4217,6 @@ function sendUpdateAlertEmail(author, dept, project, text, linkedTask) {
     })
   }).catch(e => console.warn('[Email alert] Failed to send update notification:', e));
 }
-
-function renderUpdatesList() {
-  if (!currentProject || !currentDept) return;
-  const list = document.getElementById('updates-list'); if(!list) return;
-
-  // Resolve the session we're viewing
-  const sessionKey = (viewingSessionDate && viewingSessionDate !== 'current')
-    ? viewingSessionDate
-    : ((availableSessions[currentProject] && availableSessions[currentProject][0]) || 'current');
-
-  // ── Collect updates for this specific session only ──
-  // Prefer Firebase-synced key, then fall back to local key
-  const fbKey    = 'fb_dept:' + currentProject + ':' + currentDept + ':' + sessionKey;
-  const localKey = 'deptupdate:' + currentProject + ':' + currentDept + ':' + sessionKey;
-
-  // Legacy support: also check old un-scoped keys so nothing is lost
-  const legacyFb    = 'fb_dept:' + currentProject + ':' + currentDept;
-  const legacyLocal = 'deptupdate:' + currentProject + ':' + currentDept;
-
-  let updates = JSON.parse(localStorage.getItem(fbKey) || localStorage.getItem(localKey) || '[]');
-
-  // Merge in legacy updates that match this session (so old data isn't orphaned)
-  if (!updates.length) {
-    const legacy = JSON.parse(localStorage.getItem(legacyFb) || localStorage.getItem(legacyLocal) || '[]');
-    updates = legacy.filter(u => !u.session || u.session === sessionKey);
-  }
-
-  // Update section heading to show which session we're viewing
-  const heading = document.getElementById('team-updates-heading');
-  if (heading) {
-    const label = (viewingSessionDate === 'current' || !viewingSessionDate)
-      ? 'Team Updates & Pre-Meeting Notes — Current Session'
-      : 'Team Updates & Pre-Meeting Notes — ' + formatSheetName(sessionKey);
-    heading.textContent = label;
-  }
-
-  if (!updates.length) {
-    list.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">No pre-meeting updates recorded for this date yet.</div>';
-    return;
-  }
-  list.innerHTML = [...updates].reverse().map(u => {
-    const ts = new Date(u.timestamp).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-    const deleteBtn = diagUnlocked
-      ? `<button onclick="deleteUpdate('${u.timestamp}')" title="Delete this update" class="update-media-delete-btn" style="position:absolute;top:8px;right:8px;">✕ Delete</button>`
-      : '';
-
-    // ── Media preview block ──
-    let mediaHtml = '';
-    if (u.media) {
-      const m = u.media;
-      const isImage = m.mimeType && m.mimeType.startsWith('image/');
-      const isVideo = m.mimeType && m.mimeType.startsWith('video/');
-      const mediaDel = diagUnlocked
-        ? `<button onclick="deleteMedia('${u.timestamp}','${m.fileId}')" class="update-media-delete-btn" style="display:inline-flex;margin-top:6px;">🗑 Remove media</button>`
-        : '';
-      if (isImage) {
-        mediaHtml = `<div class="update-media-preview">
-          <a href="${m.viewUrl}" target="_blank" rel="noopener"><img src="${m.thumbUrl}" alt="${m.fileName}" loading="lazy" title="Click to open in Drive"></a>
-          ${mediaDel}
-        </div>`;
-      } else if (isVideo) {
-        mediaHtml = `<div class="update-media-preview">
-          <iframe src="${m.embedUrl}" frameborder="0" allow="autoplay" allowfullscreen></iframe>
-          <a class="update-media-link" href="${m.viewUrl}" target="_blank" rel="noopener">▶ Open video in Drive — ${m.fileName}</a>
-          ${mediaDel}
-        </div>`;
-      } else {
-        mediaHtml = `<div class="update-media-preview">
-          <a class="update-media-link" href="${m.viewUrl}" target="_blank" rel="noopener">📎 ${m.fileName}</a>
-          ${mediaDel}
-        </div>`;
-      }
-    }
-
-    return `<div class="update-item" style="position:relative;">
-      <div class="update-meta">
-        <strong>${u.author||'Anonymous'}</strong> — ${ts}
-        ${u.linkedTask ? `<span class="update-task-tag">📌 ${u.linkedTask}</span>` : ''}
-      </div>
-      <div style="white-space:pre-wrap;word-break:break-word;${diagUnlocked ? 'padding-right:80px;' : ''}">${u.text}</div>
-      ${mediaHtml}
-      ${deleteBtn}
-    </div>`;
-  }).join('');
-}
-
-function deleteUpdate(timestamp) {
-  if (!diagUnlocked) return;
-  if (!confirm('Delete this update? This cannot be undone.')) return;
-
-  const sessionKey = (viewingSessionDate && viewingSessionDate !== 'current')
-    ? viewingSessionDate
-    : ((availableSessions[currentProject] && availableSessions[currentProject][0]) || 'current');
-
-  // ── Remove from all localStorage keys (scoped + legacy) ──
-  const keysToCheck = [
-    'deptupdate:' + currentProject + ':' + currentDept + ':' + sessionKey,
-    'fb_dept:'    + currentProject + ':' + currentDept + ':' + sessionKey,
-    'deptupdate:' + currentProject + ':' + currentDept,
-    'fb_dept:'    + currentProject + ':' + currentDept,
-  ];
-  keysToCheck.forEach(key => {
-    try {
-      const arr = JSON.parse(localStorage.getItem(key) || '[]');
-      const filtered = arr.filter(u => u.timestamp !== timestamp);
-      if (filtered.length !== arr.length) localStorage.setItem(key, JSON.stringify(filtered));
-    } catch(e) {}
-  });
-
-  // ── Remove from Firebase ──
-  if (_fbReady && _fbDb) {
-    const ref = _fbDb.ref('dept_updates/' + currentProject + '/' + currentDept + '/' + sessionKey);
-    ref.once('value').then(snap => {
-      snap.forEach(child => {
-        if (child.val().timestamp === timestamp) child.ref.remove();
-      });
-    }).catch(e => console.warn('[Firebase] delete update failed:', e));
-  }
-
-  renderUpdatesList();
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// MEDIA UPLOAD & DELETE
-// ══════════════════════════════════════════════════════════════════════════════
-
-// Holds the selected File object until submit
-let _pendingMediaFile = null;
-
-function onMediaFileSelected(input) {
-  const file = input.files[0];
-  if (!file) return;
-
-  const MAX_BYTES = 50 * 1024 * 1024; // 50 MB
-  if (file.size > MAX_BYTES) {
-    alert('File is too large (' + (file.size / 1024 / 1024).toFixed(1) + ' MB). Maximum size is 50 MB.');
-    input.value = '';
-    return;
-  }
-
-  _pendingMediaFile = file;
-  const nameEl = document.getElementById('update-media-filename');
-  const clearBtn = document.getElementById('update-media-clear');
-  if (nameEl) nameEl.textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(1) + ' MB)';
-  if (clearBtn) clearBtn.style.display = 'inline';
-}
-
-function clearMediaAttachment() {
-  _pendingMediaFile = null;
-  const input = document.getElementById('new-update-media');
-  const nameEl = document.getElementById('update-media-filename');
-  const clearBtn = document.getElementById('update-media-clear');
-  if (input) input.value = '';
-  if (nameEl) nameEl.textContent = '';
-  if (clearBtn) clearBtn.style.display = 'none';
-}
-
-async function uploadMediaToGAS(file, project, dept) {
-  const SCRIPT_URL   = window.APPS_SCRIPT_URL   || localStorage.getItem('APPS_SCRIPT_URL');
-  const SCRIPT_TOKEN = window.APPS_SCRIPT_TOKEN  || localStorage.getItem('APPS_SCRIPT_TOKEN');
-  if (!SCRIPT_URL || !SCRIPT_TOKEN) return null;
-
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-      // Strip the data URL prefix to get raw base64
-      const base64 = e.target.result.split(',')[1];
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({
-            action:    'uploadMedia',
-            token:     SCRIPT_TOKEN,
-            fileName:  file.name,
-            mimeType:  file.type,
-            base64Data: base64,
-            project:   project,
-            dept:      dept
-          })
-        });
-        const data = await res.json();
-        if (data.success) resolve(data);
-        else reject(new Error(data.error || 'Upload failed'));
-      } catch(err) { reject(err); }
-    };
-    reader.onerror = () => reject(new Error('FileReader failed'));
-    reader.readAsDataURL(file);
-  });
-}
-
-function deleteMedia(updateTimestamp, fileId) {
-  if (!diagUnlocked) return;
-  if (!confirm('Remove this media? It will be moved to Drive trash.')) return;
-
-  const SCRIPT_URL   = window.APPS_SCRIPT_URL   || localStorage.getItem('APPS_SCRIPT_URL');
-  const SCRIPT_TOKEN = window.APPS_SCRIPT_TOKEN  || localStorage.getItem('APPS_SCRIPT_TOKEN');
-
-  // Remove media reference from all localStorage keys
-  const sessionKey = (viewingSessionDate && viewingSessionDate !== 'current')
-    ? viewingSessionDate
-    : ((availableSessions[currentProject] && availableSessions[currentProject][0]) || 'current');
-
-  const keysToCheck = [
-    'deptupdate:' + currentProject + ':' + currentDept + ':' + sessionKey,
-    'fb_dept:'    + currentProject + ':' + currentDept + ':' + sessionKey,
-    'deptupdate:' + currentProject + ':' + currentDept,
-    'fb_dept:'    + currentProject + ':' + currentDept,
-  ];
-  keysToCheck.forEach(key => {
-    try {
-      const arr = JSON.parse(localStorage.getItem(key) || '[]');
-      let changed = false;
-      arr.forEach(u => { if (u.timestamp === updateTimestamp && u.media) { delete u.media; changed = true; } });
-      if (changed) localStorage.setItem(key, JSON.stringify(arr));
-    } catch(e) {}
-  });
-
-  // Remove from Firebase
-  if (_fbReady && _fbDb) {
-    const ref = _fbDb.ref('dept_updates/' + currentProject + '/' + currentDept + '/' + sessionKey);
-    ref.once('value').then(snap => {
-      snap.forEach(child => {
-        if (child.val().timestamp === updateTimestamp) child.ref.child('media').remove();
-      });
-    }).catch(e => console.warn('[Firebase] delete media ref failed:', e));
-  }
-
-  // Trash the Drive file via GAS
-  if (SCRIPT_URL && SCRIPT_TOKEN) {
-    fetch(SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'deleteMedia', token: SCRIPT_TOKEN, fileId: fileId })
-    }).catch(e => console.warn('[GAS] Drive trash failed:', e));
-  }
-
-  renderUpdatesList();
-}
-
 async function syncWithGoogleSheet() {
   try {
     document.querySelectorAll('.sync-btn').forEach(btn => btn.classList.add('syncing'));
@@ -4510,7 +4644,7 @@ function rebuildMobilePills() {
   const latest = availableSessions[currentProject] && availableSessions[currentProject][0];
   container.innerHTML = depts.map(d => { const count = taskDatabase.filter(t => t.project === currentProject && t.dept.toLowerCase() === d.toLowerCase() && t.session === latest).length; const isActive = currentDept === d ? activeClass : ''; return `<button class="mobile-dept-pill ${isActive}" onclick="showDeptMobile('${d}')">${d} <span class="pill-count">${count}</span></button>`; }).join('');
 }
-function showDeptMobile(dept) { currentDept = dept; viewingSessionDate = 'current'; updateSidebarCounts(); renderDeptContent(currentProject, dept); }
+function showDeptMobile(dept) { currentDept = dept; viewingSessionDate = 'current'; _clearMediaState(); cancelReply(); updateSidebarCounts(); renderDeptContent(currentProject, dept); }
 function buildHistoryBar() {
   const bar = document.getElementById('history-bar'); if (!currentProject) return;
   const sessions = availableSessions[currentProject] || []; const monthGroups = {};
@@ -4535,7 +4669,7 @@ function switchSession(val) {
   if (val === 'current') dateLabel.textContent = 'Current'; else if (val.length === 3) dateLabel.textContent = val.charAt(0).toUpperCase() + val.slice(1) + ' Rollup'; else dateLabel.textContent = formatSheetName(val);
   renderCurrentDept();
 }
-function showDept(btn, proj, dept) { currentProject = proj; currentDept = dept; viewingSessionDate = 'current'; document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderDeptContent(proj, dept); }
+function showDept(btn, proj, dept) { currentProject = proj; currentDept = dept; viewingSessionDate = 'current'; _clearMediaState(); cancelReply(); document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderDeptContent(proj, dept); }
 function renderDeptContent(proj, dept) {
   document.getElementById('panel-placeholder').style.display = 'none'; const container = document.getElementById('dynamic-dept-container'); container.style.display = 'block';
   document.getElementById('dynamic-dept-title').textContent = dept; const badge = document.getElementById('dynamic-dept-badge'); badge.textContent = proj; badge.className = 'nav-badge ' + (proj==='Crossings' ? 'badge-cx' : 'badge-annex');
