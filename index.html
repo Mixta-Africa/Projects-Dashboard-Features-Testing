@@ -5373,8 +5373,8 @@ async function _checkFirebaseDB() {
 
 async function _checkSheets() {
   const checks = [
-    { id: 'sheets-cx', name: 'Google Sheets — Crossings', url: window.SHEET_CROSSINGS || localStorage.getItem('SHEET_CROSSINGS') },
-    { id: 'sheets-ax', name: 'Google Sheets — Annexe',    url: window.SHEET_ANNEXE    || localStorage.getItem('SHEET_ANNEXE') }
+    { id: 'sheets-cx', name: 'Google Sheets — Crossings', url: (typeof SHEET_CROSSINGS !== 'undefined' ? SHEET_CROSSINGS : null) || window.SHEET_CROSSINGS || localStorage.getItem('SHEET_CROSSINGS') },
+    { id: 'sheets-ax', name: 'Google Sheets — Annexe',    url: (typeof SHEET_ANNEXE    !== 'undefined' ? SHEET_ANNEXE    : null) || window.SHEET_ANNEXE    || localStorage.getItem('SHEET_ANNEXE') }
   ];
   for (const c of checks) {
     if (!c.url || c.url.startsWith('__')) { _hCard(c.id, c.name,'warn','Sheet URL not configured. Sync will not work.',`URL value: "${c.url}"`); continue; }
@@ -5384,33 +5384,51 @@ async function _checkSheets() {
         new Promise((_,rej) => setTimeout(() => rej(new Error('Timeout after 8s')), 8000))
       ]);
       if (res.ok || res.status === 302 || res.status === 200) {
-        _hCard(c.id, c.name,'ok','Sheet URL is reachable.',`HTTP ${res.status} | url: ${c.url.slice(0,60)}…`);
+        _hCard(c.id, c.name,'ok','Sheet URL is reachable and responding correctly.',`HTTP ${res.status} | url: ${c.url.slice(0,60)}…`);
       } else {
-        _hCard(c.id, c.name,'warn',`Sheet returned unexpected status ${res.status}.`,`HTTP ${res.status} | url: ${c.url.slice(0,60)}…`);
+        _hCard(c.id, c.name,'warn',`Sheet returned unexpected status ${res.status}. Sync may be unreliable.`,`HTTP ${res.status} | url: ${c.url.slice(0,60)}…`);
       }
-    } catch(e) { _hCard(c.id, c.name,'err','Cannot reach sheet URL. Sync will fail.',e.message); }
+    } catch(e) { _hCard(c.id, c.name,'err','Cannot reach sheet URL. Sync will fail — check if the sheet is still published.',e.message); }
   }
 }
 
 async function _checkGAS() {
   const url = window.APPS_SCRIPT_URL || localStorage.getItem('APPS_SCRIPT_URL');
-  if (!url || url.startsWith('__')) { _hCard('gas','Apps Script Endpoint','warn','GAS URL not configured. Email and media upload will not work.','APPS_SCRIPT_URL is not set'); return; }
+  if (!url || url.startsWith('__')) {
+    _hCard('gas','Apps Script Endpoint','err',
+      'GAS URL not configured. Email, media upload and delete will not work. Check APPS_SCRIPT_URL in GitHub Secrets.',
+      'window.APPS_SCRIPT_URL is empty or still a placeholder');
+    return;
+  }
   try {
     const res = await Promise.race([
       fetch(url, { method: 'GET' }),
-      new Promise((_,rej) => setTimeout(() => rej(new Error('Timeout after 8s')), 8000))
+      new Promise((_,rej) => setTimeout(() => rej(new Error('TIMEOUT')), 10000))
     ]);
     const text = await res.text();
     let data;
     try { data = JSON.parse(text); } catch(e) { data = null; }
     if (data && data.status === 'ok') {
-      _hCard('gas','Apps Script Endpoint','ok','GAS endpoint is live and responding correctly.',`status: ${data.status} | service: ${data.service}`);
+      _hCard('gas','Apps Script Endpoint','ok',
+        'GAS endpoint is live and responding correctly. Email and media are operational.',
+        `status: ${data.status} | service: ${data.service}`);
     } else if (res.ok) {
-      _hCard('gas','Apps Script Endpoint','warn','GAS endpoint responded but returned unexpected format. Check the deployed script.',`response: ${text.slice(0,120)}`);
+      _hCard('gas','Apps Script Endpoint','warn',
+        'GAS endpoint responded but returned unexpected format. The script may not have the doGet handler — check that the latest version is deployed.',
+        `HTTP ${res.status} | response: ${text.slice(0,120)}`);
     } else {
-      _hCard('gas','Apps Script Endpoint','err',`GAS endpoint returned HTTP ${res.status}. Email and uploads will fail.`,`HTTP ${res.status} | body: ${text.slice(0,120)}`);
+      _hCard('gas','Apps Script Endpoint','err',
+        `GAS endpoint returned HTTP ${res.status}. Email and uploads will fail.`,
+        `HTTP ${res.status} | body: ${text.slice(0,120)}`);
     }
-  } catch(e) { _hCard('gas','Apps Script Endpoint','err','Cannot reach the GAS endpoint. Email and media are offline.',e.message); }
+  } catch(e) {
+    const isTimeout = e.message === 'TIMEOUT';
+    _hCard('gas','Apps Script Endpoint', isTimeout ? 'warn' : 'err',
+      isTimeout
+        ? 'GAS endpoint timed out. This usually means the deployment URL in GitHub Secrets is outdated — when you create a new GAS deployment it generates a new URL. Update APPS_SCRIPT_URL secret with the current deployment URL and redeploy.'
+        : 'Cannot reach GAS endpoint. Email and media are offline.',
+      `url: ${url.slice(0,80)} | error: ${e.message}`);
+  }
 }
 
 async function _checkGroq() {
