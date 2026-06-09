@@ -3674,14 +3674,18 @@ const METRIC_PATTERNS = {
   inflow: /(?:total\s+)?(?:sales\s+)?(?:inflow|received)(?:\s+to\s+date)?[\s:\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?(?:n|N|mn|MN)?)/i,
   sales: /(?:total\s+)?value\s+of\s+sales[\s:\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?(?:n|N|mn|MN)?)/i,
   balance: /(?:account\s+)?bal(?:ance)?[\s:\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?(?:n|N|mn|MN)?)/i,
-  units: /(?:sales|units\s*sold|no\.?\s*of\s*sales)[\s:\-]+(\d{1,4})\b|\b(\d{1,4})\s+units/i,
-  offers: /(?:active\s*)?offer(?:s| letters?)?[\s:\-]+(\d{1,4})\b|\b(\d{1,4})\s*(?:active\s*)?offer/i
+  units: /(?:sales|units\s*sold|no\.?\s*of\s*sales)[\s:\-]+(\d{1,4})\b|\b(\d{1,4})\s+(?:units|sales)/i,
+  offers: /(?:active\s*)?offer(?:s| letters?)?[\s:\-]+(\d{1,4})\b|\b(\d{1,4}|no|zero)\s*(?:active\s*)?offer/i
 };
 
 function parseExtractedMetric(matchResult, isCurrency) {
   if (!matchResult) return null;
   let val = matchResult[1] || matchResult[2]; 
   if (!val) return null;
+
+  if (!isCurrency) {
+      if (val.toLowerCase() === 'no' || val.toLowerCase() === 'zero') return '0';
+  }
   
   if (isCurrency) {
     let raw = val.trim().toUpperCase().replace(/[, ]/g, '');
@@ -4626,43 +4630,8 @@ function processSheet(rows, proj, sheetName, isLatest) {
       if (matched) lastDept = matched; // Update department header
     }
 
-    // ── METRIC EXTRACTION FROM OPERATIONS ──
-    if (/operations|fincon/i.test(lastDept)) {
-        const resultText = String(c[colMap.result] || '').trim();
-        const actionText = action + ' ' + explanationText + ' ' + resultText;
-
-        // 1. Initialize local caches IMMEDIATELY (Do not wait for Firebase auth)
-        window._firebaseMetrics = window._firebaseMetrics || {};
-        window._firebaseMetrics[proj] = window._firebaseMetrics[proj] || {};
-        window._firebaseMetrics[proj][sheetName] = window._firebaseMetrics[proj][sheetName] || {};
-
-        // 2. Scan every operations row against the regex patterns
-        const inflowMatch = actionText.match(METRIC_PATTERNS.inflow);
-        const salesMatch = actionText.match(METRIC_PATTERNS.sales);
-        const balanceMatch = actionText.match(METRIC_PATTERNS.balance);
-        const unitsMatch = actionText.match(METRIC_PATTERNS.units);
-        const offersMatch = actionText.match(METRIC_PATTERNS.offers);
-
-        let foundAny = false;
-
-        // 3. Accumulate data across multiple rows (solves Annexe fragmentation)
-        if (inflowMatch) { window._firebaseMetrics[proj][sheetName].inflow = parseExtractedMetric(inflowMatch, true); foundAny = true; }
-        if (salesMatch) { window._firebaseMetrics[proj][sheetName].sales = parseExtractedMetric(salesMatch, true); foundAny = true; }
-        if (balanceMatch) { window._firebaseMetrics[proj][sheetName].balance = parseExtractedMetric(balanceMatch, true); foundAny = true; }
-        if (unitsMatch) { window._firebaseMetrics[proj][sheetName].units = parseExtractedMetric(unitsMatch, false); foundAny = true; }
-        if (offersMatch) { window._firebaseMetrics[proj][sheetName].offers = parseExtractedMetric(offersMatch, false); foundAny = true; }
-
-        // 4. Update internal chart metrics locally
-        if (window._firebaseMetrics[proj][sheetName].inflow) window._chartMetrics[proj][sheetName].inflow = parseNairaToM(window._firebaseMetrics[proj][sheetName].inflow);
-        if (window._firebaseMetrics[proj][sheetName].sales) window._chartMetrics[proj][sheetName].salesValue = parseNairaToM(window._firebaseMetrics[proj][sheetName].sales);
-        if (window._firebaseMetrics[proj][sheetName].balance) window._chartMetrics[proj][sheetName].balance = parseNairaToM(window._firebaseMetrics[proj][sheetName].balance);
-
-        // 5. Background sync to Firebase ONLY if ready
-        if (foundAny && _fbReady && _fbDb) {
-            const updates = { ...window._firebaseMetrics[proj][sheetName], updatedAt: firebase.database.ServerValue.TIMESTAMP };
-            _fbDb.ref(`metrics/${proj}/${sheetName}`).update(updates).catch(e => console.warn('Firebase metric sync failed', e));
-        }
-    } // end if (operations|fincon)
+    // ── METRIC EXTRACTION REMOVED ──
+    // Metrics are now derived dynamically from the taskDatabase via extractMetricsFromTasks()
     
     // ── TASK VERIFICATION ──
     if (!action || action.length < 4) continue;
@@ -7759,6 +7728,27 @@ function getActiveSession() {
   return _dashboardSession === 'latest' ? sessions[0] : _dashboardSession;
 }
 
+function extractMetricsFromTasks(proj, session) {
+  const opsTasks = taskDatabase.filter(t => 
+    t.project === proj && 
+    t.session === session && 
+    /operations|fincon/i.test(t.dept)
+  );
+
+  let combinedText = '';
+  opsTasks.forEach(t => {
+    combinedText += `${t.action} ${t.explanation || ''} ${t.resultToAchieve || ''} `;
+  });
+
+  return {
+    inflow: parseExtractedMetric(combinedText.match(METRIC_PATTERNS.inflow), true),
+    sales:  parseExtractedMetric(combinedText.match(METRIC_PATTERNS.sales), true),
+    balance: parseExtractedMetric(combinedText.match(METRIC_PATTERNS.balance), true),
+    units:  parseExtractedMetric(combinedText.match(METRIC_PATTERNS.units), false),
+    offers: parseExtractedMetric(combinedText.match(METRIC_PATTERNS.offers), false)
+  };
+}
+
 function refreshDashboardForSession() {
   if (!currentProject) return;
   const session = getActiveSession();
@@ -7766,18 +7756,15 @@ function refreshDashboardForSession() {
   const proj = currentProject;
   const pfx = proj === 'Crossings';
 
-  const latestSession = availableSessions[proj][0];
-  
-  // Pull directly from our Firebase cache safely
-  const selectedMetrics = (window._firebaseMetrics && window._firebaseMetrics[proj]) ? window._firebaseMetrics[proj][session] || {} : {};
-  const latestMetrics = (window._firebaseMetrics && window._firebaseMetrics[proj]) ? window._firebaseMetrics[proj][latestSession] || {} : {};
+  // ── THE SUPERIOR APPROACH: Extract dynamically from local task memory ──
+  const extractedMetrics = extractMetricsFromTasks(proj, session);
 
-  // Fallbacks: Use selected -> then latest -> then '...'
-  const finalInflow = selectedMetrics.inflow || latestMetrics.inflow || '...';
-  const finalUnits = selectedMetrics.units || latestMetrics.units || '...';
-  const finalSales = selectedMetrics.sales || latestMetrics.sales || '...';
-  const finalBalance = selectedMetrics.balance || latestMetrics.balance || '...';
-  const finalOffers = selectedMetrics.offers || latestMetrics.offers || '...';
+  // Fallbacks: Use extracted -> then '...'
+  const finalInflow = extractedMetrics.inflow || '...';
+  const finalUnits  = extractedMetrics.units || '...';
+  const finalSales  = extractedMetrics.sales || '...';
+  const finalBalance= extractedMetrics.balance || '...';
+  const finalOffers = extractedMetrics.offers || '...';
 
   document.getElementById(pfx?'val-cx-inflow':'val-annex-inflow').textContent = finalInflow;
   document.getElementById(pfx?'val-cx-units':'val-annex-units').textContent = finalUnits;
@@ -7786,6 +7773,14 @@ function refreshDashboardForSession() {
   document.getElementById(pfx?'val-cx-offers':'val-annex-offers').textContent = finalOffers;
 
   applyPriorityColors();
+
+  // Background sync to Firebase (UI already painted, so no race conditions)
+  if (window._fbReady && window._fbDb && Object.values(extractedMetrics).some(v => v !== null)) {
+      const updates = { ...extractedMetrics, updatedAt: firebase.database.ServerValue.TIMESTAMP };
+      // Clean nulls before sending to Firebase
+      Object.keys(updates).forEach(k => updates[k] == null && delete updates[k]);
+      window._fbDb.ref(`metrics/${proj}/${session}`).update(updates).catch(e => console.warn('Firebase metric sync failed', e));
+  }
 
   const targetEl = document.getElementById(pfx ? 'targets-crossings' : 'targets-annexe');
   if (targetEl) {
@@ -8346,10 +8341,14 @@ function renderDynamicCharts() {
     if (legacyData[proj] && legacyData[proj][session]) {
       return legacyData[proj][session];
     }
-    if (window._chartMetrics && window._chartMetrics[proj] && window._chartMetrics[proj][session]) {
-      return window._chartMetrics[proj][session];
-    }
-    return { inflow: null, salesValue: null };
+    
+    // THE SUPERIOR APPROACH: Extract dynamically for the chart engine
+    const metrics = extractMetricsFromTasks(proj, session);
+    
+    return { 
+        inflow: parseNairaToM(metrics.inflow), 
+        salesValue: parseNairaToM(metrics.sales) 
+    };
   }
 
   function buildChartData(proj) {
