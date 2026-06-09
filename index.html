@@ -3674,18 +3674,14 @@ const METRIC_PATTERNS = {
   inflow: /(?:total\s+)?(?:sales\s+)?(?:inflow|received)(?:\s+to\s+date)?[\s:\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?(?:n|N|mn|MN)?)/i,
   sales: /(?:total\s+)?value\s+of\s+sales[\s:\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?(?:n|N|mn|MN)?)/i,
   balance: /(?:account\s+)?bal(?:ance)?[\s:\-]+([₦N]?\s*[\d,.]+\s*[BMKbmk]?(?:n|N|mn|MN)?)/i,
-  units: /(?:sales|units\s*sold|no\.?\s*of\s*sales)[\s:\-]+(\d{1,4})\b|\b(\d{1,4})\s+(?:units|sales)/i,
-  offers: /(?:active\s*)?offer(?:s| letters?)?[\s:\-]+(\d{1,4})\b|\b(\d{1,4}|no|zero)\s*(?:active\s*)?offer/i
+  units: /(?:sales|units\s*sold|no\.?\s*of\s*sales)[\s:\-]+(\d{1,4})\b|\b(\d{1,4})\s+units/i,
+  offers: /(?:active\s*)?offer(?:s| letters?)?[\s:\-]+(\d{1,4})\b|\b(\d{1,4})\s*(?:active\s*)?offer/i
 };
 
 function parseExtractedMetric(matchResult, isCurrency) {
   if (!matchResult) return null;
   let val = matchResult[1] || matchResult[2]; 
   if (!val) return null;
-
-  if (!isCurrency) {
-      if (val.toLowerCase() === 'no' || val.toLowerCase() === 'zero') return '0';
-  }
   
   if (isCurrency) {
     let raw = val.trim().toUpperCase().replace(/[, ]/g, '');
@@ -4462,7 +4458,7 @@ async function syncWithGoogleSheet() {
     // ── Reset PI + milestones so they regenerate with fresh data ──
     _piGenerated = { Crossings: false, Annexe: false };
     _milestonesLoaded = { Crossings: false, Annexe: false };
-    viewingSessionDate = 'current'; updateDashboardDates(); applyPriorityColors(); renderAlertStrips(); updateSidebarCounts(); renderOverduePanels(); if (currentDept) renderCurrentDept(); populateSessionPicker(); refreshDashboardForSession(); renderDynamicCharts(); updateLandingPageMetrics(); setTimeout(renderAllCVIs, 200);
+    viewingSessionDate = 'current'; updateDashboardDates(); renderMetricTiles(); applyPriorityColors(); renderAlertStrips(); updateSidebarCounts(); renderOverduePanels(); if (currentDept) renderCurrentDept(); populateSessionPicker(); if(_dashboardSession!=='latest') refreshDashboardForSession(); renderDynamicCharts(); updateLandingPageMetrics(); setTimeout(renderAllCVIs, 200);
     // 25002500 Run Trend Intelligence Engine 25002500
     setTimeout(function() {
       try { runAndRenderTrend('Crossings'); } catch(e) { console.warn('[TI] Crossings:', e); }
@@ -4630,8 +4626,73 @@ function processSheet(rows, proj, sheetName, isLatest) {
       if (matched) lastDept = matched; // Update department header
     }
 
-    // ── METRIC EXTRACTION REMOVED ──
-    // Metrics are now derived dynamically from the taskDatabase via extractMetricsFromTasks()
+    // ── METRIC EXTRACTION FROM OPERATIONS ──
+if (/operations|fincon/i.test(lastDept)) {
+    // CROSSINGS: all metrics are packed into the action text as one sentence.
+    // ANNEXE: metrics appear as sub-rows with empty action; the value is in the
+    //         resultToAchieve (Result) column, e.g. "Total Inflow - ₦6.45Bn".
+    //         We therefore always include the result column so both projects work.
+    const resultText = String(c[colMap.result] || '').trim();
+    const actionText = action + ' ' + explanationText + ' ' + resultText;
+
+    function extractLabeled(text, labelPatterns) {
+      for (const pat of labelPatterns) {
+        const rx = new RegExp(pat + '(?:[\\s\\w]*?)[:\\s\\-]*([₦N]?\\s*[\\d,]+\\.?\\d*\\s*[BMKbmk]?(?:n|mn|MN|Mn)?)\\b', 'i');
+        const m = text.match(rx);
+        if (m) {
+          let raw = m[1].trim().replace(/,/g,'').toUpperCase();
+          // Normalise "BN" → "B", "MN" → "M" suffix
+          raw = raw.replace(/BN$/, 'B').replace(/MN$/, 'M');
+          if (!raw.startsWith('₦')) raw = raw.replace(/^N(?=\d)/, '₦');
+          if (!raw.startsWith('₦')) raw = '₦' + raw;
+          return raw;
+        }
+      }
+      return null;
+    }
+
+    function extractLabeledCount(text, labelPatterns) {
+      for (const pat of labelPatterns) {
+        let m = text.match(new RegExp(pat + '[:\\s\\-]+(\\d{1,4})\\b', 'i'));
+        if (m) return m[1];
+        m = text.match(new RegExp('(\\d{1,4})\\s+' + pat, 'i'));
+        if (m) return m[1];
+      }
+      return null;
+    }
+
+    // For Annexe sub-rows the action is empty but resultText has the value —
+    // so we test the full combined text, not just action alone.
+    const hasMetricData = /[₦N][\d,]+|\bsales[-:\s]+\d|\d+\s*units|\d+\s*offer/i.test(actionText);
+
+    if (hasMetricData) {
+      const inflow = parseExtractedMetric(actionText.match(METRIC_PATTERNS.inflow), true);
+      const salesVal = parseExtractedMetric(actionText.match(METRIC_PATTERNS.sales), true);
+      const balance = parseExtractedMetric(actionText.match(METRIC_PATTERNS.balance), true);
+      const units = parseExtractedMetric(actionText.match(METRIC_PATTERNS.units), false);
+      const offers = parseExtractedMetric(actionText.match(METRIC_PATTERNS.offers), false);
+
+      // Save chart metrics locally for the chart engine (Inflow vs Value of Sales)
+      if (inflow)   window._chartMetrics[proj][sheetName].inflow     = parseNairaToM(inflow);
+      if (salesVal) window._chartMetrics[proj][sheetName].salesValue = parseNairaToM(salesVal);
+      if (balance)  window._chartMetrics[proj][sheetName].balance    = parseNairaToM(balance);
+
+      // Write to Firebase (Firebase handles DOM updates via the listener)
+      if (_fbReady && _fbDb) {
+        const updates = {};
+        if (inflow)   updates.inflow   = inflow;
+        if (salesVal) updates.sales    = salesVal;
+        if (balance)  updates.balance  = balance;
+        if (units)    updates.units    = units;
+        if (offers)   updates.offers   = offers;
+
+        if (Object.keys(updates).length > 0) {
+          updates.updatedAt = firebase.database.ServerValue.TIMESTAMP;
+          _fbDb.ref(`metrics/${proj}/${sheetName}`).update(updates);
+        }
+      }
+    }
+  } // end if (operations|fincon)
     
     // ── TASK VERIFICATION ──
     if (!action || action.length < 4) continue;
@@ -4682,6 +4743,58 @@ function processSheet(rows, proj, sheetName, isLatest) {
   if (d.headerRow && d.colMap) { const actionHeader = d.headerRow[d.colMap.action] || '(empty)'; const dueHeader = d.headerRow[d.colMap.due] || '(empty)'; d.info = `action col ${d.colMap.action} → "${actionHeader}" | due col ${d.colMap.due} → "${dueHeader}"`; }
   
   renderDiagPanel();
+}
+
+// ── DIRECT METRIC EXTRACTION FROM TASKDATABASE ──
+// Reads Operations/Fincon rows directly instead of relying on intermediate Firebase writes
+function extractMetricsFromOperations(project, session) {
+  const metrics = { inflow: null, units: null, sales: null, balance: null, offers: null };
+  
+  // Find all Operations/Fincon tasks for this project+session
+  const opTasks = taskDatabase.filter(t => 
+    t.project === project && 
+    t.session === session && 
+    /^(operations|fincon)$/i.test(t.dept)
+  );
+  
+  if (opTasks.length === 0) return metrics;
+  
+  // Combine all operations text (action + explanation + resultToAchieve)
+  const combinedText = opTasks.map(t => 
+    (t.action || '') + ' ' + (t.explanation || '') + ' ' + (t.resultToAchieve || '')
+  ).join(' ');
+  
+  // Use existing METRIC_PATTERNS to extract values
+  const inflow = parseExtractedMetric(combinedText.match(METRIC_PATTERNS.inflow), true);
+  const salesVal = parseExtractedMetric(combinedText.match(METRIC_PATTERNS.sales), true);
+  const balance = parseExtractedMetric(combinedText.match(METRIC_PATTERNS.balance), true);
+  const units = parseExtractedMetric(combinedText.match(METRIC_PATTERNS.units), false);
+  const offers = parseExtractedMetric(combinedText.match(METRIC_PATTERNS.offers), false);
+  
+  return {
+    inflow: inflow || null,
+    units: units || null,
+    sales: salesVal || null,
+    balance: balance || null,
+    offers: offers || null
+  };
+}
+
+// ── RENDER METRICS TO DOM ──
+// Called after every sync, reads from taskDatabase directly
+function renderMetricTiles() {
+  if (!currentProject || viewingSessionDate === 'current') return;
+  
+  const metrics = extractMetricsFromOperations(currentProject, viewingSessionDate);
+  
+  const prefix = currentProject === 'Crossings' ? 'cx' : 'annex';
+  if (metrics.inflow) setMetric(`val-${prefix}-inflow`, metrics.inflow);
+  if (metrics.units) setMetric(`val-${prefix}-units`, metrics.units);
+  if (metrics.sales) setMetric(`val-${prefix}-sales`, metrics.sales);
+  if (metrics.balance) setMetric(`val-${prefix}-balance`, metrics.balance);
+  if (metrics.offers) setMetric(`val-${prefix}-offers`, metrics.offers);
+  
+  applyPriorityColors();
 }
 
 function setMetric(id, val) { const el = document.getElementById(id); if (el && val) el.textContent = val; }
@@ -7728,27 +7841,6 @@ function getActiveSession() {
   return _dashboardSession === 'latest' ? sessions[0] : _dashboardSession;
 }
 
-function extractMetricsFromTasks(proj, session) {
-  const opsTasks = taskDatabase.filter(t => 
-    t.project === proj && 
-    t.session === session && 
-    /operations|fincon/i.test(t.dept)
-  );
-
-  let combinedText = '';
-  opsTasks.forEach(t => {
-    combinedText += `${t.action} ${t.explanation || ''} ${t.resultToAchieve || ''} `;
-  });
-
-  return {
-    inflow: parseExtractedMetric(combinedText.match(METRIC_PATTERNS.inflow), true),
-    sales:  parseExtractedMetric(combinedText.match(METRIC_PATTERNS.sales), true),
-    balance: parseExtractedMetric(combinedText.match(METRIC_PATTERNS.balance), true),
-    units:  parseExtractedMetric(combinedText.match(METRIC_PATTERNS.units), false),
-    offers: parseExtractedMetric(combinedText.match(METRIC_PATTERNS.offers), false)
-  };
-}
-
 function refreshDashboardForSession() {
   if (!currentProject) return;
   const session = getActiveSession();
@@ -7756,31 +7848,17 @@ function refreshDashboardForSession() {
   const proj = currentProject;
   const pfx = proj === 'Crossings';
 
-  // ── THE SUPERIOR APPROACH: Extract dynamically from local task memory ──
-  const extractedMetrics = extractMetricsFromTasks(proj, session);
-
-  // Fallbacks: Use extracted -> then '...'
-  const finalInflow = extractedMetrics.inflow || '...';
-  const finalUnits  = extractedMetrics.units || '...';
-  const finalSales  = extractedMetrics.sales || '...';
-  const finalBalance= extractedMetrics.balance || '...';
-  const finalOffers = extractedMetrics.offers || '...';
-
-  document.getElementById(pfx?'val-cx-inflow':'val-annex-inflow').textContent = finalInflow;
-  document.getElementById(pfx?'val-cx-units':'val-annex-units').textContent = finalUnits;
-  document.getElementById(pfx?'val-cx-sales':'val-annex-sales').textContent = finalSales;
-  document.getElementById(pfx?'val-cx-balance':'val-annex-balance').textContent = finalBalance;
-  document.getElementById(pfx?'val-cx-offers':'val-annex-offers').textContent = finalOffers;
+  // Use new direct extraction from taskDatabase instead of Firebase cache
+  const metrics = extractMetricsFromOperations(proj, session);
+  
+  const prefix = proj === 'Crossings' ? 'cx' : 'annex';
+  document.getElementById(`val-${prefix}-inflow`).textContent = metrics.inflow || '...';
+  document.getElementById(`val-${prefix}-units`).textContent = metrics.units || '...';
+  document.getElementById(`val-${prefix}-sales`).textContent = metrics.sales || '...';
+  document.getElementById(`val-${prefix}-balance`).textContent = metrics.balance || '...';
+  document.getElementById(`val-${prefix}-offers`).textContent = metrics.offers || '...';
 
   applyPriorityColors();
-
-  // Background sync to Firebase (UI already painted, so no race conditions)
-  if (window._fbReady && window._fbDb && Object.values(extractedMetrics).some(v => v !== null)) {
-      const updates = { ...extractedMetrics, updatedAt: firebase.database.ServerValue.TIMESTAMP };
-      // Clean nulls before sending to Firebase
-      Object.keys(updates).forEach(k => updates[k] == null && delete updates[k]);
-      window._fbDb.ref(`metrics/${proj}/${session}`).update(updates).catch(e => console.warn('Firebase metric sync failed', e));
-  }
 
   const targetEl = document.getElementById(pfx ? 'targets-crossings' : 'targets-annexe');
   if (targetEl) {
@@ -8341,14 +8419,10 @@ function renderDynamicCharts() {
     if (legacyData[proj] && legacyData[proj][session]) {
       return legacyData[proj][session];
     }
-    
-    // THE SUPERIOR APPROACH: Extract dynamically for the chart engine
-    const metrics = extractMetricsFromTasks(proj, session);
-    
-    return { 
-        inflow: parseNairaToM(metrics.inflow), 
-        salesValue: parseNairaToM(metrics.sales) 
-    };
+    if (window._chartMetrics && window._chartMetrics[proj] && window._chartMetrics[proj][session]) {
+      return window._chartMetrics[proj][session];
+    }
+    return { inflow: null, salesValue: null };
   }
 
   function buildChartData(proj) {
