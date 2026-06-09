@@ -4627,81 +4627,42 @@ function processSheet(rows, proj, sheetName, isLatest) {
     }
 
     // ── METRIC EXTRACTION FROM OPERATIONS ──
-if (/operations|fincon/i.test(lastDept)) {
-    // CROSSINGS: all metrics are packed into the action text as one sentence.
-    // ANNEXE: metrics appear as sub-rows with empty action; the value is in the
-    //         resultToAchieve (Result) column, e.g. "Total Inflow - ₦6.45Bn".
-    //         We therefore always include the result column so both projects work.
-    const resultText = String(c[colMap.result] || '').trim();
-    const actionText = action + ' ' + explanationText + ' ' + resultText;
+    if (/operations|fincon/i.test(lastDept)) {
+        const resultText = String(c[colMap.result] || '').trim();
+        const actionText = action + ' ' + explanationText + ' ' + resultText;
 
-    function extractLabeled(text, labelPatterns) {
-      for (const pat of labelPatterns) {
-        const rx = new RegExp(pat + '(?:[\\s\\w]*?)[:\\s\\-]*([₦N]?\\s*[\\d,]+\\.?\\d*\\s*[BMKbmk]?(?:n|mn|MN|Mn)?)\\b', 'i');
-        const m = text.match(rx);
-        if (m) {
-          let raw = m[1].trim().replace(/,/g,'').toUpperCase();
-          // Normalise "BN" → "B", "MN" → "M" suffix
-          raw = raw.replace(/BN$/, 'B').replace(/MN$/, 'M');
-          if (!raw.startsWith('₦')) raw = raw.replace(/^N(?=\d)/, '₦');
-          if (!raw.startsWith('₦')) raw = '₦' + raw;
-          return raw;
+        // 1. Initialize local caches IMMEDIATELY (Do not wait for Firebase auth)
+        window._firebaseMetrics = window._firebaseMetrics || {};
+        window._firebaseMetrics[proj] = window._firebaseMetrics[proj] || {};
+        window._firebaseMetrics[proj][sheetName] = window._firebaseMetrics[proj][sheetName] || {};
+
+        // 2. Scan every operations row against the regex patterns
+        const inflowMatch = actionText.match(METRIC_PATTERNS.inflow);
+        const salesMatch = actionText.match(METRIC_PATTERNS.sales);
+        const balanceMatch = actionText.match(METRIC_PATTERNS.balance);
+        const unitsMatch = actionText.match(METRIC_PATTERNS.units);
+        const offersMatch = actionText.match(METRIC_PATTERNS.offers);
+
+        let foundAny = false;
+
+        // 3. Accumulate data across multiple rows (solves Annexe fragmentation)
+        if (inflowMatch) { window._firebaseMetrics[proj][sheetName].inflow = parseExtractedMetric(inflowMatch, true); foundAny = true; }
+        if (salesMatch) { window._firebaseMetrics[proj][sheetName].sales = parseExtractedMetric(salesMatch, true); foundAny = true; }
+        if (balanceMatch) { window._firebaseMetrics[proj][sheetName].balance = parseExtractedMetric(balanceMatch, true); foundAny = true; }
+        if (unitsMatch) { window._firebaseMetrics[proj][sheetName].units = parseExtractedMetric(unitsMatch, false); foundAny = true; }
+        if (offersMatch) { window._firebaseMetrics[proj][sheetName].offers = parseExtractedMetric(offersMatch, false); foundAny = true; }
+
+        // 4. Update internal chart metrics locally
+        if (window._firebaseMetrics[proj][sheetName].inflow) window._chartMetrics[proj][sheetName].inflow = parseNairaToM(window._firebaseMetrics[proj][sheetName].inflow);
+        if (window._firebaseMetrics[proj][sheetName].sales) window._chartMetrics[proj][sheetName].salesValue = parseNairaToM(window._firebaseMetrics[proj][sheetName].sales);
+        if (window._firebaseMetrics[proj][sheetName].balance) window._chartMetrics[proj][sheetName].balance = parseNairaToM(window._firebaseMetrics[proj][sheetName].balance);
+
+        // 5. Background sync to Firebase ONLY if ready
+        if (foundAny && _fbReady && _fbDb) {
+            const updates = { ...window._firebaseMetrics[proj][sheetName], updatedAt: firebase.database.ServerValue.TIMESTAMP };
+            _fbDb.ref(`metrics/${proj}/${sheetName}`).update(updates).catch(e => console.warn('Firebase metric sync failed', e));
         }
-      }
-      return null;
-    }
-
-    function extractLabeledCount(text, labelPatterns) {
-      for (const pat of labelPatterns) {
-        let m = text.match(new RegExp(pat + '[:\\s\\-]+(\\d{1,4})\\b', 'i'));
-        if (m) return m[1];
-        m = text.match(new RegExp('(\\d{1,4})\\s+' + pat, 'i'));
-        if (m) return m[1];
-      }
-      return null;
-    }
-
-    // For Annexe sub-rows the action is empty but resultText has the value —
-    // so we test the full combined text, not just action alone.
-    const hasMetricData = /[₦N][\d,]+|\bsales[-:\s]+\d|\d+\s*units|\d+\s*offer/i.test(actionText);
-
-    if (hasMetricData) {
-      const inflow = parseExtractedMetric(actionText.match(METRIC_PATTERNS.inflow), true);
-      const salesVal = parseExtractedMetric(actionText.match(METRIC_PATTERNS.sales), true);
-      const balance = parseExtractedMetric(actionText.match(METRIC_PATTERNS.balance), true);
-      const units = parseExtractedMetric(actionText.match(METRIC_PATTERNS.units), false);
-      const offers = parseExtractedMetric(actionText.match(METRIC_PATTERNS.offers), false);
-
-      // Save chart metrics locally for the chart engine (Inflow vs Value of Sales)
-      if (inflow)   window._chartMetrics[proj][sheetName].inflow     = parseNairaToM(inflow);
-      if (salesVal) window._chartMetrics[proj][sheetName].salesValue = parseNairaToM(salesVal);
-      if (balance)  window._chartMetrics[proj][sheetName].balance    = parseNairaToM(balance);
-
-      // FIX: Write to Local Cache immediately so the UI doesn't wait for Firebase
-      window._firebaseMetrics = window._firebaseMetrics || {};
-      window._firebaseMetrics[proj] = window._firebaseMetrics[proj] || {};
-      window._firebaseMetrics[proj][sheetName] = window._firebaseMetrics[proj][sheetName] || {};
-      
-      if (inflow)   window._firebaseMetrics[proj][sheetName].inflow = inflow;
-      if (salesVal) window._firebaseMetrics[proj][sheetName].sales = salesVal;
-      if (balance)  window._firebaseMetrics[proj][sheetName].balance = balance;
-      if (units)    window._firebaseMetrics[proj][sheetName].units = units;
-      if (offers)   window._firebaseMetrics[proj][sheetName].offers = offers;
-
-      // Write to Firebase (Firebase handles DOM updates via the listener)
-      if (_fbReady && _fbDb) {
-        const updates = {};
-        if (inflow)   updates.inflow   = inflow;
-        if (salesVal) updates.sales    = salesVal;
-        if (balance)  updates.balance  = balance;
-        if (units)    updates.units    = units;
-        if (offers)   updates.offers   = offers;
-
-        if (Object.keys(updates).length > 0) {
-          updates.updatedAt = firebase.database.ServerValue.TIMESTAMP;
-          _fbDb.ref(`metrics/${proj}/${sheetName}`).update(updates);
-        }
-      }
+    } // end if (operations|fincon)
     
     // ── TASK VERIFICATION ──
     if (!action || action.length < 4) continue;
