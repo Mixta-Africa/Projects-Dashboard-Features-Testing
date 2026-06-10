@@ -7278,7 +7278,7 @@ function sendReminderEmail() {
       var hasSpecificMention = mentionsDA || mentionsMrsH || mentionsBA;
 
       rawRecipients.forEach(function(realEmail) {
-        var greeting = 'Dear AMC Team,';
+        var greeting = 'Dear AMC,';
         var e = realEmail.toLowerCase();
         
         var isDA = e.includes('d.alli') || e.includes('deji.alli');
