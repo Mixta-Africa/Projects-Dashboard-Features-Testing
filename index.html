@@ -3598,7 +3598,7 @@ async function _drainWriteQueue() {
       const resp = await fetch(item.scriptUrl, {
         method: 'POST',
         mode: 'no-cors', // Apps Script doesn't send CORS headers on error responses
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(item.payload)
       });
       _writeQueue.shift(); // success — remove from queue
@@ -4262,7 +4262,7 @@ function deleteMediaItem(updateTimestamp, mediaIndex, fileId) {
 
   if (SCRIPT_URL && SCRIPT_TOKEN) {
     fetch(SCRIPT_URL, {
-      method: 'POST', headers: headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action: 'deleteMedia', token: SCRIPT_TOKEN, fileId })
     }).catch(e => console.warn('[GAS] Drive trash failed:', e));
   }
