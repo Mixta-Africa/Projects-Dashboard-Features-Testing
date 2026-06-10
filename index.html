@@ -3598,7 +3598,7 @@ async function _drainWriteQueue() {
       const resp = await fetch(item.scriptUrl, {
         method: 'POST',
         mode: 'no-cors', // Apps Script doesn't send CORS headers on error responses
-        headers: { 'Content-Type': 'text/plain' },
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(item.payload)
       });
       _writeQueue.shift(); // success — remove from queue
@@ -4262,7 +4262,7 @@ function deleteMediaItem(updateTimestamp, mediaIndex, fileId) {
 
   if (SCRIPT_URL && SCRIPT_TOKEN) {
     fetch(SCRIPT_URL, {
-      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      method: 'POST', headers: headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action: 'deleteMedia', token: SCRIPT_TOKEN, fileId })
     }).catch(e => console.warn('[GAS] Drive trash failed:', e));
   }
@@ -4280,7 +4280,7 @@ async function uploadOneFileToGAS(file, project, dept) {
       const base64 = e.target.result.split(',')[1];
       try {
         const res  = await fetch(SCRIPT_URL, {
-          method: 'POST', headers: { 'Content-Type': 'text/plain' },
+          method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'uploadMedia', token: SCRIPT_TOKEN,
             fileName: file.name, mimeType: file.type, base64Data: base64, project, dept })
         });
@@ -4337,7 +4337,7 @@ function maybeSendAdminReplyEmail(author, replyRef, text, dept, project) {
 </div>`;
 
   fetch(SCRIPT_URL, {
-    method: 'POST', headers: { 'Content-Type': 'text/plain' },
+    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify({ action: 'sendEmail', token: SCRIPT_TOKEN,
       to: [toEmail], subject: `[${projectLabel} — ${dept}] O. Olasunkanmi replied to your update`,
       html, reply_to: ADMIN_EMAIL })
@@ -4377,7 +4377,7 @@ function sendUpdateAlertEmail(author, dept, project, text, linkedTask) {
 
   fetch(SCRIPT_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify({
       token:    SCRIPT_TOKEN,
       to:       ['o.olasunkanmi@mixtafrica.com'],
@@ -5587,7 +5587,7 @@ async function runFullEndToEndTest() {
 
   // 1 — Email test
   try {
-    const r = await fetch(url, { method:'POST', headers:{'Content-Type':'text/plain'},
+    const r = await fetch(url, { method:'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action:'sendEmail', token, to:[ADMIN_EMAIL_CONST],
         subject:'[Tracker] Health Check — Email Test', html:'<p>This is an automated health check email from the Mixta Africa Projects Tracker. If you received this, email delivery is working correctly.</p>', reply_to: ADMIN_EMAIL_CONST }) });
     const d = await r.json();
@@ -5599,7 +5599,7 @@ async function runFullEndToEndTest() {
   let testFileId = null;
   try {
     const tiny = btoa('Tracker health check ' + new Date().toISOString());
-    const r = await fetch(url, { method:'POST', headers:{'Content-Type':'text/plain'},
+    const r = await fetch(url, { method:'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action:'uploadMedia', token, fileName:'tracker_health_check.txt',
         mimeType:'text/plain', base64Data: tiny, project:'HealthCheck', dept:'Test' }) });
     const d = await r.json();
@@ -5613,7 +5613,7 @@ async function runFullEndToEndTest() {
   // 3 — Drive delete test (trash the file we just uploaded)
   if (testFileId) {
     try {
-      const r = await fetch(url, { method:'POST', headers:{'Content-Type':'text/plain'},
+      const r = await fetch(url, { method:'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action:'deleteMedia', token, fileId: testFileId }) });
       const d = await r.json();
       if (d.success) { _hCard('e2e-delete','Drive Delete Test','ok','Test file trashed from Drive successfully. Full upload/delete cycle confirmed.',`fileId: ${d.fileId}`); }
