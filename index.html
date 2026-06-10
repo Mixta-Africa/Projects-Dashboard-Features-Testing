@@ -7266,16 +7266,37 @@ function sendReminderEmail() {
   var emailsToSend = [];
   var mode = document.getElementById('reminder-mode').value;
 
-  // Helper — builds email payloads, handles AMC personalisation
+  // Helper — builds email payloads, handles AMC personalisation and targeted delivery
   function pushEmail(dept, rawRecipients, subject, baseBody) {
     if (!rawRecipients || rawRecipients.length === 0) return;
+    
     if (dept.toUpperCase() === 'AMC') {
+      // 1. Detect if any nicknames are explicitly mentioned in the tasks (baseBody)
+      var mentionsDA = /\bDA\b/.test(baseBody);
+      var mentionsMrsH = /\bMrs H\b/i.test(baseBody); // case-insensitive just in case
+      var mentionsBA = /\bBA\b/.test(baseBody);
+      var hasSpecificMention = mentionsDA || mentionsMrsH || mentionsBA;
+
       rawRecipients.forEach(function(realEmail) {
         var greeting = 'Dear AMC Team,';
         var e = realEmail.toLowerCase();
-        if (e.includes('d.alli') || e.includes('deji.alli')) greeting = 'Dear DA,';
-        else if (e.includes('s.hughes')) greeting = 'Dear Mrs H,';
-        else if (e.includes('b.ajayi')) greeting = 'Dear BA,';
+        
+        var isDA = e.includes('d.alli') || e.includes('deji.alli');
+        var isMrsH = e.includes('s.hughes');
+        var isBA = e.includes('b.ajayi');
+
+        // 2. If specific names are mentioned, ONLY send to those mentioned.
+        // If no names are mentioned, bypass this to send the generic task to everyone.
+        if (hasSpecificMention) {
+          if (isDA && !mentionsDA) return;
+          if (isMrsH && !mentionsMrsH) return;
+          if (isBA && !mentionsBA) return;
+        }
+
+        if (isDA) greeting = 'Dear DA,';
+        else if (isMrsH) greeting = 'Dear Mrs H,';
+        else if (isBA) greeting = 'Dear BA,';
+        
         var customBody = baseBody.replace('Dear ' + dept + ' Team,', greeting);
         var toAddress = mode === 'test' ? TEST_EMAIL : realEmail;
         emailsToSend.push({ to: [toAddress], subject: subject, html: customBody, dept: dept });
