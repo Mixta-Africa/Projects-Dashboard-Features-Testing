@@ -7329,7 +7329,7 @@ function sendReminderEmail() {
 
     fetch(SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' }, // Apps Script requires text/plain to avoid CORS preflight
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Ensures emojis don't get scrambled
       body: JSON.stringify({
         token:    SCRIPT_TOKEN,
         to:       emailGroup.to,
