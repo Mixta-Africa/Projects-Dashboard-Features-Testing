@@ -6232,7 +6232,7 @@ YOUR TASK:
 Output EXACTLY these HTML blocks (using the exact class names provided) to inject into the dashboard:
 
 <div class="pi-insight-block" style="border-top:3px solid ${accentColor};margin-top:0">
-  <div class="pi-insight-headline">📍 Liquidity & Sales Correlation</div>
+  <div class="pi-insight-headline"><i data-lucide="map-pin" style="width: 16px; height: 16px; margin-right: 4px; vertical-align: middle;"></i> Liquidity & Sales Correlation</div>
   <div class="pi-insight-text">[1-2 punchy sentences. How does the current cash liquidity and offer letter pipeline directly impact our immediate construction ability?]</div>
 </div>
 
@@ -6244,12 +6244,12 @@ Output EXACTLY these HTML blocks (using the exact class names provided) to injec
 </div>
 
 <div class="pi-insight-block">
-  <div class="pi-insight-headline">🔥 Milestone Delivery Risks</div>
+  <div class="pi-insight-headline"><i data-lucide="alert-triangle" style="width: 16px; height: 16px; margin-right: 4px; vertical-align: middle;"></i> Milestone Delivery Risks</div>
   <div class="pi-insight-text">[1-2 sentences identifying exactly what milestone is at risk right now due to the bottlenecks or cash position.]</div>
 </div>
 
 <div class="pi-insight-block">
-  <div class="pi-insight-headline">🎯 Immediate Required Executive Action</div>
+  <div class="pi-insight-headline"><i data-lucide="target" style="width: 16px; height: 16px; margin-right: 4px; vertical-align: middle;"></i> Immediate Required Executive Action</div>
   <div class="pi-insight-text">[1-2 sentences. What exact decision must the board make THIS WEEK to unblock the project? Name it clearly.]</div>
 </div>
 
@@ -9243,11 +9243,11 @@ label = '₦' + (bVal.endsWith('.00') ? bVal.slice(0, -3) : bVal) + 'Bn';
         <label>Select project</label>
         <div class="report-type-grid">
           <button class="report-type-btn" id="report-btn-annexe" onclick="selectReportProject('Annexe')">
-            <div class="report-type-label">🏘 Lakowe Annexe</div>
+            <div class="report-type-label"><i data-lucide="home" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Lakowe Annexe</div>
             <div class="report-type-sub">78 units · ₦6.27B inflow · 35.3% complete</div>
           </button>
           <button class="report-type-btn" id="report-btn-crossings" onclick="selectReportProject('Crossings')">
-            <div class="report-type-label">🏗 Lakowe Crossings</div>
+            <div class="report-type-label"><i data-lucide="hammer" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Lakowe Crossings</div>
             <div class="report-type-sub">6 units · ₦1.72B inflow · 27.8% complete</div>
           </button>
         </div>
@@ -9338,9 +9338,9 @@ window._authSafetyTimer = setTimeout(function() {
       <button class="mgmt-close" onclick="closeMgmtPanel()">✕</button>
     </div>
     <div class="mgmt-tabs">
-      <button class="mgmt-tab active" onclick="switchMgmtTab('users',this)">👤 Users</button>
-      <button class="mgmt-tab" onclick="switchMgmtTab('depts',this)">🏢 Departments</button>
-      <button class="mgmt-tab" onclick="switchMgmtTab('tasks',this)">🗑 Delete Tasks</button>
+      <button class="mgmt-tab active" onclick="switchMgmtTab('users',this)"><i data-lucide="users" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Users</button>
+      <button class="mgmt-tab" onclick="switchMgmtTab('depts',this)"><i data-lucide="building-2" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Departments</button>
+      <button class="mgmt-tab" onclick="switchMgmtTab('tasks',this)"><i data-lucide="trash-2" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Delete Tasks</button>
     </div>
     <div class="mgmt-body">
 
@@ -9437,7 +9437,7 @@ window._authSafetyTimer = setTimeout(function() {
     <button class="chatbot-close-btn" onclick="closeChatbot()" aria-label="Close">✕</button>
   </div>
   <div class="chatbot-welcome" id="chatbot-welcome">
-    <div class="chatbot-welcome-emoji">🏗️</div>
+    <div class="chatbot-welcome-emoji"><i data-lucide="building" style="width: 28px; height: 28px; margin: 0 auto;"></i></div>
     <h3>Welcome! How may I assist you today?</h3>
     <p>I have full access to all tasks, deadlines, financial data,<br>and meeting notes across every session in both projects.</p>
   </div>
@@ -9873,42 +9873,42 @@ window._authSafetyTimer = setTimeout(function() {
 // ══════════════════════════════════════════
 const TOUR_STEPS = [
   {
-    emoji: '🏠',
+    icon: 'home',
     label: 'Welcome',
     title: 'Your project command centre',
     desc: 'This dashboard gives you a real-time view of both Lakowe Crossings and Lakowe Annexe — including tasks, financials, targets, and team updates. Everything updates automatically from Google Sheets every 5 minutes.',
     tip: '💡 No manual refresh needed. The "Last synced" timestamp at the top tells you how fresh the data is.'
   },
   {
-    emoji: '🔄',
+    icon: 'arrow-left-right',
     label: 'Projects',
     title: 'Switch between Crossings & Annexe',
     desc: 'Use the project tabs at the top of the page to switch between Lakowe Crossings (green) and Lakowe Annexe (red). Each project has its own tasks, KPIs, charts, and history.',
     tip: '💡 Your login email determines which project you have access to by default.'
   },
   {
-    emoji: '★',
+    icon: 'star',
     label: 'KPIs',
     title: 'Watch the Priority tiles',
     desc: 'The two gold-bordered tiles — Account Balance and Offer Letters — are the most critical indicators. They change colour automatically: Red means action is needed now, Amber means watch closely, Green means healthy.',
     tip: '💡 These tiles are the CEO\'s first checkpoint. Keep them green before every meeting.'
   },
   {
-    emoji: '📋',
+    icon: 'check-square',
     label: 'Tasks',
     title: 'Click any task to update its status',
     desc: 'Task cards are colour-coded by status: Green = On Track, Red = Delayed, Gold = On Hold, Blue = Done. Click a card to expand it and change the status. The red Alert Zone at the top collects all delayed tasks from every department.',
     tip: '💡 Updating a task status saves immediately — your team sees it in real time.'
   },
   {
-    emoji: '📈',
+    icon: 'trending-up',
     label: 'Charts',
     title: 'Track financial progress over time',
     desc: 'The Financial Progress Trend chart shows cash inflow vs. sales value over every project session. The gap between the two lines = receivables outstanding. The Targets card beside it shows this month\'s key spreadsheet objectives.',
     tip: '💡 Hover over the chart to see exact values at any point in time.'
   },
   {
-    emoji: '🛠️',
+    icon: 'wrench',
     label: 'Tools',
     title: 'Reminders, Reports & AI Assistant',
     desc: 'The toolbar contains tools for sending email reminders to departments, generating monthly Word reports, accessing team updates, and asking the AI Assistant project questions. The ? button always brings back this guide.',
@@ -9926,7 +9926,7 @@ function renderTour() {
 
   strip.innerHTML = TOUR_STEPS.map((s, i) =>
     `<div class="tour-step-pill ${i === _tourStep ? 'active' : ''}" onclick="jumpTourStep(${i})">
-      <span class="tour-step-emoji">${s.emoji}</span>
+      <span class="tour-step-emoji"><i data-lucide="${s.icon}" style="width: 20px; height: 20px;"></i></span>
       <span class="tour-step-label">${s.label}</span>
     </div>`
   ).join('');
@@ -10009,6 +10009,12 @@ function switchHelpTab(section, btn) {
   btn.classList.add('active');
 }
 </script>
+  // Add this at the very end of your scripts, right before </body>
+const iconObserver = new MutationObserver(() => {
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+});
+iconObserver.observe(document.body, { childList: true, subtree: true });
+if (typeof lucide !== 'undefined') lucide.createIcons();
 
 </body>
 
