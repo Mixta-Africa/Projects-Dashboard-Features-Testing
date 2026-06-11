@@ -487,6 +487,46 @@ body.users-bar-visible .dept-sidebar {
 .media-chip button { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 11px; padding: 0; line-height: 1; }
 .media-chip button:hover { color: var(--brand-red); }
 
+/* ── Upload progress bar ── */
+.upload-progress-wrap {
+  display: none; flex-direction: column; gap: 6px;
+  padding: 10px 12px; background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); margin-top: 6px;
+}
+.upload-progress-wrap.visible { display: flex; }
+.upload-progress-header {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 11px; font-weight: 700; color: var(--text-secondary);
+}
+.upload-progress-label { font-size: 11px; color: var(--text-muted); }
+.upload-progress-track {
+  height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;
+}
+.upload-progress-fill {
+  height: 100%; background: var(--active-theme-color, var(--cx-color));
+  border-radius: 3px; transition: width 0.3s ease; width: 0%;
+}
+.upload-file-row {
+  display: flex; align-items: center; gap: 8px; font-size: 11px;
+  color: var(--text-secondary); padding: 3px 0;
+}
+.upload-file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upload-file-status { font-size: 10px; font-weight: 700; white-space: nowrap; }
+.upload-file-status.uploading { color: var(--active-theme-color, var(--cx-color)); }
+.upload-file-status.done { color: #2e7d32; }
+.upload-file-status.error { color: #c62828; }
+/* GAS config banner */
+.gas-config-banner {
+  background: #fff8e1; border: 1px solid #ffe082; border-radius: var(--radius-sm);
+  padding: 10px 14px; font-size: 12px; color: #795548; display: none;
+  align-items: flex-start; gap: 10px; margin-bottom: 10px;
+}
+.gas-config-banner.visible { display: flex; }
+.gas-config-banner svg { flex-shrink: 0; margin-top: 1px; stroke: #e65100; }
+.gas-config-banner strong { color: #e65100; }
+.gas-config-link { font-weight: 700; color: #e65100; text-decoration: underline; cursor: pointer; }
+
+
 .update-task-tag { display: inline-block; margin-left: 6px; background: var(--active-theme-color, var(--cx-color)); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; vertical-align: middle; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .update-input-group input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; }
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 60px 24px; color: var(--text-muted); background: var(--white); border: 1px dashed var(--border-md); border-radius: var(--radius); }
@@ -2379,6 +2419,20 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
               <input type="file" id="new-update-media" accept="image/*,video/*" multiple style="display:none;" onchange="onMediaFilesSelected(this)">
               <div class="media-file-chips" id="media-file-chips"></div>
             </div>
+            <!-- GAS not configured warning -->
+            <div class="gas-config-banner" id="gas-config-banner">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <div><strong>Media upload unavailable.</strong> The Apps Script URL is not configured. Files will be posted as text-only updates. <span class="gas-config-link" onclick="openGasConfigModal()">Configure GAS URL</span></div>
+            </div>
+            <!-- Upload progress -->
+            <div class="upload-progress-wrap" id="upload-progress-wrap">
+              <div class="upload-progress-header">
+                <span>Uploading to Google Drive</span>
+                <span id="upload-progress-count">0 / 0</span>
+              </div>
+              <div class="upload-progress-track"><div class="upload-progress-fill" id="upload-progress-fill"></div></div>
+              <div id="upload-file-rows"></div>
+            </div>
             <div class="update-author-row">
               <input type="text" id="new-update-author" placeholder="Your Name (auto-filled if logged in)" readonly style="background:var(--bg);color:var(--text-muted);cursor:default;">
               <button id="submit-update-btn" onclick="submitTeamUpdate()">Submit Update</button>
@@ -3348,32 +3402,70 @@ function initFirebase() {
         if (currentDept) renderCurrentDept();
       });
 
+      // ── Full snapshot sync (on connect + whenever any update changes) ────────
       _fbDb.ref('dept_updates').on('value', snap => {
         const all = snap.val() || {};
+        let needsRender = false;
         Object.entries(all).forEach(([proj, depts]) => {
           Object.entries(depts).forEach(([dept, sessionsOrUpdates]) => {
-            // New schema: dept_updates/{proj}/{dept}/{session}/{pushId} = update
-            // Detect whether the first-level children are session keys or direct update objects
+            if (!sessionsOrUpdates || typeof sessionsOrUpdates !== 'object') return;
             const firstVal = Object.values(sessionsOrUpdates)[0];
             if (firstVal && typeof firstVal === 'object' && ('text' in firstVal || 'timestamp' in firstVal)) {
-              // Legacy flat schema — store under the legacy key
+              // Legacy flat schema
               const arr = Object.values(sessionsOrUpdates).sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
               try { localStorage.setItem('fb_dept:' + proj + ':' + dept, JSON.stringify(arr)); } catch(e){}
             } else {
-              // New session-scoped schema
+              // Session-scoped schema: dept_updates/{proj}/{dept}/{session}/{pushId}
               Object.entries(sessionsOrUpdates).forEach(([sessionKey, pushItems]) => {
+                if (!pushItems || typeof pushItems !== 'object') return;
                 const arr = Object.values(pushItems).sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
                 try { localStorage.setItem('fb_dept:' + proj + ':' + dept + ':' + sessionKey, JSON.stringify(arr)); } catch(e){}
-              // Live-refresh the updates panel if this is the currently viewed dept/project
-              if (proj === currentProject && dept === currentDept) {
-                renderUpdatesList();
-              }
+                if (proj === currentProject && dept === currentDept) needsRender = true;
               });
             }
           });
         });
-        if (currentDept) renderUpdatesList();
+        // Only re-render once after all keys are written, and only if relevant dept is active
+        if (needsRender && currentDept) renderUpdatesList();
+        else if (!needsRender && currentDept) renderUpdatesList(); // first load: always render
       });
+
+      // ── Child-added listener for instant cross-device push ───────────────────
+      // Fires immediately when any new update is pushed (without waiting for full snapshot)
+      (function _subscribeCurrentDeptUpdates() {
+        let _deptRef = null;
+        let _deptRefPath = null;
+        window._resubscribeDeptUpdates = function() {
+          if (!_fbReady || !_fbDb || !currentProject || !currentDept) return;
+          const sessionKey = (viewingSessionDate && viewingSessionDate !== 'current')
+            ? viewingSessionDate
+            : ((availableSessions[currentProject] && availableSessions[currentProject][0]) || 'current');
+          const path = 'dept_updates/' + currentProject + '/' + currentDept + '/' + sessionKey;
+          if (path === _deptRefPath) return; // already subscribed to this path
+          // Unsubscribe from old path
+          if (_deptRef) { try { _deptRef.off('child_added'); } catch(e){} }
+          _deptRef = _fbDb.ref(path);
+          _deptRefPath = path;
+          _deptRef.on('child_added', childSnap => {
+            const update = childSnap.val();
+            if (!update || !update.timestamp) return;
+            // Write into fb_dept: localStorage key
+            const fbKey = 'fb_dept:' + currentProject + ':' + currentDept + ':' + sessionKey;
+            try {
+              const existing = JSON.parse(localStorage.getItem(fbKey) || '[]');
+              const alreadyIn = existing.some(u => u.timestamp === update.timestamp);
+              if (!alreadyIn) {
+                existing.push(update);
+                existing.sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
+                localStorage.setItem(fbKey, JSON.stringify(existing));
+                renderUpdatesList(); // instant re-render on receiving new message
+              }
+            } catch(e){}
+          }, err => console.warn('[Firebase] child_added error:', err));
+        };
+        // Subscribe now and re-subscribe whenever dept/project/session changes
+        setTimeout(window._resubscribeDeptUpdates, 500);
+      })();
 
       // Sync task_update_meta from Firebase into localStorage so updater stamps are cross-device
       _fbDb.ref('task_update_meta').on('value', snap => {
@@ -4047,7 +4139,8 @@ function submitTeamUpdate() {
 
   if (filesToUpload.length > 0) {
     if (btn) { btn.disabled = true; btn.textContent = 'Uploading…'; }
-    Promise.all(filesToUpload.map(f => uploadOneFileToGAS(f, currentProject, currentDept)))
+    _initUploadProgress(filesToUpload);
+    Promise.all(filesToUpload.map((f, i) => uploadOneFileToGAS(f, currentProject, currentDept, i).catch(err => null)))
       .then(results => {
         const mediaItems = results.filter(r => r && r.success).map(r => ({
           fileId: r.fileId, fileName: r.fileName, mimeType: r.mimeType,
@@ -4102,10 +4195,29 @@ function renderUpdatesList() {
   const legacyFb    = 'fb_dept:' + currentProject + ':' + currentDept;
   const legacyLocal = 'deptupdate:' + currentProject + ':' + currentDept;
 
-  let updates = JSON.parse(localStorage.getItem(fbKey) || localStorage.getItem(localKey) || '[]');
+  // Merge fb_dept (synced from Firebase) + deptupdate (locally written) so:
+  // — The posting device sees the update instantly (from localKey)
+  // — Other devices see it as soon as Firebase listener fires (from fbKey)
+  // Deduplicate by timestamp to avoid doubles
+  const fromFb    = JSON.parse(localStorage.getItem(fbKey)    || '[]');
+  const fromLocal = JSON.parse(localStorage.getItem(localKey) || '[]');
+  const seen = new Set();
+  let updates = [...fromFb, ...fromLocal].filter(u => {
+    if (!u || !u.timestamp) return false;
+    if (seen.has(u.timestamp)) return false;
+    seen.add(u.timestamp); return true;
+  }).sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
+
   if (!updates.length) {
-    const legacy = JSON.parse(localStorage.getItem(legacyFb) || localStorage.getItem(legacyLocal) || '[]');
-    updates = legacy.filter(u => !u.session || u.session === sessionKey);
+    const legacyFbArr    = JSON.parse(localStorage.getItem(legacyFb)    || '[]');
+    const legacyLocalArr = JSON.parse(localStorage.getItem(legacyLocal) || '[]');
+    const legacySeen = new Set();
+    updates = [...legacyFbArr, ...legacyLocalArr].filter(u => {
+      if (!u || !u.timestamp || seen.has(u.timestamp)) return false;
+      if (legacySeen.has(u.timestamp)) return false;
+      legacySeen.add(u.timestamp); return true;
+    }).filter(u => !u.session || u.session === sessionKey)
+      .sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
   }
 
   const heading = document.getElementById('team-updates-heading');
@@ -4273,26 +4385,167 @@ function deleteMediaItem(updateTimestamp, mediaIndex, fileId) {
   renderUpdatesList();
 }
 
-async function uploadOneFileToGAS(file, project, dept) {
+// ── Upload progress helpers ──────────────────────────────────────────
+let _uploadTotal = 0;
+let _uploadDone  = 0;
+
+function _initUploadProgress(files) {
+  _uploadTotal = files.length;
+  _uploadDone  = 0;
+  const wrap = document.getElementById('upload-progress-wrap');
+  const fill = document.getElementById('upload-progress-fill');
+  const count = document.getElementById('upload-progress-count');
+  const rows  = document.getElementById('upload-file-rows');
+  if (!wrap) return;
+  wrap.classList.add('visible');
+  fill.style.width = '0%';
+  count.textContent = '0 / ' + files.length;
+  rows.innerHTML = files.map((f, i) =>
+    `<div class="upload-file-row" id="upload-row-${i}">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span class="upload-file-name">${f.name}</span>
+      <span class="upload-file-status uploading" id="upload-status-${i}">Uploading…</span>
+    </div>`
+  ).join('');
+}
+
+function _updateUploadProgress(index, success, errorMsg) {
+  _uploadDone++;
+  const fill  = document.getElementById('upload-progress-fill');
+  const count = document.getElementById('upload-progress-count');
+  const st    = document.getElementById('upload-status-' + index);
+  if (fill)  fill.style.width = Math.round((_uploadDone / _uploadTotal) * 100) + '%';
+  if (count) count.textContent = _uploadDone + ' / ' + _uploadTotal;
+  if (st) {
+    st.textContent = success ? 'Done' : ('Failed: ' + (errorMsg || 'error'));
+    st.className = 'upload-file-status ' + (success ? 'done' : 'error');
+  }
+  // Auto-hide after last file completes
+  if (_uploadDone >= _uploadTotal) {
+    setTimeout(() => {
+      const wrap = document.getElementById('upload-progress-wrap');
+      if (wrap) wrap.classList.remove('visible');
+    }, 2200);
+  }
+}
+
+function _resetUploadProgress() {
+  const wrap = document.getElementById('upload-progress-wrap');
+  const fill = document.getElementById('upload-progress-fill');
+  if (wrap) wrap.classList.remove('visible');
+  if (fill) fill.style.width = '0%';
+  _uploadTotal = 0; _uploadDone = 0;
+}
+
+function _checkGasBanner() {
+  const url   = window.APPS_SCRIPT_URL   || localStorage.getItem('APPS_SCRIPT_URL');
+  const token = window.APPS_SCRIPT_TOKEN || localStorage.getItem('APPS_SCRIPT_TOKEN');
+  const banner = document.getElementById('gas-config-banner');
+  if (banner) banner.classList.toggle('visible', !url || !token || url.startsWith('__'));
+}
+
+// GAS config modal helpers
+function openGasConfigModal() {
+  const modal = document.getElementById('gas-config-modal');
+  if (!modal) return;
+  document.getElementById('gas-url-input').value   = window.APPS_SCRIPT_URL   || localStorage.getItem('APPS_SCRIPT_URL')   || '';
+  document.getElementById('gas-token-input').value = window.APPS_SCRIPT_TOKEN || localStorage.getItem('APPS_SCRIPT_TOKEN') || '';
+  modal.classList.add('open');
+}
+
+async function saveGasConfig() {
+  const url   = document.getElementById('gas-url-input').value.trim();
+  const token = document.getElementById('gas-token-input').value.trim();
+  const status = document.getElementById('gas-config-status');
+  if (!url || !token) { status.textContent = 'Both fields are required.'; return; }
+
+  // Persist to localStorage (survives page refresh without a redeploy)
+  localStorage.setItem('APPS_SCRIPT_URL', url);
+  localStorage.setItem('APPS_SCRIPT_TOKEN', token);
+  window.APPS_SCRIPT_URL   = url;
+  window.APPS_SCRIPT_TOKEN = token;
+
+  status.textContent = 'Testing connection…';
+  try {
+    const res  = await fetch(url, { method: 'GET' });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      status.style.color = '#2e7d32';
+      status.textContent = 'Connection successful! GAS is live.';
+      setTimeout(() => {
+        document.getElementById('gas-config-modal').classList.remove('open');
+        _checkGasBanner();
+      }, 1400);
+    } else {
+      status.style.color = '#c62828';
+      status.textContent = 'GAS responded but returned unexpected data: ' + JSON.stringify(data);
+    }
+  } catch(err) {
+    status.style.color = '#c62828';
+    status.textContent = 'Connection failed: ' + err.message + '. Check the URL is correct and the deployment is set to "Anyone".';
+  }
+}
+
+function clearGasConfig() {
+  localStorage.removeItem('APPS_SCRIPT_URL');
+  localStorage.removeItem('APPS_SCRIPT_TOKEN');
+  window.APPS_SCRIPT_URL = '';
+  window.APPS_SCRIPT_TOKEN = '';
+  document.getElementById('gas-url-input').value   = '';
+  document.getElementById('gas-token-input').value = '';
+  document.getElementById('gas-config-status').textContent = 'Cleared.';
+  _checkGasBanner();
+}
+
+// ── Per-file upload with progress tracking ────────────────────────
+async function uploadOneFileToGAS(file, project, dept, fileIndex) {
   const SCRIPT_URL   = window.APPS_SCRIPT_URL   || localStorage.getItem('APPS_SCRIPT_URL');
   const SCRIPT_TOKEN = window.APPS_SCRIPT_TOKEN  || localStorage.getItem('APPS_SCRIPT_TOKEN');
-  if (!SCRIPT_URL || !SCRIPT_TOKEN) return null;
+  if (!SCRIPT_URL || !SCRIPT_TOKEN || SCRIPT_URL.startsWith('__')) {
+    _updateUploadProgress(fileIndex, false, 'GAS not configured');
+    return null;
+  }
 
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = async e => {
       const base64 = e.target.result.split(',')[1];
+      // Abort controller for 60-second timeout
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 60000);
       try {
-        const res  = await fetch(SCRIPT_URL, {
-          method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'uploadMedia', token: SCRIPT_TOKEN,
-            fileName: file.name, mimeType: file.type, base64Data: base64, project, dept })
+        const res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'uploadMedia', token: SCRIPT_TOKEN,
+            fileName: file.name, mimeType: file.type,
+            base64Data: base64, project, dept,
+            updateTimestamp: new Date().toISOString()
+          }),
+          signal: ctrl.signal
         });
+        clearTimeout(timer);
         const data = await res.json();
-        if (data.success) resolve(data); else reject(new Error(data.error || 'Upload failed'));
-      } catch(err) { reject(err); }
+        if (data.success) {
+          _updateUploadProgress(fileIndex, true);
+          resolve(data);
+        } else {
+          _updateUploadProgress(fileIndex, false, data.error || 'Upload failed');
+          reject(new Error(data.error || 'Upload failed'));
+        }
+      } catch(err) {
+        clearTimeout(timer);
+        const msg = err.name === 'AbortError' ? 'Timed out (60s)' : err.message;
+        _updateUploadProgress(fileIndex, false, msg);
+        console.warn('[GAS upload error]', file.name, msg);
+        reject(err);
+      }
     };
-    reader.onerror = () => reject(new Error('FileReader error'));
+    reader.onerror = () => {
+      _updateUploadProgress(fileIndex, false, 'File read error');
+      reject(new Error('FileReader error'));
+    };
     reader.readAsDataURL(file);
   });
 }
@@ -4870,7 +5123,7 @@ function rebuildMobilePills() {
   const latest = availableSessions[currentProject] && availableSessions[currentProject][0];
   container.innerHTML = depts.map(d => { const count = taskDatabase.filter(t => t.project === currentProject && t.dept.toLowerCase() === d.toLowerCase() && t.session === latest).length; const isActive = currentDept === d ? activeClass : ''; return `<button class="mobile-dept-pill ${isActive}" onclick="showDeptMobile('${d}')">${d} <span class="pill-count">${count}</span></button>`; }).join('');
 }
-function showDeptMobile(dept) { currentDept = dept; viewingSessionDate = 'current'; _clearMediaState(); cancelReply(); updateSidebarCounts(); renderDeptContent(currentProject, dept); }
+function showDeptMobile(dept) { currentDept = dept; viewingSessionDate = 'current'; _clearMediaState(); cancelReply(); updateSidebarCounts(); renderDeptContent(currentProject, dept); if(window._resubscribeDeptUpdates) window._resubscribeDeptUpdates(); }
 function buildHistoryBar() {
   const bar = document.getElementById('history-bar'); if (!currentProject) return;
   const sessions = availableSessions[currentProject] || []; const monthGroups = {};
@@ -4893,9 +5146,9 @@ function expandMonth(m) { const sessions = availableSessions[currentProject] || 
 function switchSession(val) {
   viewingSessionDate = val; buildHistoryBar(); const dateLabel = document.getElementById('viewing-date-label');
   if (val === 'current') dateLabel.textContent = 'Current'; else if (val.length === 3) dateLabel.textContent = val.charAt(0).toUpperCase() + val.slice(1) + ' Rollup'; else dateLabel.textContent = formatSheetName(val);
-  renderCurrentDept();
+  renderCurrentDept(); if(window._resubscribeDeptUpdates) window._resubscribeDeptUpdates();
 }
-function showDept(btn, proj, dept) { currentProject = proj; currentDept = dept; viewingSessionDate = 'current'; _clearMediaState(); cancelReply(); document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderDeptContent(proj, dept); }
+function showDept(btn, proj, dept) { currentProject = proj; currentDept = dept; viewingSessionDate = 'current'; _clearMediaState(); cancelReply(); document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderDeptContent(proj, dept); if(window._resubscribeDeptUpdates) window._resubscribeDeptUpdates(); }
 function renderDeptContent(proj, dept) {
   document.getElementById('panel-placeholder').style.display = 'none'; const container = document.getElementById('dynamic-dept-container'); container.style.display = 'block';
   document.getElementById('dynamic-dept-title').textContent = dept; const badge = document.getElementById('dynamic-dept-badge'); badge.textContent = proj; badge.className = 'nav-badge ' + (proj==='Crossings' ? 'badge-cx' : 'badge-annex');
@@ -9083,6 +9336,7 @@ window.onload = function () {
   
   mgmtInitOnLoad();
   updateTargetHeaders();
+  setTimeout(_checkGasBanner, 800); // Show GAS warning if URL not configured
   initFirebase();
 
   if (!window.onAuthGateReady) {
@@ -9091,6 +9345,78 @@ window.onload = function () {
       applyPriorityColors();
       syncWithGoogleSheet();
       setInterval(syncWithGoogleSheet, AUTO_SYNC_MINUTES * 60 * 1000);
+
+      // ── localStorage → Firebase reconciliation ──────────────────────────────
+      // Runs every 5 minutes on ALL logged-in devices (not admin-only).
+      // Scans every deptupdate: key in localStorage, reads the corresponding
+      // Firebase node, and pushes any local updates that Firebase doesn't have.
+      // This is a passive safety net: if Firebase was offline when an update
+      // was saved, the next reconciliation cycle will catch it and push it up.
+      // ────────────────────────────────────────────────────────────────────────
+      function _reconcileLocalToFirebase() {
+        if (!_fbReady || !_fbDb) return; // Firebase not ready yet — skip this cycle
+
+        // Collect all deptupdate: keys (new session-scoped schema only)
+        const localKeys = [];
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            // Match: deptupdate:{proj}:{dept}:{session}
+            if (k && k.startsWith('deptupdate:') && k.split(':').length === 4) {
+              localKeys.push(k);
+            }
+          }
+        } catch(e) { return; }
+
+        if (!localKeys.length) return;
+
+        localKeys.forEach(key => {
+          let localUpdates;
+          try { localUpdates = JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) { return; }
+          if (!localUpdates.length) return;
+
+          // Parse: deptupdate:{proj}:{dept}:{session}
+          const parts = key.split(':');
+          const proj    = parts[1];
+          const dept    = parts[2];
+          const session = parts[3];
+
+          const fbPath = 'dept_updates/' + proj + '/' + dept + '/' + session;
+
+          // Read what Firebase already has for this path
+          _fbDb.ref(fbPath).once('value').then(snap => {
+            const fbData = snap.val() || {};
+            // Build a set of timestamps already in Firebase
+            const fbTimestamps = new Set(
+              Object.values(fbData)
+                .filter(v => v && v.timestamp)
+                .map(v => v.timestamp)
+            );
+
+            // Push only updates whose timestamp isn't already in Firebase
+            const missing = localUpdates.filter(u => u && u.timestamp && !fbTimestamps.has(u.timestamp));
+            if (!missing.length) return;
+
+            missing.forEach(update => {
+              _fbDb.ref(fbPath).push(update).catch(e =>
+                console.warn('[Reconcile] Failed to push update to Firebase:', e.message)
+              );
+            });
+
+            if (missing.length > 0) {
+              console.log('[Reconcile] Pushed ' + missing.length + ' missing update(s) to Firebase →', fbPath);
+            }
+          }).catch(e => console.warn('[Reconcile] Firebase read failed for', fbPath, e.message));
+        });
+      }
+
+      // Run once on load (after a short delay so Firebase connection is ready)
+      // then every 5 minutes in sync with the sheet sync cycle
+      setTimeout(_reconcileLocalToFirebase, 8000);
+      setInterval(_reconcileLocalToFirebase, AUTO_SYNC_MINUTES * 60 * 1000);
+
+      // Expose globally so it can be triggered manually if needed
+      window._reconcileLocalToFirebase = _reconcileLocalToFirebase;
     };
   }
 
@@ -9302,6 +9628,11 @@ window.onAuthGateReady = window.onAuthGateReady || function () {
   applyPriorityColors();
   syncWithGoogleSheet();
   setInterval(syncWithGoogleSheet, AUTO_SYNC_MINUTES * 60 * 1000);
+  // Reconciler fallback — in case this code path fired instead of the primary one
+  if (window._reconcileLocalToFirebase) {
+    setTimeout(window._reconcileLocalToFirebase, 8000);
+    setInterval(window._reconcileLocalToFirebase, AUTO_SYNC_MINUTES * 60 * 1000);
+  }
 };
 
 window.onAuthGateSignedIn = window.onAuthGateSignedIn || function(user, access) {
@@ -9454,6 +9785,39 @@ window._authSafetyTimer = setTimeout(function() {
     <textarea class="chatbot-input" id="chatbot-input" placeholder="Ask anything about the projects…" rows="1"
       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage();}"></textarea>
     <button class="chatbot-send-btn" id="chatbot-send-btn" onclick="sendChatMessage()">Send</button>
+  </div>
+</div>
+
+
+<!-- GAS Config Modal (admin shortcut when secrets aren't injected) -->
+<div class="tool-modal-overlay" id="gas-config-modal">
+  <div class="tool-modal" style="max-width:460px;">
+    <div class="tool-modal-header">
+      <div>
+        <h2>Configure Apps Script</h2>
+        <p>Set the GAS Web App URL &amp; token to enable media uploads and email sending</p>
+      </div>
+      <button class="tool-modal-close" onclick="document.getElementById('gas-config-modal').classList.remove('open')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="tool-modal-body">
+      <div class="tool-field">
+        <label>Apps Script Web App URL</label>
+        <input type="url" id="gas-url-input" placeholder="https://script.google.com/macros/s/.../exec" style="font-size:12px;">
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Deploy your GAS project → Web App → Copy URL here</div>
+      </div>
+      <div class="tool-field">
+        <label>Secret Token</label>
+        <input type="text" id="gas-token-input" placeholder="MixtaMail2026" style="font-size:12px;">
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Must match SECRET_TOKEN in your GAS script</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="sync-btn" onclick="saveGasConfig()" style="flex:1;">Save &amp; Test Connection</button>
+        <button class="sync-btn" onclick="clearGasConfig()" style="background:var(--bg);color:var(--text-secondary);border:1px solid var(--border);">Clear</button>
+      </div>
+      <div id="gas-config-status" style="margin-top:10px;font-size:12px;color:var(--text-muted);min-height:18px;"></div>
+    </div>
   </div>
 </div>
 
