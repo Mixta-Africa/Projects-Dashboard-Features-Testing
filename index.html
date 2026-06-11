@@ -2761,6 +2761,7 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <script>
 // ═══════════════════════════════════════════════
 // STATE & GOOGLE SHEETS SETUP
@@ -6232,7 +6233,7 @@ YOUR TASK:
 Output EXACTLY these HTML blocks (using the exact class names provided) to inject into the dashboard:
 
 <div class="pi-insight-block" style="border-top:3px solid ${accentColor};margin-top:0">
-  <div class="pi-insight-headline"><i data-lucide="map-pin" style="width: 16px; height: 16px; margin-right: 4px; vertical-align: middle;"></i> Liquidity & Sales Correlation</div>
+  <div class="pi-insight-headline">📍 Liquidity & Sales Correlation</div>
   <div class="pi-insight-text">[1-2 punchy sentences. How does the current cash liquidity and offer letter pipeline directly impact our immediate construction ability?]</div>
 </div>
 
@@ -6244,12 +6245,12 @@ Output EXACTLY these HTML blocks (using the exact class names provided) to injec
 </div>
 
 <div class="pi-insight-block">
-  <div class="pi-insight-headline"><i data-lucide="alert-triangle" style="width: 16px; height: 16px; margin-right: 4px; vertical-align: middle;"></i> Milestone Delivery Risks</div>
+  <div class="pi-insight-headline">🔥 Milestone Delivery Risks</div>
   <div class="pi-insight-text">[1-2 sentences identifying exactly what milestone is at risk right now due to the bottlenecks or cash position.]</div>
 </div>
 
 <div class="pi-insight-block">
-  <div class="pi-insight-headline"><i data-lucide="target" style="width: 16px; height: 16px; margin-right: 4px; vertical-align: middle;"></i> Immediate Required Executive Action</div>
+  <div class="pi-insight-headline">🎯 Immediate Required Executive Action</div>
   <div class="pi-insight-text">[1-2 sentences. What exact decision must the board make THIS WEEK to unblock the project? Name it clearly.]</div>
 </div>
 
@@ -9243,11 +9244,11 @@ label = '₦' + (bVal.endsWith('.00') ? bVal.slice(0, -3) : bVal) + 'Bn';
         <label>Select project</label>
         <div class="report-type-grid">
           <button class="report-type-btn" id="report-btn-annexe" onclick="selectReportProject('Annexe')">
-            <div class="report-type-label"><i data-lucide="home" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Lakowe Annexe</div>
+            <div class="report-type-label">🏘 Lakowe Annexe</div>
             <div class="report-type-sub">78 units · ₦6.27B inflow · 35.3% complete</div>
           </button>
           <button class="report-type-btn" id="report-btn-crossings" onclick="selectReportProject('Crossings')">
-            <div class="report-type-label"><i data-lucide="hammer" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Lakowe Crossings</div>
+            <div class="report-type-label">🏗 Lakowe Crossings</div>
             <div class="report-type-sub">6 units · ₦1.72B inflow · 27.8% complete</div>
           </button>
         </div>
@@ -9338,9 +9339,9 @@ window._authSafetyTimer = setTimeout(function() {
       <button class="mgmt-close" onclick="closeMgmtPanel()">✕</button>
     </div>
     <div class="mgmt-tabs">
-      <button class="mgmt-tab active" onclick="switchMgmtTab('users',this)"><i data-lucide="users" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Users</button>
-      <button class="mgmt-tab" onclick="switchMgmtTab('depts',this)"><i data-lucide="building-2" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Departments</button>
-      <button class="mgmt-tab" onclick="switchMgmtTab('tasks',this)"><i data-lucide="trash-2" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Delete Tasks</button>
+      <button class="mgmt-tab active" onclick="switchMgmtTab('users',this)">👤 Users</button>
+      <button class="mgmt-tab" onclick="switchMgmtTab('depts',this)">🏢 Departments</button>
+      <button class="mgmt-tab" onclick="switchMgmtTab('tasks',this)">🗑 Delete Tasks</button>
     </div>
     <div class="mgmt-body">
 
@@ -9437,7 +9438,7 @@ window._authSafetyTimer = setTimeout(function() {
     <button class="chatbot-close-btn" onclick="closeChatbot()" aria-label="Close">✕</button>
   </div>
   <div class="chatbot-welcome" id="chatbot-welcome">
-    <div class="chatbot-welcome-emoji"><i data-lucide="building" style="width: 28px; height: 28px; margin: 0 auto;"></i></div>
+    <div class="chatbot-welcome-emoji">🏗️</div>
     <h3>Welcome! How may I assist you today?</h3>
     <p>I have full access to all tasks, deadlines, financial data,<br>and meeting notes across every session in both projects.</p>
   </div>
@@ -9464,15 +9465,15 @@ window._authSafetyTimer = setTimeout(function() {
 /* ── Floating Help Button ── */
 .help-fab {
   position: fixed; bottom: 24px; right: 24px; z-index: 9000;
-  width: 46px; height: 46px; border-radius: 50%;
+  width: 48px; height: 48px; border-radius: 50%;
   background: var(--active-theme-color, var(--cx-color));
   color: #fff; border: none; cursor: pointer;
   box-shadow: 0 4px 16px rgba(0,0,0,0.22);
   display: flex; align-items: center; justify-content: center;
-  font-size: 18px; font-weight: 800; font-family: inherit;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   user-select: none;
 }
+.help-fab svg { stroke: #fff; width: 22px; height: 22px; }
 .help-fab:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(0,0,0,0.28); }
 .help-fab-label {
   position: absolute; right: 54px; background: #1a1a1a; color: #fff;
@@ -9543,24 +9544,29 @@ window._authSafetyTimer = setTimeout(function() {
 .help-guide-icon-wrap {
   width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
   background: var(--active-theme-color, var(--cx-color));
-  display: flex; align-items: center; justify-content: center; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; flex-shrink: 0;
 }
+.help-guide-icon-wrap svg { width: 18px; height: 18px; stroke: #fff; }
 .help-guide-text { flex: 1; }
 .help-guide-title { font-size: 13px; font-weight: 800; color: #1a1a1a; margin-bottom: 3px; }
 .help-guide-desc { font-size: 12px; color: #666; line-height: 1.6; }
 
 .help-tip-badge {
-  display: inline-flex; align-items: center; gap: 5px;
+  display: inline-flex; align-items: center; gap: 6px;
   font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
-  padding: 2px 8px; border-radius: 20px; margin-bottom: 8px;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 8px;
   background: #fff8e1; color: #e65100;
 }
+.help-tip-badge svg { width: 12px; height: 12px; stroke: #e65100; }
 
 .help-restart-btn {
   width: 100%; padding: 12px; border: 2px dashed #ddd; border-radius: 10px;
   background: none; cursor: pointer; font-size: 13px; font-weight: 700; color: #888;
   font-family: inherit; margin-top: 16px; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
 }
+.help-restart-btn svg { width: 14px; height: 14px; stroke: currentColor; }
 .help-restart-btn:hover { border-color: var(--active-theme-color, var(--cx-color)); color: var(--active-theme-color, var(--cx-color)); background: #fafafa; }
 
 /* ── First-Visit Tour ── */
@@ -9595,8 +9601,11 @@ window._authSafetyTimer = setTimeout(function() {
 }
 .tour-step-pill:hover { border-color: var(--active-theme-color, var(--cx-color)); background: #fff; }
 .tour-step-pill.active { border-color: var(--active-theme-color, var(--cx-color)); background: var(--active-theme-color, var(--cx-color)); color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-.tour-step-emoji { font-size: 20px; }
-.tour-step-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; text-align: center; line-height: 1.3; }
+.tour-step-pill.active svg { stroke: #fff; }
+.tour-step-pill svg { stroke: var(--text-secondary, #666); width: 18px; height: 18px; }
+.tour-step-icon { display: flex; align-items: center; justify-content: center; }
+.tour-step-icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; } .tour-step-icon svg { width: 18px; height: 18px; }
+.tour-step-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; text-align: center; line-height: 1.3; color: var(--text-secondary, #666); }
 .tour-step-pill.active .tour-step-label { color: rgba(255,255,255,0.9); }
 
 .tour-content { padding: 22px 28px; min-height: 120px; }
@@ -9632,8 +9641,8 @@ window._authSafetyTimer = setTimeout(function() {
 
 <!-- Floating Help Button -->
 <button class="help-fab" onclick="openHelpPanel()" aria-label="Help">
-  <span class="help-fab-label">Help & Guide</span>
-  ?
+  <span class="help-fab-label">Help &amp; Guide</span>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
 </button>
 
 <!-- Help Panel -->
@@ -9644,7 +9653,7 @@ window._authSafetyTimer = setTimeout(function() {
         <div class="help-panel-title">Dashboard Guide</div>
         <div class="help-panel-sub">Learn how to navigate and use every feature</div>
       </div>
-      <button class="help-close-btn" onclick="closeHelpPanelDirect()">✕</button>
+      <button class="help-close-btn" onclick="closeHelpPanelDirect()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="help-tabs">
       <button class="help-tab active" onclick="switchHelpTab('overview', this)">Overview</button>
@@ -9659,61 +9668,61 @@ window._authSafetyTimer = setTimeout(function() {
       <!-- OVERVIEW -->
       <div class="help-section active" id="help-overview">
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">🏠</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">What is this dashboard?</div>
             <div class="help-guide-desc">This is the Mixta Africa Projects Tracker — a live, real-time dashboard for monitoring Lakowe Crossings and Lakowe Annexe. It syncs directly from your project spreadsheets every 5 minutes.</div>
           </div>
         </div>
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">🔁</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Data is live-synced</div>
             <div class="help-guide-desc">The dashboard automatically pulls the latest data from Google Sheets. You'll see a "Last synced" time at the top of the page. No manual refresh needed.</div>
           </div>
         </div>
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">🔐</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">You're signed in to your department</div>
             <div class="help-guide-desc">Your Google account determines which project and department you can see. You only have access to your own department's data — other tabs are locked for privacy.</div>
           </div>
         </div>
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">📱</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Works on mobile too</div>
             <div class="help-guide-desc">The dashboard adapts to your screen size. On mobile, use the hamburger menu (≡) at the top to switch between pages like Analytics, Milestones, and Trends.</div>
           </div>
         </div>
-        <button class="help-restart-btn" onclick="startTour()">▶ Restart the guided tour</button>
+        <button class="help-restart-btn" onclick="startTour()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Restart the guided tour</button>
       </div>
 
       <!-- PROJECTS -->
       <div class="help-section" id="help-projects">
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">🟢</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Lakowe Crossings (Green)</div>
             <div class="help-guide-desc">The Lakowe Crossings project is displayed with a green theme. Click "Crossings" in the top navigation bar to switch to this project view. KPI tiles, charts, and tasks will update to show Crossings data.</div>
           </div>
         </div>
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">🔴</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Lakowe Annexe (Red)</div>
             <div class="help-guide-desc">The Lakowe Annexe project is displayed with a red theme. Click "Annexe" in the navigation to switch. Each project maintains its own task history, financial data, and session logs.</div>
           </div>
         </div>
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">📅</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Session picker</div>
             <div class="help-guide-desc">Use the date/session dropdown at the top to browse historical meeting data. Each session represents one project meeting. The default view shows the most recent session.</div>
           </div>
         </div>
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">★</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Priority tiles — Account Balance & Offer Letters</div>
             <div class="help-guide-desc">The two gold-bordered tiles at the top right are the highest-priority KPIs. They change colour automatically: Red = critical, Amber = watch closely, Green = healthy.</div>
@@ -9723,30 +9732,30 @@ window._authSafetyTimer = setTimeout(function() {
 
       <!-- TASKS -->
       <div class="help-section" id="help-tasks">
-        <div class="help-tip-badge">⚡ Key Feature</div>
+        <div class="help-tip-badge"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Key Feature</div>
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">📋</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Reading a task card</div>
             <div class="help-guide-desc">Each task card shows the Context/Result bar at the top (so you know WHY the task matters), then the action item below. The left-border colour shows the status: Green = On Track, Red = Delayed, Gold = On Hold, Blue = Done.</div>
           </div>
         </div>
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">✏️</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Updating task status</div>
             <div class="help-guide-desc">Click any task card to expand it, then use the status buttons to mark it as Done, Delayed, or On Hold. Your update is saved immediately and synced to the shared database.</div>
           </div>
         </div>
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">🚨</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Critical Alert Zone</div>
             <div class="help-guide-desc">The red strip below the KPI tiles collects all Delayed tasks from every department in one place. This is the CEO's first-look summary — check it before every meeting.</div>
           </div>
         </div>
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">🏷️</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Trend badges</div>
             <div class="help-guide-desc">Some tasks show a "Repeated" badge — this means the same action item has appeared in multiple sessions without being marked as Done. These are escalation signals worth reviewing.</div>
@@ -9757,28 +9766,28 @@ window._authSafetyTimer = setTimeout(function() {
       <!-- CHARTS -->
       <div class="help-section" id="help-charts">
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">📈</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Financial Progress Trend chart</div>
             <div class="help-guide-desc">This chart tracks two lines over time: Sales Value (dashed blue) and Total Inflow (solid, project colour). The gap between the two lines represents outstanding receivables — the closer they are, the healthier the cash position.</div>
           </div>
         </div>
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">🎯</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Spreadsheet Targets Status</div>
             <div class="help-guide-desc">The card next to the chart shows this month's targets from the spreadsheet. Green = Done, Orange = Ongoing, Red = At Risk. Scroll within the card to see all targets.</div>
           </div>
         </div>
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">💰</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Account Balance Trend (CVI)</div>
             <div class="help-guide-desc">Below the charts is the Commercial Velocity Indicator — it shows the trend in account balance, inflow rate, and whether the project is in a "cash drought". Red drought strips signal periods of no inflow.</div>
           </div>
         </div>
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">🔍</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Hovering for details</div>
             <div class="help-guide-desc">Hover over any point on a chart to see an exact value tooltip. The crosshair will snap to the nearest data point for both lines simultaneously.</div>
@@ -9789,28 +9798,28 @@ window._authSafetyTimer = setTimeout(function() {
       <!-- TOOLS -->
       <div class="help-section" id="help-tools">
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">📧</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Send Task Reminders</div>
             <div class="help-guide-desc">Use the envelope icon in the toolbar to compose and send email reminders to any department. Select the project, department, and Test or Live mode — Test sends only to the admin address for preview.</div>
           </div>
         </div>
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">📄</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Monthly Report</div>
             <div class="help-guide-desc">The report icon generates a structured Word document (.docx) monthly summary for executives. Select the project, click Generate, and download the report for distribution.</div>
           </div>
         </div>
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">🤖</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">AI Project Assistant</div>
             <div class="help-guide-desc">The chat bubble at the bottom opens an AI assistant trained on your project data. Ask it questions like "What are the most delayed tasks?" or "Summarise Annexe progress this month."</div>
           </div>
         </div>
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">💬</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Team Updates</div>
             <div class="help-guide-desc">The message icon opens the Team Updates feed — a WhatsApp-style chat log where team members post progress notes, photos, and file attachments by department.</div>
@@ -9821,21 +9830,21 @@ window._authSafetyTimer = setTimeout(function() {
       <!-- ADMIN -->
       <div class="help-section" id="help-admin">
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">🔑</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Admin access</div>
             <div class="help-guide-desc">Admin features are only visible to the admin account. If you're an admin, use the lock icon in the toolbar and enter the admin password to unlock the Admin Panel.</div>
           </div>
         </div>
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">🩺</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Health monitoring</div>
             <div class="help-guide-desc">The Admin Panel has a Health tab that runs 9 system checks — Firebase, Sheets sync, GAS relay, Groq API, and more. A warning banner appears automatically if any critical system fails in the last 30 minutes.</div>
           </div>
         </div>
         <div class="help-guide-item">
-          <div class="help-guide-icon-wrap">🗂️</div>
+          <div class="help-guide-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div>
           <div class="help-guide-text">
             <div class="help-guide-title">Sheets diagnostics</div>
             <div class="help-guide-desc">Admins can inspect raw data from Google Sheets in the Admin Panel to debug sync issues. The Error Log tab shows a rolling history of any sync failures with timestamps.</div>
@@ -9873,46 +9882,46 @@ window._authSafetyTimer = setTimeout(function() {
 // ══════════════════════════════════════════
 const TOUR_STEPS = [
   {
-    icon: 'home',
+    svg: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
     label: 'Welcome',
     title: 'Your project command centre',
     desc: 'This dashboard gives you a real-time view of both Lakowe Crossings and Lakowe Annexe — including tasks, financials, targets, and team updates. Everything updates automatically from Google Sheets every 5 minutes.',
-    tip: '💡 No manual refresh needed. The "Last synced" timestamp at the top tells you how fresh the data is.'
+    tip: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:3px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> No manual refresh needed. The "Last synced" timestamp at the top tells you how fresh the data is.'
   },
   {
-    icon: 'arrow-left-right',
+    svg: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
     label: 'Projects',
     title: 'Switch between Crossings & Annexe',
     desc: 'Use the project tabs at the top of the page to switch between Lakowe Crossings (green) and Lakowe Annexe (red). Each project has its own tasks, KPIs, charts, and history.',
-    tip: '💡 Your login email determines which project you have access to by default.'
+    tip: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:3px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Your login email determines which project you have access to by default.'
   },
   {
-    icon: 'star',
+    svg: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
     label: 'KPIs',
     title: 'Watch the Priority tiles',
     desc: 'The two gold-bordered tiles — Account Balance and Offer Letters — are the most critical indicators. They change colour automatically: Red means action is needed now, Amber means watch closely, Green means healthy.',
-    tip: '💡 These tiles are the CEO\'s first checkpoint. Keep them green before every meeting.'
+    tip: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:3px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> These tiles are the CEO\'s first checkpoint. Keep them green before every meeting.'
   },
   {
-    icon: 'check-square',
+    svg: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>',
     label: 'Tasks',
     title: 'Click any task to update its status',
     desc: 'Task cards are colour-coded by status: Green = On Track, Red = Delayed, Gold = On Hold, Blue = Done. Click a card to expand it and change the status. The red Alert Zone at the top collects all delayed tasks from every department.',
-    tip: '💡 Updating a task status saves immediately — your team sees it in real time.'
+    tip: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:3px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Updating a task status saves immediately — your team sees it in real time.'
   },
   {
-    icon: 'trending-up',
+    svg: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>',
     label: 'Charts',
     title: 'Track financial progress over time',
     desc: 'The Financial Progress Trend chart shows cash inflow vs. sales value over every project session. The gap between the two lines = receivables outstanding. The Targets card beside it shows this month\'s key spreadsheet objectives.',
-    tip: '💡 Hover over the chart to see exact values at any point in time.'
+    tip: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:3px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Hover over the chart to see exact values at any point in time.'
   },
   {
-    icon: 'wrench',
+    svg: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
     label: 'Tools',
     title: 'Reminders, Reports & AI Assistant',
     desc: 'The toolbar contains tools for sending email reminders to departments, generating monthly Word reports, accessing team updates, and asking the AI Assistant project questions. The ? button always brings back this guide.',
-    tip: '💡 Use the AI Assistant to get instant answers like "What\'s the current account balance?" or "Which tasks are most overdue?"'
+    tip: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:3px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Use the AI Assistant to get instant answers like "What\'s the current account balance?" or "Which tasks are most overdue?"'
   }
 ];
 
@@ -9926,7 +9935,7 @@ function renderTour() {
 
   strip.innerHTML = TOUR_STEPS.map((s, i) =>
     `<div class="tour-step-pill ${i === _tourStep ? 'active' : ''}" onclick="jumpTourStep(${i})">
-      <span class="tour-step-emoji"><i data-lucide="${s.icon}" style="width: 20px; height: 20px;"></i></span>
+      <span class="tour-step-icon">${s.svg}</span>
       <span class="tour-step-label">${s.label}</span>
     </div>`
   ).join('');
@@ -9943,7 +9952,7 @@ function renderTour() {
   ).join('');
 
   const isLast = _tourStep === TOUR_STEPS.length - 1;
-  nextBtn.textContent = isLast ? '✓ Get started' : 'Next →';
+  nextBtn.innerHTML = isLast ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle"><polyline points="20 6 9 17 4 12"/></svg> Get started` : 'Next &#8594;';
 }
 
 function jumpTourStep(i) {
@@ -10009,12 +10018,6 @@ function switchHelpTab(section, btn) {
   btn.classList.add('active');
 }
 </script>
-  // Add this at the very end of your scripts, right before </body>
-const iconObserver = new MutationObserver(() => {
-  if (typeof lucide !== 'undefined') lucide.createIcons();
-});
-iconObserver.observe(document.body, { childList: true, subtree: true });
-if (typeof lucide !== 'undefined') lucide.createIcons();
 
 </body>
 
