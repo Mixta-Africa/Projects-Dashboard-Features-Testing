@@ -291,11 +291,14 @@ body.users-bar-visible .dept-sidebar {
 .overdue-dept { background: var(--active-theme-color, var(--cx-color)); color: white; font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: var(--radius-pill); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; flex-shrink: 0; }
 .overdue-action { color: var(--text-primary); font-weight: 600; flex: 1; min-width: 0; word-wrap: break-word; }
 .overdue-due { color: var(--status-red); font-size: 10px; font-weight: 700; white-space: nowrap; }
-.charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-.chart-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
-.chart-card-header { display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 12px; gap: 6px; }
-.chart-card h3 { font-size: 11px; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
-.chart-wrap { position: relative; height: 190px; width: 100%; }
+.charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.chart-card { background: var(--white); border: 1px solid #e8eaed; border-radius: 12px; padding: 20px 20px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04); position: relative; overflow: hidden; transition: box-shadow 0.2s ease; }
+.chart-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06); }
+.chart-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--active-theme-color, var(--cx-color)); opacity: 0.7; }
+.chart-card-header { display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 14px; gap: 3px; }
+.chart-card h3 { font-size: 12px; font-weight: 800; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.07em; }
+.chart-card-subtitle { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+.chart-wrap { position: relative; height: 200px; width: 100%; }
 .target-legend { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: flex; gap: 12px; justify-content: flex-start; flex-wrap: wrap; }
 .legend-dot { display: inline-flex; align-items: center; gap: 4px; }
 .legend-dot::before { content: '●'; }
@@ -309,8 +312,8 @@ body.users-bar-visible .dept-sidebar {
 .mc-amber { background: #ff9800; }
 .mc-green { background: #2e7d32; }
 .mc-note { color: var(--text-muted); font-weight: 500; text-transform: none; letter-spacing: 0; font-size: 10px; }
-.target-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; height: 190px; overflow-y: auto; padding-right: 6px; }
-.target-item { display: flex; align-items: stretch; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid transparent; font-size: 12px; min-width: 0; width: 100%; margin-bottom: 0; min-height: 40px; }
+.target-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; height: 200px; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; }
+.target-item { display: flex; align-items: stretch; border-radius: 8px; overflow: hidden; border: 1px solid transparent; font-size: 12px; min-width: 0; width: 100%; margin-bottom: 0; min-height: 44px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
 .target-item.t-done { background: #f0faf0; border-color: #a5d6a7; }
 .target-item.t-ongoing { background: #fff4e5; border-color: #ffcc80; }
 .target-item.t-atrisk { background: #fff5f5; border-color: #ef9a9a; }
@@ -2054,9 +2057,9 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
     </div>
     <div id="overdue-cx"></div>
     <div class="charts-row">
-      <div class="chart-card"><div class="chart-card-header"><h3>Cumulative Sales Inflow</h3></div><div class="chart-wrap"><canvas id="c3"></canvas></div></div>
+      <div class="chart-card"><div class="chart-card-header"><h3>Financial Progress Trend</h3><div class="chart-card-subtitle">Cash inflow vs cumulative sales value (receivable gaps in millions)</div></div><div class="chart-wrap"><canvas id="c3"></canvas></div></div>
       <div class="chart-card">
-        <div class="chart-card-header"><h3 id="targets-cx-title">End of April Targets</h3><div class="target-legend"><span class="legend-dot legend-done">Done</span><span class="legend-dot legend-ongoing">Ongoing</span><span class="legend-dot legend-atrisk">At Risk</span></div></div>
+        <div class="chart-card-header" style="flex-direction:row;align-items:center;justify-content:space-between;width:100%;"><div><h3 id="targets-cx-title">End of Month Priorities</h3><div class="chart-card-subtitle">Spreadsheet targets status</div></div><div class="target-legend"><span class="legend-dot legend-done">Done</span><span class="legend-dot legend-ongoing">Ongoing</span><span class="legend-dot legend-atrisk">At Risk</span></div></div>
         <div class="target-list" id="targets-crossings"></div>
       </div>
     </div>
@@ -2176,9 +2179,9 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
     </div>
     <div id="overdue-annex"></div>
     <div class="charts-row">
-      <div class="chart-card"><div class="chart-card-header"><h3>Inflow &amp; Balance Trend</h3></div><div class="chart-wrap"><canvas id="c1"></canvas></div></div>
+      <div class="chart-card"><div class="chart-card-header"><h3>Financial Progress Trend</h3><div class="chart-card-subtitle">Cash inflow vs cumulative sales value (receivable gaps in millions)</div></div><div class="chart-wrap"><canvas id="c1"></canvas></div></div>
       <div class="chart-card">
-        <div class="chart-card-header"><h3 id="targets-annex-title">End of April Targets</h3><div class="target-legend"><span class="legend-dot legend-done">Done</span><span class="legend-dot legend-ongoing">Ongoing</span><span class="legend-dot legend-atrisk">At Risk</span></div></div>
+        <div class="chart-card-header" style="flex-direction:row;align-items:center;justify-content:space-between;width:100%;"><div><h3 id="targets-annex-title">End of Month Priorities</h3><div class="chart-card-subtitle">Spreadsheet targets status</div></div><div class="target-legend"><span class="legend-dot legend-done">Done</span><span class="legend-dot legend-ongoing">Ongoing</span><span class="legend-dot legend-atrisk">At Risk</span></div></div>
         <div class="target-list" id="targets-annexe"></div>
       </div>
     </div>
@@ -7108,9 +7111,9 @@ function buildReminderEmailBody(proj, dept, tasks) {
 
   let taskSection = '';
   if (total > 0) {
-    taskSection += buildTable(tasks.delayed, '🔴 Delayed / Overdue — Immediate Action Required', '#c62828', 'DELAYED');
-    taskSection += buildTable(tasks.ontrack, '🟢 In Progress — On Track', '#2e7d32', 'ON TRACK');
-    taskSection += buildTable(tasks.onhold,  '⏸ On Hold — Due Within 7 Days', '#e65100', 'ON HOLD');
+    taskSection += buildTable(tasks.delayed, '&#9632; DELAYED / OVERDUE &#8212; IMMEDIATE ACTION REQUIRED', '#c62828', 'DELAYED');
+    taskSection += buildTable(tasks.ontrack, '&#9632; IN PROGRESS &#8212; ON TRACK', '#2e7d32', 'ON TRACK');
+    taskSection += buildTable(tasks.onhold,  '&#9632; ON HOLD &#8212; DUE WITHIN 7 DAYS', '#e65100', 'ON HOLD');
   }
 
   // Closing instruction
@@ -8491,31 +8494,32 @@ function renderDynamicCharts() {
     maintainAspectRatio: false,
     interaction: {
       mode: 'index',
-      intersect: false // Enables the vertical crosshair spanning both lines
+      intersect: false
     },
     plugins: { 
       legend: { 
         display: true, position: 'bottom', 
-        labels: { font: { size: 12, weight: '700', family: "'DM Sans', sans-serif" }, color: '#1a73e8', usePointStyle: true, boxWidth: 8, padding: 20 } 
+        labels: { font: { size: 11, weight: '700', family: "'DM Sans', sans-serif" }, color: '#5f6368', usePointStyle: true, pointStyleWidth: 12, boxWidth: 8, padding: 20 } 
       },
       tooltip: {
         backgroundColor: '#ffffff', titleColor: '#202124', bodyColor: '#5f6368', borderColor: '#dadce0', borderWidth: 1, padding: 12, boxPadding: 6, usePointStyle: true,
         titleFont: { size: 13, weight: 'bold', family: "'DM Sans', sans-serif" },
         bodyFont: { size: 12, weight: 'bold', family: "'DM Sans', sans-serif" },
-        boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
         callbacks: {
-          label: function(ctx) { return ' : ₦' + (ctx.parsed.y / 1000).toFixed(2) + 'B'; }
+          label: function(ctx) { return ' ' + ctx.dataset.label + ': ₦' + (ctx.parsed.y / 1000).toFixed(2) + 'B'; }
         }
       }
     }, 
     scales: { 
       x: { 
-        ticks: { color: '#80868b', font: { size: 11, weight: '600' }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }, 
-        grid: { display: false } 
+        ticks: { color: '#9aa0a6', font: { size: 10, weight: '600' }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }, 
+        grid: { display: false },
+        border: { display: false }
       }, 
       y: { 
-        ticks: { color: '#80868b', font: { size: 11, weight: '600' }, callback: function(value) { return '₦' + (value / 1000).toFixed(1) + 'B'; } }, 
-        grid: { color: '#EAEBEE', drawBorder: false } 
+        ticks: { color: '#9aa0a6', font: { size: 10, weight: '600' }, callback: function(value) { return '₦' + (value / 1000).toFixed(1) + 'B'; } }, 
+        grid: { color: '#f1f3f4', drawBorder: false },
+        border: { display: false, dash: [3,3] }
       } 
     } 
   };
@@ -8530,8 +8534,8 @@ function renderDynamicCharts() {
     annexChartInstance = new Chart(ctxAnnexe, {
       type: 'line', 
       data: { labels: annData.labels, datasets: [ 
-        { label: 'Value of Sales', data: annData.salesValueData, borderColor: '#1a73e8', backgroundColor: 'transparent', borderWidth: 2, pointRadius: annRadius, pointBackgroundColor: '#1a73e8', pointBorderColor: '#fff', pointHoverRadius: 6, fill: false, tension: 0.1, borderDash: [4, 4] },
-        { label: 'Total Inflow', data: annData.inflowData, borderColor: '#d93025', backgroundColor: 'rgba(217,48,37,0.05)', borderWidth: 2, pointRadius: annRadius, pointBackgroundColor: '#d93025', pointBorderColor: '#fff', pointHoverRadius: 6, fill: true, tension: 0.1 } 
+        { label: 'Sales Value', data: annData.salesValueData, borderColor: '#1a73e8', backgroundColor: 'transparent', borderWidth: 2, pointRadius: annRadius, pointBackgroundColor: '#1a73e8', pointBorderColor: '#fff', pointBorderWidth: 2, pointHoverRadius: 6, fill: false, tension: 0.35, borderDash: [5, 4] },
+        { label: 'Total Inflow', data: annData.inflowData, borderColor: '#D32F2F', backgroundColor: 'rgba(211,47,47,0.07)', borderWidth: 2.5, pointRadius: annRadius, pointBackgroundColor: '#D32F2F', pointBorderColor: '#fff', pointBorderWidth: 2, pointHoverRadius: 6, fill: true, tension: 0.35 } 
       ]},
       options: baseOpts
     });
@@ -8547,8 +8551,8 @@ function renderDynamicCharts() {
     cxChartInstance = new Chart(ctxCx, {
       type: 'line', 
       data: { labels: cxData.labels, datasets: [ 
-        { label: 'Value of Sales', data: cxData.salesValueData, borderColor: '#1a73e8', backgroundColor: 'transparent', borderWidth: 2, pointRadius: cxRadius, pointBackgroundColor: '#1a73e8', pointBorderColor: '#fff', pointHoverRadius: 6, fill: false, tension: 0.1, borderDash: [4, 4] },
-        { label: 'Total Inflow', data: cxData.inflowData, borderColor: '#d93025', backgroundColor: 'rgba(217,48,37,0.05)', borderWidth: 2, pointRadius: cxRadius, pointBackgroundColor: '#d93025', pointBorderColor: '#fff', pointHoverRadius: 6, fill: true, tension: 0.1 } 
+        { label: 'Sales Value', data: cxData.salesValueData, borderColor: '#1a73e8', backgroundColor: 'transparent', borderWidth: 2, pointRadius: cxRadius, pointBackgroundColor: '#1a73e8', pointBorderColor: '#fff', pointBorderWidth: 2, pointHoverRadius: 6, fill: false, tension: 0.35, borderDash: [5, 4] },
+        { label: 'Total Inflow', data: cxData.inflowData, borderColor: '#1b5e20', backgroundColor: 'rgba(27,94,32,0.07)', borderWidth: 2.5, pointRadius: cxRadius, pointBackgroundColor: '#1b5e20', pointBorderColor: '#fff', pointBorderWidth: 2, pointHoverRadius: 6, fill: true, tension: 0.35 } 
       ]},
       options: baseOpts
     });
@@ -9451,6 +9455,561 @@ window._authSafetyTimer = setTimeout(function() {
     <button class="chatbot-send-btn" id="chatbot-send-btn" onclick="sendChatMessage()">Send</button>
   </div>
 </div>
-  
+
+<!-- ══════════════════════════════════════════════════════
+     ONBOARDING TOUR + HELP SYSTEM
+     ══════════════════════════════════════════════════════ -->
+
+<style>
+/* ── Floating Help Button ── */
+.help-fab {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9000;
+  width: 46px; height: 46px; border-radius: 50%;
+  background: var(--active-theme-color, var(--cx-color));
+  color: #fff; border: none; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 800; font-family: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  user-select: none;
+}
+.help-fab:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(0,0,0,0.28); }
+.help-fab-label {
+  position: absolute; right: 54px; background: #1a1a1a; color: #fff;
+  font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px;
+  white-space: nowrap; opacity: 0; transition: opacity 0.2s ease; pointer-events: none;
+}
+.help-fab:hover .help-fab-label { opacity: 1; }
+
+/* ── Help Panel Overlay ── */
+.help-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 9100;
+  display: none; align-items: center; justify-content: center;
+  backdrop-filter: blur(3px);
+  animation: helpFadeIn 0.2s ease;
+}
+.help-overlay.open { display: flex; }
+@keyframes helpFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.help-panel {
+  background: #fff; border-radius: 16px; width: 560px; max-width: 94vw;
+  max-height: 88vh; overflow: hidden; display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  animation: helpSlideUp 0.25s ease;
+}
+@keyframes helpSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+.help-panel-header {
+  padding: 20px 24px 16px; border-bottom: 1px solid #f0f0f0;
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--active-theme-color, var(--cx-color)); color: #fff; border-radius: 16px 16px 0 0;
+}
+.help-panel-title { font-size: 16px; font-weight: 800; }
+.help-panel-sub { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+.help-close-btn {
+  width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,0.2);
+  border: none; color: #fff; cursor: pointer; font-size: 16px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.help-close-btn:hover { background: rgba(255,255,255,0.35); }
+
+.help-tabs {
+  display: flex; border-bottom: 1px solid #f0f0f0; padding: 0 24px; gap: 4px;
+  overflow-x: auto; flex-shrink: 0;
+}
+.help-tab {
+  font-size: 11px; font-weight: 700; padding: 10px 14px; border: none; background: none;
+  cursor: pointer; color: #888; border-bottom: 2px solid transparent; white-space: nowrap;
+  font-family: inherit; text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.15s;
+}
+.help-tab:hover { color: var(--active-theme-color, var(--cx-color)); }
+.help-tab.active { color: var(--active-theme-color, var(--cx-color)); border-bottom-color: var(--active-theme-color, var(--cx-color)); }
+
+.help-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+.help-section { display: none; }
+.help-section.active { display: block; }
+
+.help-guide-item {
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 14px 0; border-bottom: 1px solid #f4f4f4;
+}
+.help-guide-item:last-child { border-bottom: none; }
+.help-guide-icon {
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+  background: var(--active-theme-color, var(--cx-color)); opacity: 0.12;
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.help-guide-icon-wrap {
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+  background: var(--active-theme-color, var(--cx-color));
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+}
+.help-guide-text { flex: 1; }
+.help-guide-title { font-size: 13px; font-weight: 800; color: #1a1a1a; margin-bottom: 3px; }
+.help-guide-desc { font-size: 12px; color: #666; line-height: 1.6; }
+
+.help-tip-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 2px 8px; border-radius: 20px; margin-bottom: 8px;
+  background: #fff8e1; color: #e65100;
+}
+
+.help-restart-btn {
+  width: 100%; padding: 12px; border: 2px dashed #ddd; border-radius: 10px;
+  background: none; cursor: pointer; font-size: 13px; font-weight: 700; color: #888;
+  font-family: inherit; margin-top: 16px; transition: all 0.2s;
+}
+.help-restart-btn:hover { border-color: var(--active-theme-color, var(--cx-color)); color: var(--active-theme-color, var(--cx-color)); background: #fafafa; }
+
+/* ── First-Visit Tour ── */
+.tour-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 9200;
+  display: none; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.tour-overlay.open { display: flex; }
+
+.tour-card {
+  background: #fff; border-radius: 18px; width: 500px; max-width: 92vw;
+  box-shadow: 0 24px 72px rgba(0,0,0,0.22);
+  animation: helpSlideUp 0.3s ease; overflow: hidden;
+}
+.tour-header {
+  background: var(--active-theme-color, var(--cx-color)); padding: 24px 28px 20px; color: #fff;
+}
+.tour-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.8; margin-bottom: 8px; }
+.tour-title { font-size: 22px; font-weight: 900; line-height: 1.2; margin-bottom: 6px; }
+.tour-subtitle { font-size: 13px; opacity: 0.85; line-height: 1.5; }
+
+.tour-steps-strip {
+  display: flex; padding: 18px 28px; gap: 8px; border-bottom: 1px solid #f0f0f0;
+  overflow-x: auto;
+}
+.tour-step-pill {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 10px 14px; border-radius: 10px; border: 1.5px solid #e8e8e8;
+  background: #fafafa; min-width: 90px; cursor: pointer; transition: all 0.2s;
+  flex-shrink: 0;
+}
+.tour-step-pill:hover { border-color: var(--active-theme-color, var(--cx-color)); background: #fff; }
+.tour-step-pill.active { border-color: var(--active-theme-color, var(--cx-color)); background: var(--active-theme-color, var(--cx-color)); color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+.tour-step-emoji { font-size: 20px; }
+.tour-step-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; text-align: center; line-height: 1.3; }
+.tour-step-pill.active .tour-step-label { color: rgba(255,255,255,0.9); }
+
+.tour-content { padding: 22px 28px; min-height: 120px; }
+.tour-step-title { font-size: 16px; font-weight: 800; margin-bottom: 8px; color: #1a1a1a; }
+.tour-step-desc { font-size: 13px; color: #555; line-height: 1.7; }
+.tour-step-tip {
+  margin-top: 12px; padding: 10px 14px; background: #f8f9fa; border-radius: 8px;
+  font-size: 12px; color: #555; border-left: 3px solid var(--active-theme-color, var(--cx-color));
+}
+
+.tour-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 28px; border-top: 1px solid #f0f0f0; background: #fafafa;
+}
+.tour-dots { display: flex; gap: 6px; }
+.tour-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: #ddd; transition: all 0.2s;
+}
+.tour-dot.active { background: var(--active-theme-color, var(--cx-color)); width: 20px; border-radius: 4px; }
+.tour-btn-row { display: flex; gap: 8px; }
+.tour-skip-btn {
+  font-size: 12px; font-weight: 700; color: #999; border: none; background: none;
+  cursor: pointer; font-family: inherit; padding: 8px 12px;
+}
+.tour-skip-btn:hover { color: #555; }
+.tour-next-btn {
+  font-size: 13px; font-weight: 800; color: #fff; border: none;
+  background: var(--active-theme-color, var(--cx-color)); cursor: pointer; font-family: inherit;
+  padding: 10px 22px; border-radius: 8px; transition: opacity 0.2s;
+}
+.tour-next-btn:hover { opacity: 0.88; }
+</style>
+
+<!-- Floating Help Button -->
+<button class="help-fab" onclick="openHelpPanel()" aria-label="Help">
+  <span class="help-fab-label">Help & Guide</span>
+  ?
+</button>
+
+<!-- Help Panel -->
+<div class="help-overlay" id="help-overlay" onclick="closeHelpPanel(event)">
+  <div class="help-panel">
+    <div class="help-panel-header">
+      <div>
+        <div class="help-panel-title">Dashboard Guide</div>
+        <div class="help-panel-sub">Learn how to navigate and use every feature</div>
+      </div>
+      <button class="help-close-btn" onclick="closeHelpPanelDirect()">✕</button>
+    </div>
+    <div class="help-tabs">
+      <button class="help-tab active" onclick="switchHelpTab('overview', this)">Overview</button>
+      <button class="help-tab" onclick="switchHelpTab('projects', this)">Projects</button>
+      <button class="help-tab" onclick="switchHelpTab('tasks', this)">Tasks</button>
+      <button class="help-tab" onclick="switchHelpTab('charts', this)">Charts</button>
+      <button class="help-tab" onclick="switchHelpTab('tools', this)">Tools</button>
+      <button class="help-tab" onclick="switchHelpTab('admin', this)">Admin</button>
+    </div>
+    <div class="help-body">
+
+      <!-- OVERVIEW -->
+      <div class="help-section active" id="help-overview">
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">🏠</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">What is this dashboard?</div>
+            <div class="help-guide-desc">This is the Mixta Africa Projects Tracker — a live, real-time dashboard for monitoring Lakowe Crossings and Lakowe Annexe. It syncs directly from your project spreadsheets every 5 minutes.</div>
+          </div>
+        </div>
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">🔁</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Data is live-synced</div>
+            <div class="help-guide-desc">The dashboard automatically pulls the latest data from Google Sheets. You'll see a "Last synced" time at the top of the page. No manual refresh needed.</div>
+          </div>
+        </div>
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">🔐</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">You're signed in to your department</div>
+            <div class="help-guide-desc">Your Google account determines which project and department you can see. You only have access to your own department's data — other tabs are locked for privacy.</div>
+          </div>
+        </div>
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">📱</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Works on mobile too</div>
+            <div class="help-guide-desc">The dashboard adapts to your screen size. On mobile, use the hamburger menu (≡) at the top to switch between pages like Analytics, Milestones, and Trends.</div>
+          </div>
+        </div>
+        <button class="help-restart-btn" onclick="startTour()">▶ Restart the guided tour</button>
+      </div>
+
+      <!-- PROJECTS -->
+      <div class="help-section" id="help-projects">
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">🟢</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Lakowe Crossings (Green)</div>
+            <div class="help-guide-desc">The Lakowe Crossings project is displayed with a green theme. Click "Crossings" in the top navigation bar to switch to this project view. KPI tiles, charts, and tasks will update to show Crossings data.</div>
+          </div>
+        </div>
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">🔴</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Lakowe Annexe (Red)</div>
+            <div class="help-guide-desc">The Lakowe Annexe project is displayed with a red theme. Click "Annexe" in the navigation to switch. Each project maintains its own task history, financial data, and session logs.</div>
+          </div>
+        </div>
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">📅</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Session picker</div>
+            <div class="help-guide-desc">Use the date/session dropdown at the top to browse historical meeting data. Each session represents one project meeting. The default view shows the most recent session.</div>
+          </div>
+        </div>
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">★</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Priority tiles — Account Balance & Offer Letters</div>
+            <div class="help-guide-desc">The two gold-bordered tiles at the top right are the highest-priority KPIs. They change colour automatically: Red = critical, Amber = watch closely, Green = healthy.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TASKS -->
+      <div class="help-section" id="help-tasks">
+        <div class="help-tip-badge">⚡ Key Feature</div>
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">📋</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Reading a task card</div>
+            <div class="help-guide-desc">Each task card shows the Context/Result bar at the top (so you know WHY the task matters), then the action item below. The left-border colour shows the status: Green = On Track, Red = Delayed, Gold = On Hold, Blue = Done.</div>
+          </div>
+        </div>
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">✏️</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Updating task status</div>
+            <div class="help-guide-desc">Click any task card to expand it, then use the status buttons to mark it as Done, Delayed, or On Hold. Your update is saved immediately and synced to the shared database.</div>
+          </div>
+        </div>
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">🚨</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Critical Alert Zone</div>
+            <div class="help-guide-desc">The red strip below the KPI tiles collects all Delayed tasks from every department in one place. This is the CEO's first-look summary — check it before every meeting.</div>
+          </div>
+        </div>
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">🏷️</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Trend badges</div>
+            <div class="help-guide-desc">Some tasks show a "Repeated" badge — this means the same action item has appeared in multiple sessions without being marked as Done. These are escalation signals worth reviewing.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHARTS -->
+      <div class="help-section" id="help-charts">
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">📈</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Financial Progress Trend chart</div>
+            <div class="help-guide-desc">This chart tracks two lines over time: Sales Value (dashed blue) and Total Inflow (solid, project colour). The gap between the two lines represents outstanding receivables — the closer they are, the healthier the cash position.</div>
+          </div>
+        </div>
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">🎯</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Spreadsheet Targets Status</div>
+            <div class="help-guide-desc">The card next to the chart shows this month's targets from the spreadsheet. Green = Done, Orange = Ongoing, Red = At Risk. Scroll within the card to see all targets.</div>
+          </div>
+        </div>
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">💰</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Account Balance Trend (CVI)</div>
+            <div class="help-guide-desc">Below the charts is the Commercial Velocity Indicator — it shows the trend in account balance, inflow rate, and whether the project is in a "cash drought". Red drought strips signal periods of no inflow.</div>
+          </div>
+        </div>
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">🔍</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Hovering for details</div>
+            <div class="help-guide-desc">Hover over any point on a chart to see an exact value tooltip. The crosshair will snap to the nearest data point for both lines simultaneously.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOOLS -->
+      <div class="help-section" id="help-tools">
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">📧</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Send Task Reminders</div>
+            <div class="help-guide-desc">Use the envelope icon in the toolbar to compose and send email reminders to any department. Select the project, department, and Test or Live mode — Test sends only to the admin address for preview.</div>
+          </div>
+        </div>
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">📄</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Monthly Report</div>
+            <div class="help-guide-desc">The report icon generates a structured Word document (.docx) monthly summary for executives. Select the project, click Generate, and download the report for distribution.</div>
+          </div>
+        </div>
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">🤖</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">AI Project Assistant</div>
+            <div class="help-guide-desc">The chat bubble at the bottom opens an AI assistant trained on your project data. Ask it questions like "What are the most delayed tasks?" or "Summarise Annexe progress this month."</div>
+          </div>
+        </div>
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">💬</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Team Updates</div>
+            <div class="help-guide-desc">The message icon opens the Team Updates feed — a WhatsApp-style chat log where team members post progress notes, photos, and file attachments by department.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN -->
+      <div class="help-section" id="help-admin">
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">🔑</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Admin access</div>
+            <div class="help-guide-desc">Admin features are only visible to the admin account. If you're an admin, use the lock icon in the toolbar and enter the admin password to unlock the Admin Panel.</div>
+          </div>
+        </div>
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">🩺</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Health monitoring</div>
+            <div class="help-guide-desc">The Admin Panel has a Health tab that runs 9 system checks — Firebase, Sheets sync, GAS relay, Groq API, and more. A warning banner appears automatically if any critical system fails in the last 30 minutes.</div>
+          </div>
+        </div>
+        <div class="help-guide-item">
+          <div class="help-guide-icon-wrap">🗂️</div>
+          <div class="help-guide-text">
+            <div class="help-guide-title">Sheets diagnostics</div>
+            <div class="help-guide-desc">Admins can inspect raw data from Google Sheets in the Admin Panel to debug sync issues. The Error Log tab shows a rolling history of any sync failures with timestamps.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- First-Visit Tour -->
+<div class="tour-overlay" id="tour-overlay">
+  <div class="tour-card">
+    <div class="tour-header">
+      <div class="tour-badge">Welcome to Mixta Africa</div>
+      <div class="tour-title" id="tour-title">Projects Dashboard</div>
+      <div class="tour-subtitle" id="tour-subtitle">A quick 6-step walkthrough to get you up to speed in under a minute.</div>
+    </div>
+    <div class="tour-steps-strip" id="tour-steps-strip"></div>
+    <div class="tour-content" id="tour-content"></div>
+    <div class="tour-footer">
+      <div class="tour-dots" id="tour-dots"></div>
+      <div class="tour-btn-row">
+        <button class="tour-skip-btn" onclick="dismissTour()">Skip tour</button>
+        <button class="tour-next-btn" id="tour-next-btn" onclick="tourNext()">Next →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// ONBOARDING TOUR SYSTEM
+// ══════════════════════════════════════════
+const TOUR_STEPS = [
+  {
+    emoji: '🏠',
+    label: 'Welcome',
+    title: 'Your project command centre',
+    desc: 'This dashboard gives you a real-time view of both Lakowe Crossings and Lakowe Annexe — including tasks, financials, targets, and team updates. Everything updates automatically from Google Sheets every 5 minutes.',
+    tip: '💡 No manual refresh needed. The "Last synced" timestamp at the top tells you how fresh the data is.'
+  },
+  {
+    emoji: '🔄',
+    label: 'Projects',
+    title: 'Switch between Crossings & Annexe',
+    desc: 'Use the project tabs at the top of the page to switch between Lakowe Crossings (green) and Lakowe Annexe (red). Each project has its own tasks, KPIs, charts, and history.',
+    tip: '💡 Your login email determines which project you have access to by default.'
+  },
+  {
+    emoji: '★',
+    label: 'KPIs',
+    title: 'Watch the Priority tiles',
+    desc: 'The two gold-bordered tiles — Account Balance and Offer Letters — are the most critical indicators. They change colour automatically: Red means action is needed now, Amber means watch closely, Green means healthy.',
+    tip: '💡 These tiles are the CEO\'s first checkpoint. Keep them green before every meeting.'
+  },
+  {
+    emoji: '📋',
+    label: 'Tasks',
+    title: 'Click any task to update its status',
+    desc: 'Task cards are colour-coded by status: Green = On Track, Red = Delayed, Gold = On Hold, Blue = Done. Click a card to expand it and change the status. The red Alert Zone at the top collects all delayed tasks from every department.',
+    tip: '💡 Updating a task status saves immediately — your team sees it in real time.'
+  },
+  {
+    emoji: '📈',
+    label: 'Charts',
+    title: 'Track financial progress over time',
+    desc: 'The Financial Progress Trend chart shows cash inflow vs. sales value over every project session. The gap between the two lines = receivables outstanding. The Targets card beside it shows this month\'s key spreadsheet objectives.',
+    tip: '💡 Hover over the chart to see exact values at any point in time.'
+  },
+  {
+    emoji: '🛠️',
+    label: 'Tools',
+    title: 'Reminders, Reports & AI Assistant',
+    desc: 'The toolbar contains tools for sending email reminders to departments, generating monthly Word reports, accessing team updates, and asking the AI Assistant project questions. The ? button always brings back this guide.',
+    tip: '💡 Use the AI Assistant to get instant answers like "What\'s the current account balance?" or "Which tasks are most overdue?"'
+  }
+];
+
+let _tourStep = 0;
+
+function renderTour() {
+  const strip = document.getElementById('tour-steps-strip');
+  const content = document.getElementById('tour-content');
+  const dots = document.getElementById('tour-dots');
+  const nextBtn = document.getElementById('tour-next-btn');
+
+  strip.innerHTML = TOUR_STEPS.map((s, i) =>
+    `<div class="tour-step-pill ${i === _tourStep ? 'active' : ''}" onclick="jumpTourStep(${i})">
+      <span class="tour-step-emoji">${s.emoji}</span>
+      <span class="tour-step-label">${s.label}</span>
+    </div>`
+  ).join('');
+
+  const step = TOUR_STEPS[_tourStep];
+  content.innerHTML = `
+    <div class="tour-step-title">${step.title}</div>
+    <div class="tour-step-desc">${step.desc}</div>
+    ${step.tip ? `<div class="tour-step-tip">${step.tip}</div>` : ''}
+  `;
+
+  dots.innerHTML = TOUR_STEPS.map((_, i) =>
+    `<div class="tour-dot ${i === _tourStep ? 'active' : ''}"></div>`
+  ).join('');
+
+  const isLast = _tourStep === TOUR_STEPS.length - 1;
+  nextBtn.textContent = isLast ? '✓ Get started' : 'Next →';
+}
+
+function jumpTourStep(i) {
+  _tourStep = i;
+  renderTour();
+}
+
+function tourNext() {
+  if (_tourStep < TOUR_STEPS.length - 1) {
+    _tourStep++;
+    renderTour();
+  } else {
+    dismissTour();
+  }
+}
+
+function dismissTour() {
+  document.getElementById('tour-overlay').classList.remove('open');
+  try { localStorage.setItem('mixta_tour_done', '1'); } catch(e) {}
+}
+
+function startTour() {
+  closeHelpPanelDirect();
+  _tourStep = 0;
+  renderTour();
+  document.getElementById('tour-overlay').classList.add('open');
+}
+
+// Auto-show tour for first-time visitors
+(function() {
+  try {
+    if (!localStorage.getItem('mixta_tour_done')) {
+      // Delay slightly so dashboard loads first
+      setTimeout(function() {
+        renderTour();
+        document.getElementById('tour-overlay').classList.add('open');
+      }, 1800);
+    }
+  } catch(e) {}
+})();
+
+// ══════════════════════════════════════════
+// HELP PANEL SYSTEM
+// ══════════════════════════════════════════
+function openHelpPanel() {
+  document.getElementById('help-overlay').classList.add('open');
+}
+
+function closeHelpPanel(e) {
+  if (e.target === document.getElementById('help-overlay')) {
+    document.getElementById('help-overlay').classList.remove('open');
+  }
+}
+
+function closeHelpPanelDirect() {
+  document.getElementById('help-overlay').classList.remove('open');
+}
+
+function switchHelpTab(section, btn) {
+  document.querySelectorAll('.help-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.help-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('help-' + section).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+
 </body>
+
 </html>
