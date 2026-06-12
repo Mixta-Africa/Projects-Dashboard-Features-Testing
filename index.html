@@ -1307,6 +1307,46 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
 .dept-reminder-emails { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
 .dept-reminder-tasks { font-size: 11px; color: var(--text-secondary); line-height: 1.6; }
 
+/* ── Task reminder bell + popover ── */
+.task-reminder-bell {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--border);
+  background: var(--white); color: var(--text-muted); cursor: pointer;
+  transition: all 0.15s; flex-shrink: 0;
+}
+.task-reminder-bell:hover { color: var(--text-primary); border-color: var(--border-md); }
+.task-reminder-bell.active { color: var(--brand-red); border-color: var(--brand-red-light); background: var(--brand-red-light); }
+.task-reminder-bell svg { width: 13px; height: 13px; }
+
+.reminder-popover {
+  position: absolute; z-index: 200; background: var(--white); border: 1px solid var(--border-md);
+  border-radius: var(--radius-sm); box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  padding: 12px; width: 220px; font-size: 12px; display: none;
+}
+.reminder-popover.open { display: block; }
+.reminder-popover-title { font-weight: 800; font-size: 12px; margin-bottom: 8px; color: var(--text-primary); }
+.reminder-option {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px;
+  cursor: pointer; font-size: 12px; color: var(--text-secondary);
+}
+.reminder-option:hover { background: var(--bg); }
+.reminder-option input[type="radio"] { margin: 0; }
+.reminder-weekday-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin: 6px 0 8px 24px; }
+.reminder-weekday-grid button {
+  font-size: 10px; padding: 4px 0; border: 1px solid var(--border); border-radius: 4px;
+  background: var(--white); cursor: pointer; color: var(--text-secondary);
+}
+.reminder-weekday-grid button.sel { background: var(--brand-red); color: #fff; border-color: var(--brand-red); }
+.reminder-popover-actions { display: flex; gap: 6px; margin-top: 8px; }
+.reminder-popover-actions button {
+  flex: 1; font-size: 11px; padding: 6px 8px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--border);
+}
+.reminder-save-btn { background: var(--brand-red); color: #fff; border-color: var(--brand-red); }
+.reminder-clear-btn { background: var(--white); color: var(--text-secondary); }
+.reminder-popover-note { font-size: 10px; color: var(--text-muted); margin-top: 6px; line-height: 1.5; }
+
+
 /* Loading spinner */
 .tool-spinner {
   display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4);
@@ -3260,7 +3300,48 @@ function doPost(e) {
     return ContentService.createTextOutput(JSON.stringify({success:true})).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // ── Per-user task reminder emails (triggered on-demand OR by a time-based trigger) ──
+  if (action === 'sendReminderEmail') {
+    const toEmail = data.toEmail;
+    const reminders = data.reminders || [];
+    if (!toEmail || reminders.length === 0) {
+      return ContentService.createTextOutput(JSON.stringify({error:'Missing toEmail or reminders'})).setMimeType(ContentService.MimeType.JSON);
+    }
+    const lines = reminders.map(r => `• [${r.project || ''} / ${r.dept || ''}] ${r.taskLabel || 'Task'} — Due: ${r.due || 'see dashboard'}`);
+    const body = `Hi,\n\nHere are your reminder tasks from the Mixta Africa Projects Dashboard:\n\n${lines.join('\n')}\n\nOpen the dashboard to update status: https://mixta-africa.github.io/Projects-Dashboard/\n\n— Automated reminder`;
+    MailApp.sendEmail(toEmail, 'Your task reminders — Mixta Africa Dashboard', body);
+    return ContentService.createTextOutput(JSON.stringify({success:true})).setMimeType(ContentService.MimeType.JSON);
+  }
+
   return ContentService.createTextOutput(JSON.stringify({error:'Unknown action'})).setMimeType(ContentService.MimeType.JSON);
+}
+
+── SCHEDULED REMINDER DIGEST (optional) ──────────────────────────────
+To send reminder emails automatically (not just on-demand), set up a
+time-based trigger on this Apps Script project:
+  Triggers → Add Trigger → runScheduledReminders → Time-driven → Day timer (e.g. 7am)
+
+This reads ALL reminders from the Firebase Realtime Database REST API
+(reminders/{emailKey}/{taskId}), filters to today's day-of-week, and
+sends one digest email per user via MailApp. Requires your Firebase DB
+URL + a read-scoped secret/rules that allow server-side REST reads.
+
+function runScheduledReminders() {
+  const FIREBASE_DB_URL = 'https://YOUR-PROJECT.firebaseio.com'; // replace
+  const resp = UrlFetchApp.fetch(FIREBASE_DB_URL + '/reminders.json');
+  const allReminders = JSON.parse(resp.getContentText()) || {};
+  const today = new Date();
+  const dow = today.getDay(); // 0=Sun..6=Sat
+
+  Object.values(allReminders).forEach(userReminders => {
+    const due = Object.values(userReminders || {}).filter(r => (r.days || []).includes(dow));
+    if (due.length === 0) return;
+    const toEmail = due[0].email;
+    if (!toEmail) return;
+    const lines = due.map(r => `• [${r.project || ''} / ${r.dept || ''}] ${r.taskLabel || 'Task'} — Due: ${r.due || 'see dashboard'}`);
+    const body = `Hi,\n\nYour scheduled task reminders for today:\n\n${lines.join('\n')}\n\nOpen the dashboard: https://mixta-africa.github.io/Projects-Dashboard/\n\n— Automated reminder`;
+    MailApp.sendEmail(toEmail, 'Your task reminders — Mixta Africa Dashboard', body);
+  });
 }
 
 function doGet(e) {
@@ -3492,6 +3573,9 @@ function initFirebase() {
         if (!_presenceRef) _initPresence();
         // ── Auto-fill author name now that we have user identity ──
         autoFillAuthorName();
+        // ── Load this user's personal task reminders & check due ones ──
+        loadUserReminders();
+        setTimeout(checkDueReminders, 1500);
       };
 
       console.log('[Firebase DB] Listeners attached ✓');
@@ -5214,6 +5298,7 @@ function renderCurrentDept() {
         <button class="status-btn btn-ontrack"  onclick="askConfirm('${id}','ontrack')">On Track</button>
       </div>${status === 'achieved' ? '<div class="revert-note"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg> To undo, click any status button above and confirm</div>' : ''}` : `<div class="no-edit-notice"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> View only — contact your Commercial Strategy admin to update this task</div>`) : '';
  
+      const reminderActive = hasReminder(id);
       return `<div class="step-card s-${status}" onclick="this.classList.toggle('expanded')" id="card-${id}">
         ${t.resultToAchieve ? `<div class="step-context">${t.resultToAchieve}</div>` : ''}
         <div class="step-card-top">
@@ -5221,6 +5306,9 @@ function renderCurrentDept() {
           <div class="step-meta">
             <span class="step-date ${dueCls}">Due: ${t.due}</span>
             <span class="status-badge sb-${status}">${statusLabel}</span>
+            <button class="task-reminder-bell${reminderActive ? ' active' : ''}" title="Set reminder" onclick="event.stopPropagation(); toggleReminderPopover('${id}', event)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            </button>
           </div>
         </div>
         <div class="step-details-pane" onclick="event.stopPropagation()">
@@ -6454,6 +6542,172 @@ function parseNairaToM(str) {
   return n;
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// FLEXIBLE TREND ENGINE
+// Replaces hardcoded per-project narrative context. Derives whatever
+// trends are *actually present* in the historical session data
+// (Firebase metric history + taskDatabase) so the AI brief adapts
+// to live data instead of frozen prior-session figures.
+// ══════════════════════════════════════════════════════════════════════
+
+const PROGRESS_ANCHORS = [
+  { key: 'overallConstruction', label: 'Overall construction', re: /overall\s+(?:construction|programme|progress)[^\d%]{0,40}([\d.]+)%[^\d%]{0,40}(?:vs\.?|against|projected)[^\d%]{0,10}([\d.]+)%/i },
+  { key: 'internalRoads', label: 'Internal roads', re: /internal\s+roads?[^\d%]{0,40}([\d.]+)%[^\d%]{0,40}(?:vs\.?|against|projected)[^\d%]{0,10}([\d.]+)%/i },
+  { key: 'sandfill', label: 'Sandfill', re: /sandfill[^\d%]{0,40}([\d.]+)%/i },
+  { key: 'roadClearing', label: 'Road clearing', re: /road\s+clear(?:ing)?[^\d%]{0,40}([\d.]+)%/i },
+  { key: 'mepUtilities', label: 'MEP / utilities', re: /(?:mep|utilities)[^\d%]{0,60}([\d.]+)%/i },
+  { key: 'drainage', label: 'Drainage', re: /drainage[^\d%]{0,60}([\d.]+)%/i },
+  { key: 'compaction', label: 'Compaction', re: /compaction[^\d%]{0,60}([\d.]+)%/i },
+];
+
+const RISK_ANCHORS = [
+  { key: 'layoutApproval', label: 'Layout provisional approval', re: /layout\s+provisional\s+approval[^.]{0,160}/i },
+  { key: 'rainySeason', label: 'Rainy season risk', re: /rain(?:y)?\s+season[^.]{0,160}/i },
+  { key: 'contractorPayment', label: 'Contractor payment', re: /contractor[^.]{0,40}payment[^.]{0,160}/i },
+  { key: 'crossProjectLiability', label: 'Cross-project liability', re: /(?:elms\s+gardens|cross-?project\s+liabilit\w*)[^.]{0,160}/i },
+  { key: 'civilMobilisation', label: 'Civil mobilisation trigger', re: /(?:civil\s+(?:works|mobili[sz]ation))[^.]{0,160}/i },
+  { key: 'contractorDecision', label: 'Contractor selection', re: /\b(?:BAFF|FUNKUS)\b[^.]{0,160}/i },
+];
+
+function scanTasksForAnchors(proj, session, anchors) {
+  const tasks = taskDatabase.filter(t => t.project === proj && t.session === session);
+  const haystacks = tasks.map(t => `${t.action || ''}. ${t.explanation || ''}`).join(' \n ');
+  const found = [];
+  anchors.forEach(a => {
+    const m = haystacks.match(a.re);
+    if (m) found.push({ key: a.key, label: a.label, match: m });
+  });
+  return found;
+}
+
+function computeMetricTrends(proj) {
+  const sessions = (availableSessions[proj] || []).slice(0, 6);
+  const hist = (window._firebaseMetrics && window._firebaseMetrics[proj]) || {};
+  const points = sessions
+    .map(s => ({ session: s, data: hist[s] }))
+    .filter(p => p.data && (p.data.balance || p.data.inflow));
+
+  if (points.length < 2) return null;
+
+  const latest = points[0].data;
+  const prior  = points[1].data;
+
+  const balLatest = parseNairaToM(latest.balance);
+  const balPrior  = parseNairaToM(prior.balance);
+  const inflowLatest = parseNairaToM(latest.inflow);
+  const inflowPrior  = parseNairaToM(prior.inflow);
+  const offersLatest = parseFloat(latest.offers) || 0;
+  const offersPrior  = parseFloat(prior.offers) || 0;
+
+  let burnRate = null;
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = parseNairaToM(points[i].data.balance);
+    const b = parseNairaToM(points[i+1].data.balance);
+    if (b > a) { burnRate = b - a; break; }
+  }
+  if (burnRate === null) burnRate = Math.max(0.1, Math.abs(balLatest - balPrior));
+
+  const runwayWks = balLatest > 0 ? (balLatest / burnRate).toFixed(1) : '< 1';
+
+  return {
+    weeksOfHistory: points.length,
+    balanceDelta: +(balLatest - balPrior).toFixed(1),
+    balanceTrendPct: balPrior ? +(((balLatest - balPrior) / balPrior) * 100).toFixed(1) : null,
+    inflowDelta: +(inflowLatest - inflowPrior).toFixed(1),
+    offersDelta: offersLatest - offersPrior,
+    burnRate: +burnRate.toFixed(1),
+    runwayWks,
+  };
+}
+
+function computeTaskTrends(proj) {
+  const sessions = (availableSessions[proj] || []).slice(0, 4);
+  if (sessions.length < 1) return null;
+  const overrides = getStatusOverrides ? getStatusOverrides() : {};
+
+  const perSession = sessions.map(s => {
+    const tasks = taskDatabase
+      .filter(t => t.project === proj && t.session === s)
+      .map(t => ({ ...t, status: overrides[taskId(t)] || t.status }));
+    const delayed = tasks.filter(t => t.status === 'delayed').length;
+    const overdue = tasks.filter(t => isOverdue(t) && t.status !== 'achieved').length;
+    return { session: s, delayed, overdue, total: tasks.length };
+  });
+
+  const latest = perSession[0];
+  const prior  = perSession[1];
+  const delayedTrend = prior ? latest.delayed - prior.delayed : null;
+  const overdueTrend = prior ? latest.overdue - prior.overdue : null;
+
+  const latestTasks = taskDatabase
+    .filter(t => t.project === proj && t.session === latest.session)
+    .map(t => ({ ...t, status: overrides[taskId(t)] || t.status }))
+    .filter(t => t.status === 'delayed');
+  const deptCounts = {};
+  latestTasks.forEach(t => { deptCounts[t.dept] = (deptCounts[t.dept]||0)+1; });
+  const topDeptDelays = Object.entries(deptCounts).sort((a,b)=>b[1]-a[1]).slice(0,3)
+    .map(([d,c]) => `${d} (${c})`).join(', ');
+
+  return { delayedTrend, overdueTrend, topDeptDelays, sessionsAnalyzed: perSession.length };
+}
+
+function buildLiveTrendsContext(proj, snap) {
+  const lines = [];
+  const latestSession = availableSessions[proj] && availableSessions[proj][0];
+
+  const progressFound = scanTasksForAnchors(proj, latestSession, PROGRESS_ANCHORS);
+  if (progressFound.length) {
+    lines.push('PROGRESS SNAPSHOT (from latest session data):');
+    progressFound.forEach(p => {
+      const m = p.match;
+      if (m[2]) {
+        const actual = parseFloat(m[1]), proj_ = parseFloat(m[2]);
+        const gap = (actual - proj_).toFixed(1);
+        lines.push(`- ${p.label}: ${actual}% actual vs ${proj_}% projected (${gap >= 0 ? '+' : ''}${gap}pp gap)`);
+      } else {
+        lines.push(`- ${p.label}: ${m[1]}%`);
+      }
+    });
+  }
+
+  const risksFound = scanTasksForAnchors(proj, latestSession, RISK_ANCHORS);
+  if (risksFound.length) {
+    lines.push('\nLIVE RISK FLAGS (mentioned in latest session):');
+    risksFound.forEach(r => lines.push(`- ${r.label}: "${r.match[0].trim()}"`));
+  }
+
+  const metricTrends = computeMetricTrends(proj);
+  if (metricTrends) {
+    lines.push('\nMETRIC TRENDS (vs prior session, based on ' + metricTrends.weeksOfHistory + ' weeks of history):');
+    lines.push(`- Account balance change: ₦${metricTrends.balanceDelta}M${metricTrends.balanceTrendPct !== null ? ` (${metricTrends.balanceTrendPct}%)` : ''}`);
+    lines.push(`- Inflow change: ₦${metricTrends.inflowDelta}M`);
+    lines.push(`- Active offers change: ${metricTrends.offersDelta >= 0 ? '+' : ''}${metricTrends.offersDelta}`);
+    lines.push(`- Derived burn rate (from actual balance movement): ₦${metricTrends.burnRate}M/week`);
+    lines.push(`- Derived runway: ~${metricTrends.runwayWks} weeks`);
+  } else {
+    lines.push('\nMETRIC TRENDS: Insufficient history yet (need 2+ synced sessions) — use current snapshot only, do not invent a trend.');
+  }
+
+  const taskTrends = computeTaskTrends(proj);
+  if (taskTrends) {
+    lines.push('\nTASK & DELAY TRENDS:');
+    if (taskTrends.delayedTrend !== null) {
+      lines.push(`- Delayed task count change vs prior session: ${taskTrends.delayedTrend >= 0 ? '+' : ''}${taskTrends.delayedTrend}`);
+    }
+    if (taskTrends.overdueTrend !== null) {
+      lines.push(`- Overdue task count change vs prior session: ${taskTrends.overdueTrend >= 0 ? '+' : ''}${taskTrends.overdueTrend}`);
+    }
+    if (taskTrends.topDeptDelays) {
+      lines.push(`- Departments concentrating current delays: ${taskTrends.topDeptDelays}`);
+    }
+  }
+
+  if (snap.topDelayed) lines.push('\nTOP DELAYED ITEMS:\n' + snap.topDelayed);
+  if (snap.topAchieved) lines.push('\nRECENT ACHIEVEMENTS:\n' + snap.topAchieved);
+
+  return lines.join('\n');
+}
+
 async function generateDynamicPI(proj) {
   const dynEl    = document.getElementById(proj==='Crossings'?'pi-cx-dynamic':'pi-ann-dynamic');
   const loadEl   = document.getElementById(proj==='Crossings'?'pi-cx-loading':'pi-ann-loading');
@@ -6470,36 +6724,46 @@ async function generateDynamicPI(proj) {
   const accentColor = proj === 'Crossings' ? '#1b5e20' : '#D32F2F';
   const projLabel   = 'Lakowe ' + proj;
 
-  const projContext = proj === 'Annexe'
-    ? `ANNEXE-SPECIFIC CONTEXT:\n- Overall construction: 35.3% actual vs 40.7% projected (5.4pp shortfall)\n- Internal roads: 42.7% actual vs 47.5% projected\n- MEP/utilities (ALMOG): ~1% started — barely mobilised\n- Streets not yet cleared: Segun Odegbami, Tobi Amusan\n- Rainy season begins May — drainage & compaction at serious risk of stalling\n- Layout provisional approval: 40+ weeks overdue (Commissioner signature pending)\n- No active ad campaign or offer letters as of latest session\n- ₦100M still owed to Elms Gardens (cross-project liability)\n- QS onboarding recently closed — critical for contractor payment sign-off`
-    : `CROSSINGS-SPECIFIC CONTEXT:\n- Overall programme: 27.8% actual vs 30.6% projected (2.8pp shortfall)\n- Phase 1 sandfill: 44% complete; road clearing: 56.5% complete\n- Main civil works: NOT STARTED — gated on ₦800M cumulative inflow milestone\n- Currently ₦${Math.round(800-(parseNairaToM(snap.inflow)))}M short of the ₦800M civil mobilisation trigger\n- Account down ~81% over 6 weeks — zero new inflow since January 2026\n- BAFF vs FUNKUS civil contractor decision still unresolved at DA level\n- Hospitality site redesigned CX9→CX10 — adds 6 commercial + 68 residential units\n- Renders and "coming soon" billboard blocked pending design freeze\n- Rainy season puts Phase 1 clearing and sandfill at risk`;
+  // ── Dynamic, data-derived context (replaces hardcoded per-project narrative) ──
+  // Whatever trends/risks/progress markers exist in the latest sheet data are
+  // surfaced here. If history is thin or a pattern isn't present, it's simply
+  // omitted — the AI is instructed not to invent figures for missing items.
+  const liveTrendsContext = buildLiveTrendsContext(proj, snap);
+
+  // Use trend-derived runway/burn if available (more accurate than the
+  // static-constant fallback in buildPISnapshot)
+  const trendMetrics = computeMetricTrends(proj);
+  const effRunway = trendMetrics ? trendMetrics.runwayWks : snap.runwayWks;
+  const effBurn   = trendMetrics ? trendMetrics.burnRate   : snap.burnRate;
 
   const prompt = `You are a Senior Business Strategy Associate advising Mixta Africa's executive board. 
-Your objective is to analyze the provided live dashboard metrics for ${projLabel} and deliver a 'Predictive Intelligence' brief.
+Your objective is to analyze the provided live dashboard metrics and trends for ${projLabel} and deliver a 'Predictive Intelligence' brief.
 
 LIVE CONTEXT:
 - Cash Liquidity: ${snap.balance}
-- Estimated Runway: ~${snap.runwayWks} weeks (at ₦${snap.burnRate}M/week burn)
+- Estimated Runway: ~${effRunway} weeks (at ₦${effBurn}M/week burn)
 - Sales Pipeline: ${snap.offers} Active Offer Letters
 - Critical Bottlenecks: ${snap.delayed} Delayed Tasks (${snap.overdue} Overdue).
 
-${projContext}
+${liveTrendsContext}
 
 CRITICAL INSTRUCTIONS:
 1. NO ACADEMIC OR THEORETICAL FLUFF. Speak strictly in terms of cash flow, contractor mobilization, and real estate execution.
 2. Focus on the "So What?": If account balances are low and offers are stagnant, explicitly state that contractor payments for the next phase are at severe risk.
 3. Be candid, sharp, and action-oriented. Do not soften the blow.
+4. Base every claim ONLY on the LIVE CONTEXT and data above. Do NOT invent specific percentages, names, or figures that are not provided. If a section above is marked as having insufficient data, acknowledge the gap qualitatively rather than fabricating a number.
+5. Where trends are provided (week-over-week changes), use them to frame direction ("worsening", "improving", "stable") rather than restating only a static snapshot.
 
 YOUR TASK:
 Output EXACTLY these HTML blocks (using the exact class names provided) to inject into the dashboard:
 
 <div class="pi-insight-block" style="border-top:3px solid ${accentColor};margin-top:0">
   <div class="pi-insight-headline">Liquidity &amp; Sales Correlation</div>
-  <div class="pi-insight-text">[1-2 punchy sentences. How does the current cash liquidity and offer letter pipeline directly impact our immediate construction ability?]</div>
+  <div class="pi-insight-text">[1-2 punchy sentences. How does the current cash liquidity and offer letter pipeline directly impact our immediate construction ability? Use the trend direction if available.]</div>
 </div>
 
 <div class="pi-metrics-row">
-  <div class="pi-metric danger"><div class="pi-metric-accent"></div><div class="pi-metric-label">Account Balance</div><div class="pi-metric-value">${snap.balance}</div><div class="pi-metric-sub">Runway: ~${snap.runwayWks} wks</div></div>
+  <div class="pi-metric danger"><div class="pi-metric-accent"></div><div class="pi-metric-label">Account Balance</div><div class="pi-metric-value">${snap.balance}</div><div class="pi-metric-sub">Runway: ~${effRunway} wks</div></div>
   <div class="pi-metric warning"><div class="pi-metric-accent"></div><div class="pi-metric-label">Active Offers</div><div class="pi-metric-value">${snap.offers}</div><div class="pi-metric-sub">Pipeline status</div></div>
   <div class="pi-metric safe"><div class="pi-metric-accent"></div><div class="pi-metric-label">Delayed Tasks</div><div class="pi-metric-value">${snap.delayed}</div><div class="pi-metric-sub">Bottlenecks</div></div>
   <div class="pi-metric safe"><div class="pi-metric-accent"></div><div class="pi-metric-label">Total Inflow</div><div class="pi-metric-value">${snap.inflow}</div><div class="pi-metric-sub">To date</div></div>
@@ -6507,12 +6771,12 @@ Output EXACTLY these HTML blocks (using the exact class names provided) to injec
 
 <div class="pi-insight-block">
   <div class="pi-insight-headline">Milestone Delivery Risks</div>
-  <div class="pi-insight-text">[1-2 sentences identifying exactly what milestone is at risk right now due to the bottlenecks or cash position.]</div>
+  <div class="pi-insight-text">[1-2 sentences identifying exactly what milestone is at risk right now, grounded only in the PROGRESS SNAPSHOT and LIVE RISK FLAGS provided above. If none provided, speak to bottlenecks/cash position instead.]</div>
 </div>
 
 <div class="pi-insight-block">
   <div class="pi-insight-headline">Immediate Required Executive Action</div>
-  <div class="pi-insight-text">[1-2 sentences. What exact decision must the board make THIS WEEK to unblock the project? Name it clearly.]</div>
+  <div class="pi-insight-text">[1-2 sentences. What exact decision must the board make THIS WEEK to unblock the project? Name it clearly, grounded in the data above.]</div>
 </div>
 
 Output ONLY the HTML, nothing else before or after it.`;
@@ -7136,6 +7400,212 @@ const MAILING_LIST = {
 const TEST_EMAIL = 'o.olasunkanmi@mixtafrica.com';
 
 // ── State ──
+
+// ══════════════════════════════════════════════════════════════════════
+// PER-TASK REMINDERS — tied to the logged-in user's email (not dept mailing list)
+// Stored in Firebase under reminders/{sanitizedEmail}/{taskId}
+// Each user only sees/manages their own reminders.
+// ══════════════════════════════════════════════════════════════════════
+let _activeReminderTaskId = null;
+window._userReminders = {}; // cache: { taskId: { freq, days:[...], taskLabel, due, project, dept } }
+
+function _sanitizeEmailKey(email) {
+  return (email || 'anonymous').replace(/[.#$\[\]\/@]/g, '_');
+}
+
+function _currentUserEmail() {
+  if (currentUser && currentUser.email) return currentUser.email;
+  return null;
+}
+
+function hasReminder(taskId) {
+  const r = window._userReminders[taskId];
+  return !!(r && r.freq && r.freq !== 'none');
+}
+
+// Load this user's reminders from Firebase once authenticated
+function loadUserReminders() {
+  const email = _currentUserEmail();
+  if (!email || !_fbDb) return;
+  const key = _sanitizeEmailKey(email);
+  _fbDb.ref('reminders/' + key).on('value', snap => {
+    window._userReminders = snap.val() || {};
+    if (currentDept) renderCurrentDept();
+  });
+}
+
+function toggleReminderPopover(taskId, evt) {
+  const pop = document.getElementById('task-reminder-popover');
+  const email = _currentUserEmail();
+  if (!email) {
+    alert('Please sign in to set personal reminders.');
+    return;
+  }
+  if (_activeReminderTaskId === taskId && pop.classList.contains('open')) {
+    pop.classList.remove('open');
+    _activeReminderTaskId = null;
+    return;
+  }
+  _activeReminderTaskId = taskId;
+
+  // Position popover near the clicked bell
+  const btn = evt.target.closest('.task-reminder-bell');
+  const rect = btn.getBoundingClientRect();
+  pop.style.top = (window.scrollY + rect.bottom + 6) + 'px';
+  let left = window.scrollX + rect.left - 180;
+  if (left < 8) left = 8;
+  pop.style.left = left + 'px';
+
+  // Pre-fill from existing reminder
+  const existing = window._userReminders[taskId] || { freq: 'none', days: [] };
+  pop.querySelectorAll('input[name="rem-freq"]').forEach(r => { r.checked = (r.value === existing.freq) || (existing.freq === undefined && r.value === 'none'); });
+  if (!existing.freq) pop.querySelector('input[name="rem-freq"][value="none"]').checked = true;
+  pop.querySelectorAll('.reminder-weekday-grid button').forEach(b => {
+    b.classList.toggle('sel', (existing.days || []).includes(parseInt(b.dataset.day, 10)));
+  });
+  renderReminderOptions();
+  pop.classList.add('open');
+
+  // Request notification permission proactively (no-op if already granted/denied)
+  if (window.Notification && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function renderReminderOptions() {
+  const pop = document.getElementById('task-reminder-popover');
+  const freq = pop.querySelector('input[name="rem-freq"]:checked')?.value || 'none';
+  const grid = document.getElementById('rem-weekday-grid');
+  grid.style.display = (freq === 'weekday') ? 'grid' : 'none';
+}
+
+function toggleRemDay(btn) {
+  btn.classList.toggle('sel');
+}
+
+function saveTaskReminder() {
+  const email = _currentUserEmail();
+  if (!email || !_activeReminderTaskId) return;
+  const pop = document.getElementById('task-reminder-popover');
+  const freq = pop.querySelector('input[name="rem-freq"]:checked')?.value || 'none';
+
+  if (freq === 'none') { clearTaskReminder(); return; }
+
+  let days = [];
+  if (freq === 'weekday') {
+    days = Array.from(pop.querySelectorAll('.reminder-weekday-grid button.sel')).map(b => parseInt(b.dataset.day, 10));
+    if (days.length === 0) { alert('Pick at least one day of the week.'); return; }
+  } else if (freq === 'twice') {
+    days = [1, 4]; // Monday & Thursday
+  } else if (freq === 'daily') {
+    days = [0,1,2,3,4,5,6];
+  }
+
+  const t = window._taskMap[_activeReminderTaskId];
+  const key = _sanitizeEmailKey(email);
+  const payload = {
+    freq, days,
+    taskLabel: t ? t.action : '',
+    due: t ? t.due : '',
+    project: t ? t.project : '',
+    dept: t ? t.dept : '',
+    email,
+    updatedAt: new Date().toISOString()
+  };
+
+  window._userReminders[_activeReminderTaskId] = payload;
+  if (_fbDb) {
+    _fbDb.ref('reminders/' + key + '/' + _activeReminderTaskId).set(payload);
+  }
+  document.getElementById('task-reminder-popover').classList.remove('open');
+  if (currentDept) renderCurrentDept();
+}
+
+function clearTaskReminder() {
+  const email = _currentUserEmail();
+  if (!email || !_activeReminderTaskId) return;
+  const key = _sanitizeEmailKey(email);
+  delete window._userReminders[_activeReminderTaskId];
+  if (_fbDb) {
+    _fbDb.ref('reminders/' + key + '/' + _activeReminderTaskId).remove();
+  }
+  document.getElementById('task-reminder-popover').classList.remove('open');
+  if (currentDept) renderCurrentDept();
+}
+
+// Close popover on outside click
+document.addEventListener('click', (e) => {
+  const pop = document.getElementById('task-reminder-popover');
+  if (!pop) return;
+  if (pop.classList.contains('open') && !pop.contains(e.target) && !e.target.closest('.task-reminder-bell')) {
+    pop.classList.remove('open');
+    _activeReminderTaskId = null;
+  }
+});
+
+// ── Browser push notification check ──
+// Runs once per page load: checks today's date against each of the
+// user's stored reminders and fires a Notification if due. Designed to
+// run while the dashboard tab/PWA is open (true background push would
+// require a service-worker push subscription + push server).
+function checkDueReminders() {
+  if (!window.Notification || Notification.permission !== 'granted') return;
+  const today = new Date();
+  const dow = today.getDay(); // 0=Sun..6=Sat
+  const todayKey = today.toISOString().slice(0,10);
+  const seenKey = '_remindersFiredOn_' + todayKey;
+  let firedToday = [];
+  try { firedToday = JSON.parse(localStorage.getItem(seenKey) || '[]'); } catch(e){}
+
+  Object.entries(window._userReminders).forEach(([taskId, r]) => {
+    if (!r.freq || r.freq === 'none') return;
+    if (!(r.days || []).includes(dow)) return;
+    if (firedToday.includes(taskId)) return;
+    new Notification('Task reminder — ' + (r.project || ''), {
+      body: `${r.taskLabel || 'Task'} (${r.dept || ''}) — Due: ${r.due || 'see dashboard'}`,
+      icon: 'Mixta Africa.jpg'
+    });
+    firedToday.push(taskId);
+  });
+  try { localStorage.setItem(seenKey, JSON.stringify(firedToday)); } catch(e){}
+}
+
+// ── Email reminders via Apps Script ──
+// Any user can trigger "send my task reminders by email now" — fires a
+// POST to the configured Apps Script endpoint, scoped to their own email
+// and their own stored reminders. A time-based Apps Script trigger can
+// also call this same endpoint on a schedule (see APPS_SCRIPT code block
+// below) to send scheduled reminder digests without the dashboard open.
+async function sendMyReminderEmailNow() {
+  const email = _currentUserEmail();
+  if (!email) { alert('Please sign in first.'); return; }
+  const gasUrl = APPS_SCRIPT_ANNEXE || APPS_SCRIPT_CROSSINGS;
+  if (!gasUrl) { alert('Apps Script URL not configured — ask your admin to configure GAS URL.'); return; }
+
+  const myReminders = Object.entries(window._userReminders)
+    .filter(([id, r]) => r.freq && r.freq !== 'none')
+    .map(([id, r]) => r);
+
+  if (myReminders.length === 0) { alert('You have no active task reminders set.'); return; }
+
+  try {
+    await fetch(gasUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'sendReminderEmail',
+        token: WRITE_TOKEN,
+        toEmail: email,
+        reminders: myReminders
+      })
+    });
+    alert('Reminder email requested — check your inbox shortly.');
+  } catch(e) {
+    alert('Could not reach Apps Script: ' + e.message);
+  }
+}
+
+
 let _reminderProject = null;
 let _reminderDept = null;
 let _reminderMode = 'test';
@@ -9551,6 +10021,34 @@ label = '₦' + (bVal.endsWith('.00') ? bVal.slice(0, -3) : bVal) + 'Bn';
 
 
 <!-- ══════════════════════════════════════════════════════
+     PER-TASK REMINDER POPOVER (tied to logged-in user email)
+     ══════════════════════════════════════════════════════ -->
+<div class="reminder-popover" id="task-reminder-popover">
+  <div class="reminder-popover-title">Remind me about this task</div>
+  <label class="reminder-option"><input type="radio" name="rem-freq" value="none" onchange="renderReminderOptions()"> No reminder</label>
+  <label class="reminder-option"><input type="radio" name="rem-freq" value="daily" onchange="renderReminderOptions()"> Every day</label>
+  <label class="reminder-option"><input type="radio" name="rem-freq" value="weekday" onchange="renderReminderOptions()"> Specific day(s) of the week</label>
+  <div class="reminder-weekday-grid" id="rem-weekday-grid" style="display:none;">
+    <button type="button" data-day="0" onclick="toggleRemDay(this)">Su</button>
+    <button type="button" data-day="1" onclick="toggleRemDay(this)">Mo</button>
+    <button type="button" data-day="2" onclick="toggleRemDay(this)">Tu</button>
+    <button type="button" data-day="3" onclick="toggleRemDay(this)">We</button>
+    <button type="button" data-day="4" onclick="toggleRemDay(this)">Th</button>
+    <button type="button" data-day="5" onclick="toggleRemDay(this)">Fr</button>
+    <button type="button" data-day="6" onclick="toggleRemDay(this)">Sa</button>
+  </div>
+  <label class="reminder-option"><input type="radio" name="rem-freq" value="twice" onchange="renderReminderOptions()"> Twice a week (Mon &amp; Thu)</label>
+  <div class="reminder-popover-actions">
+    <button class="reminder-clear-btn" onclick="clearTaskReminder()">Clear</button>
+    <button class="reminder-save-btn" onclick="saveTaskReminder()">Save</button>
+  </div>
+  <div class="reminder-popover-actions">
+    <button class="reminder-clear-btn" onclick="sendMyReminderEmailNow()" style="flex:1">Email my reminders now</button>
+  </div>
+  <div class="reminder-popover-note">Reminders are personal — emailed to your account email and shown as browser notifications while the dashboard is open.</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
      REMINDER MODAL
      ══════════════════════════════════════════════════════ -->
 <div class="tool-modal-overlay" id="reminder-modal">
@@ -10457,3 +10955,4 @@ function switchHelpTab(section, btn) {
 </body>
 
 </html>
+  
