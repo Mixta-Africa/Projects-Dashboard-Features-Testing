@@ -8752,7 +8752,7 @@ function renderDynamicCharts() {
   }
 
 
-  // ── Neon glassmorphism chart helper ──────────────────────────────────────────
+  // ── Chart gradient helper (light fills under vibrant lines) ──────────────────
   function neonGrad(ctx, colorTop, colorBottom) {
     const chart = ctx.chart;
     const { top, bottom } = chart.chartArea || { top: 0, bottom: 300 };
@@ -8771,15 +8771,15 @@ function renderDynamicCharts() {
         display: true, position: 'bottom',
         labels: {
           font: { size: 11, weight: '700', family: "'DM Sans', sans-serif" },
-          color: 'rgba(255,255,255,0.55)', usePointStyle: true,
+          color: '#5f6368', usePointStyle: true,
           pointStyleWidth: 10, boxWidth: 8, padding: 20
         }
       },
       tooltip: {
-        backgroundColor: 'rgba(15,23,42,0.92)',
-        titleColor: 'rgba(255,255,255,0.9)',
-        bodyColor:  'rgba(255,255,255,0.65)',
-        borderColor: 'rgba(255,255,255,0.08)',
+        backgroundColor: '#ffffff',
+        titleColor: '#202124',
+        bodyColor:  '#5f6368',
+        borderColor: '#e0e0e0',
         borderWidth: 1, padding: 14, boxPadding: 8, usePointStyle: true,
         titleFont: { size: 13, weight: '800', family: "'DM Sans', sans-serif" },
         bodyFont:  { size: 12, weight: '600', family: "'DM Sans', sans-serif" },
@@ -8792,33 +8792,25 @@ function renderDynamicCharts() {
     },
     scales: {
       x: {
-        ticks: { color: 'rgba(255,255,255,0.35)', font: { size: 10, weight: '600' }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 },
+        ticks: { color: '#9aa0a6', font: { size: 10, weight: '600' }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 },
         grid: { display: false },
         border: { display: false }
       },
       y: {
-        ticks: { color: 'rgba(255,255,255,0.35)', font: { size: 10, weight: '600' }, callback: function(v) { return '₦' + (v/1000).toFixed(1) + 'B'; } },
-        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+        ticks: { color: '#9aa0a6', font: { size: 10, weight: '600' }, callback: function(v) { return '₦' + (v/1000).toFixed(1) + 'B'; } },
+        grid: { color: '#f1f3f4', drawBorder: false },
         border: { display: false }
       }
     }
   };
 
-  // Dark card background for chart canvases
-  const chartCardStyle = `
-    background: linear-gradient(135deg,#0f172a 0%,#1e1b4b 100%);
-    border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
-  `;
+  // White card background for chart canvases (override any previous dark theme)
   document.querySelectorAll('.chart-card').forEach(el => {
-    el.style.cssText += chartCardStyle;
-    // Update text colours inside the card for dark bg
-    el.querySelectorAll('h3, .chart-card-subtitle').forEach(t => {
-      t.style.color = 'rgba(255,255,255,0.75)';
-    });
-    el.querySelectorAll('.legend-dot').forEach(d => {
-      d.style.color = 'rgba(255,255,255,0.6)';
-    });
+    el.style.background = '';
+    el.style.boxShadow = '';
+    el.style.border = '';
+    el.querySelectorAll('h3, .chart-card-subtitle').forEach(t => { t.style.color = ''; });
+    el.querySelectorAll('.legend-dot').forEach(d => { d.style.color = ''; });
   });
 
   // RENDER ANNEXE CHART
