@@ -3490,25 +3490,32 @@ function initFirebase() {
         Object.entries(all).forEach(([proj, depts]) => {
           Object.entries(depts).forEach(([dept, sessionsOrUpdates]) => {
             if (!sessionsOrUpdates || typeof sessionsOrUpdates !== 'object') return;
-            const firstVal = Object.values(sessionsOrUpdates)[0];
-            if (firstVal && typeof firstVal === 'object' && ('text' in firstVal || 'timestamp' in firstVal)) {
-              // Legacy flat schema
-              const arr = Object.values(sessionsOrUpdates).sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
-              try { localStorage.setItem('fb_dept:' + proj + ':' + dept, JSON.stringify(arr)); } catch(e){}
-            } else {
-              // Session-scoped schema: dept_updates/{proj}/{dept}/{session}/{pushId}
-              Object.entries(sessionsOrUpdates).forEach(([sessionKey, pushItems]) => {
-                if (!pushItems || typeof pushItems !== 'object') return;
-                const arr = Object.values(pushItems).sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
-                try { localStorage.setItem('fb_dept:' + proj + ':' + dept + ':' + sessionKey, JSON.stringify(arr)); } catch(e){}
+
+            let legacyUpdates = [];
+
+            Object.entries(sessionsOrUpdates).forEach(([key, value]) => {
+              // If the key starts with a minus sign (e.g. -Nxxyz...), it's a legacy Firebase push ID
+              if (key.startsWith('-')) {
+                legacyUpdates.push(value);
+              } else {
+                // Otherwise, it's a session folder like "Jun 01"
+                if (!value || typeof value !== 'object') return;
+                const arr = Object.values(value).sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
+                try { localStorage.setItem('fb_dept:' + proj + ':' + dept + ':' + key, JSON.stringify(arr)); } catch(e){}
                 if (proj === currentProject && dept === currentDept) needsRender = true;
-              });
+              }
+            });
+
+            // Save any legacy updates we found back to the flat legacy key
+            if (legacyUpdates.length > 0) {
+              legacyUpdates.sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
+              try { localStorage.setItem('fb_dept:' + proj + ':' + dept, JSON.stringify(legacyUpdates)); } catch(e){}
             }
           });
         });
-        // Only re-render once after all keys are written, and only if relevant dept is active
+        
         if (needsRender && currentDept) renderUpdatesList();
-        else if (!needsRender && currentDept) renderUpdatesList(); // first load: always render
+        else if (!needsRender && currentDept) renderUpdatesList(); 
       });
 
       // ── Child-added listener for instant cross-device push ───────────────────
@@ -8643,6 +8650,9 @@ function refreshDashboardForSession() {
     const el = document.getElementById(pfx ? 'targets-cx-title' : 'targets-annex-title');
     if (el) el.textContent = 'End of ' + mon + ' Targets';
   }
+
+  // ADD THIS LINE HERE: Re-attach the real-time listener to the new active session folder
+  if (window._resubscribeDeptUpdates) window._resubscribeDeptUpdates();
 }
 
 // ── Update Landing Page Buttons ──
