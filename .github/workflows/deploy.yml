@@ -26,30 +26,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Inject GROQ API key
+      - name: Inject Secrets Safely (Literal Mode)
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-        run: sed -i "s|__GROQ_API_KEY__|${GROQ_API_KEY}|g" index.html
-
-      - name: Inject Cerebras API key
-        env:
           CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
-        run: sed -i "s|__CEREBRAS_API_KEY__|${CEREBRAS_API_KEY}|g" index.html
-
-      - name: Inject Apps Script URL
-        env:
           APPS_SCRIPT_URL: ${{ secrets.APPS_SCRIPT_URL }}
-        run: sed -i "s|__APPS_SCRIPT_URL__|${APPS_SCRIPT_URL}|g" index.html
-
-      - name: Inject Apps Script Token
-        env:
           APPS_SCRIPT_TOKEN: ${{ secrets.APPS_SCRIPT_TOKEN }}
-        run: sed -i "s|__APPS_SCRIPT_TOKEN__|${APPS_SCRIPT_TOKEN}|g" index.html
-
-      - name: Inject Admin Password
-        env:
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-        run: sed -i "s|__ADMIN_PASSWORD__|${ADMIN_PASSWORD}|g" index.html
+        run: |
+          node -e '
+            const fs = require("fs");
+            let html = fs.readFileSync("index.html", "utf8");
+            html = html.replace(/__GROQ_API_KEY__/g, process.env.GROQ_API_KEY || "");
+            html = html.replace(/__CEREBRAS_API_KEY__/g, process.env.CEREBRAS_API_KEY || "");
+            html = html.replace(/__APPS_SCRIPT_URL__/g, process.env.APPS_SCRIPT_URL || "");
+            html = html.replace(/__APPS_SCRIPT_TOKEN__/g, process.env.APPS_SCRIPT_TOKEN || "");
+            html = html.replace(/__ADMIN_PASSWORD__/g, process.env.ADMIN_PASSWORD || "");
+            fs.writeFileSync("index.html", html, "utf8");
+          '
 
       - name: Verify injections
         run: |
