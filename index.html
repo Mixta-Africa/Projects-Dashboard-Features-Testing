@@ -410,7 +410,7 @@ body.users-bar-visible .dept-sidebar {
 .step-card.expanded .step-details-pane { display: block; animation: fadeIn 0.2s ease; }
 .pane-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--brand-grey); margin-bottom: 6px; }
 .status-actions { display: flex; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); flex-wrap: wrap; }
-.status-btn { padding: 6px 14px; border-radius: var(--radius-pill); font-size: 11px; font-weight: 700; cursor: pointer; border: 1.5px solid; transition: all 0.2s; font-family: inherit; display: inline-flex; align-items: center; gap: 5px; }
+.status-btn { padding: 6px 14px; border-radius: var(--radius-pill); font-size: 11px; font-weight: 700; cursor: pointer; border: 1.5px solid; transition: all 0.2s; font-family: inherit; display: inline-flex; center; gap: 5px; }
 .status-btn:hover { transform: scale(1.03); }
 .btn-achieved { border-color: var(--status-blue-border); color: var(--status-blue); background: var(--status-blue-bg); }
 .btn-achieved:hover { background: var(--status-blue); color: white; }
@@ -1380,7 +1380,7 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
   .dept-layout { grid-template-columns: 1fr; }
   .dept-sidebar { position: static; width: 100%; overflow-x: auto; white-space: nowrap; padding: 12px; margin-bottom: 16px; border-radius: 12px; display: flex; gap: 12px; align-items: center; z-index: 100; }
   .sidebar-section { display: inline-flex; border: none !important; margin: 0 !important; padding: 0 !important; align-items: center; }
-  .sidebar-section-label { display: none; } /* Hide large headers to save scrolling space */
+  .sidebar-section-label { display: none; } 
   .sidebar-item { min-height: auto; width: auto; padding: 8px 16px; border-radius: 24px; border: 1px solid var(--card-border); display: inline-flex; flex-shrink: 0; }
   .stat-grid { grid-template-columns: repeat(3, 1fr); overflow-x: auto; padding-bottom: 8px; }
   .pbi-grid { grid-template-columns: 1fr; }
@@ -1464,9 +1464,7 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
   font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
 .task-card.no-permission .task-status-controls { opacity: 0.3; pointer-events: none; }
-/* ══════════════════════════════════════════════════════
-   COMMERCIAL VELOCITY INDICATOR — CSS
-   ══════════════════════════════════════════════════════ */
+/* ── COMMERCIAL VELOCITY INDICATOR — CSS ── */
 .cvi-panel {
   margin-top: 20px;
   background: #fff;
@@ -1493,7 +1491,7 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
 }
 .cvi-icon-badge.cx   { background: var(--cx-color); }
 .cvi-icon-badge.annex { background: var(--annex-color); }
-.cvi-title    { font-size: 14px; font-weight: 700; color: #18181b; letter-spacing: -0.01em; }
+.cvi-title     { font-size: 14px; font-weight: 700; color: #18181b; letter-spacing: -0.01em; }
 .cvi-subtitle { font-size: 11px; color: #71717a; font-weight: 500; margin-top: 2px; }
 
 .cvi-status-chip {
@@ -1539,7 +1537,7 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
   transition: width 1s cubic-bezier(0.4,0,0.2,1);
   position: absolute; top: 0; left: 0;
 }
-.cvi-bar-fill.cx    { background: linear-gradient(90deg, #2e7d32, #4caf50); }
+.cvi-bar-fill.cx     { background: linear-gradient(90deg, #2e7d32, #4caf50); }
 .cvi-bar-fill.annex { background: linear-gradient(90deg, #c62828, #ef5350); }
 .cvi-bar-fill.danger { background: linear-gradient(90deg, #b71c1c, #c62828) !important; }
 
@@ -1599,11 +1597,7 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
   .cvi-chart-wrap { height: 130px; }
 }
 
-/* ══════════════════════════════════════════════════════
-   TREND INTELLIGENCE ENGINE — CSS
-   ══════════════════════════════════════════════════════ */
-
-/* ── Panel shell ── */
+/* ── TREND INTELLIGENCE ENGINE — CSS ── */
 .ti-panel {
   margin-top: 28px;
   background: #ffffff;
@@ -1992,6 +1986,38 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
   margin-top: 48px; padding-top: 12px; border-top: 1px solid #ddd;
   font-size: 10px; color: #bbb; font-family: 'DM Sans', sans-serif;
   display: flex; justify-content: space-between;
+}
+
+/* ── High-Contrast Chat Action Overrides for Own Messages (Admin Fix) ── */
+.chat-row.mine .chat-bubble .chat-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.chat-row.mine .chat-bubble .chat-reply-btn {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.chat-row.mine .chat-bubble .chat-reply-btn:hover {
+  color: #ffffff !important;
+}
+
+.chat-row.mine .chat-bubble .chat-delete-btn {
+  color: #ffcdd2 !important; /* Soft high-contrast tone against active project backgrounds */
+  font-weight: 700;
+}
+
+.chat-row.mine .chat-bubble .chat-delete-btn:hover {
+  color: #ffffff !important;
+  text-decoration: underline;
+}
+
+.chat-row.mine .chat-bubble .chat-media-del-btn {
+  color: #ffcdd2 !important;
+  background: rgba(0, 0, 0, 0.25) !important;
+  border-radius: 4px;
 }
 </style>
 <script>
