@@ -4598,7 +4598,7 @@ function clearGasConfig() {
 
 // ── Per-file upload with progress tracking ────────────────────────
 async function uploadOneFileToGAS(file, project, dept, fileIndex) {
-  const SCRIPT_URL   = window.APPS_SCRIPT_URL   || localStorage.getItem('APPS_SCRIPT_URL');
+  const SCRIPT_URL    = window.APPS_SCRIPT_URL   || localStorage.getItem('APPS_SCRIPT_URL');
   const SCRIPT_TOKEN = window.APPS_SCRIPT_TOKEN  || localStorage.getItem('APPS_SCRIPT_TOKEN');
   if (!SCRIPT_URL || !SCRIPT_TOKEN || SCRIPT_URL.startsWith('__')) {
     _updateUploadProgress(fileIndex, false, 'GAS not configured');
@@ -4615,6 +4615,7 @@ async function uploadOneFileToGAS(file, project, dept, fileIndex) {
       try {
         const res = await fetch(SCRIPT_URL, {
           method: 'POST',
+          // mode: 'no-cors' REMOVED — Allowing CORS enables reading the file ID response
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'uploadMedia', token: SCRIPT_TOKEN,
