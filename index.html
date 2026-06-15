@@ -116,8 +116,9 @@ nav { position: fixed; top: 0; left: 0; right: 0; z-index: 200; height: var(--na
 .nav-brand { font-size: 15px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.03em; white-space: nowrap; cursor: pointer; transition: opacity 0.2s; user-select: none; display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .nav-brand:hover { opacity: 0.7; }
 .nav-brand span { color: var(--brand-red); }
-.nav-tabs { display: flex; gap: 6px; flex-shrink: 1; overflow: hidden; }
-.nav-tab { padding: 7px 16px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-secondary); border: 1px solid transparent; background: none; transition: all 0.2s; font-family: inherit; }
+.nav-tabs { display: flex; gap: 4px; flex-shrink: 1; overflow-x: auto; scrollbar-width: none; }
+.nav-tabs::-webkit-scrollbar { display: none; }
+.nav-tab { padding: 7px 12px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-secondary); border: 1px solid transparent; background: none; transition: all 0.2s; font-family: inherit; white-space: nowrap; flex-shrink: 0; }
 .nav-tab:hover { background: var(--brand-grey-light); color: var(--text-primary); }
 .nav-tab.active { background: var(--active-theme-color, var(--cx-color)); color: #fff; border-color: var(--active-theme-color, var(--cx-color)); }
 .nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; overflow: visible; flex-shrink: 0; flex-wrap: nowrap; }
@@ -4407,7 +4408,9 @@ function renderUpdatesList() {
     // Actions row
     const replyPreview = (u.text||'').slice(0,80).replace(/'/g, '&#39;');
     const replyBtn = `<button class="chat-reply-btn" onclick="setReply('${tsAttr}','${_esc(u.author||'Anonymous').replace(/'/g,"&#39;")}','${replyPreview}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg> Reply</button>`;
-    const deleteBtn = diagUnlocked
+    const isAdminUser = currentUserRole && currentUserRole.role === 'admin';
+    const canDelete = diagUnlocked && (isAdminUser || isMe);
+    const deleteBtn = canDelete
       ? `<button class="chat-delete-btn" onclick="deleteUpdate('${tsAttr}')" title="Delete message"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg> Delete</button>`
       : '';
     const actionsHtml = `<div class="chat-actions">${replyBtn}${deleteBtn}</div>`;
@@ -4434,6 +4437,20 @@ function _esc(str) {
 
 function deleteUpdate(timestamp) {
   if (!diagUnlocked) return;
+  // Ownership guard: admin can delete any, others can only delete their own
+  const _isAdminDel = currentUserRole && currentUserRole.role === 'admin';
+  if (!_isAdminDel) {
+    const _myEmail = currentUser ? currentUser.email : null;
+    const _myName  = currentUser ? (currentUser.displayName || '').split(' ')[0] : null;
+    const sessionKey2 = (viewingSessionDate && viewingSessionDate !== 'current')
+      ? viewingSessionDate
+      : ((availableSessions[currentProject] && availableSessions[currentProject][0]) || 'current');
+    const _allUpdates = JSON.parse(localStorage.getItem('deptupdate:' + currentProject + ':' + currentDept + ':' + sessionKey2) || '[]')
+      .concat(JSON.parse(localStorage.getItem('fb_dept:' + currentProject + ':' + currentDept + ':' + sessionKey2) || '[]'));
+    const _target = _allUpdates.find(u => u.timestamp === timestamp);
+    const _isOwn = _target && _myEmail && (_target.authorEmail === _myEmail || (!_target.authorEmail && _myName && _target.author && _target.author.toLowerCase().includes(_myName.toLowerCase())));
+    if (!_isOwn) { alert('You can only delete your own messages.'); return; }
+  }
   if (!confirm('Delete this message? This cannot be undone.')) return;
 
   const sessionKey = (viewingSessionDate && viewingSessionDate !== 'current')
@@ -10999,4 +11016,3 @@ function switchHelpTab(section, btn) {
 </body>
 
 </html>
-  
