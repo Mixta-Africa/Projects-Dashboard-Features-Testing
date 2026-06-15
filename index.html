@@ -2411,7 +2411,7 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
         <button class="sidebar-item" onclick="showDept(this,'Crossings','Legal')">Legal <span class="dept-count">0</span></button>
         <button class="sidebar-item" onclick="showDept(this,'Crossings','General')">General <span class="dept-count">0</span></button>
         <button class="sidebar-item" onclick="showDept(this,'Crossings','Collections')">Collections <span class="dept-count">0</span></button>
-        <button class="sidebar-item" onclick="showDept(this,'Crossings','Fin Planning')">Fin Planning <span class="dept-count">0</span></button>
+        <button class="sidebar-item" onclick="showDept(this,'Crossings','FinPlanning')">FinPlanning <span class="dept-count">0</span></button>
       </div>
       <div class="sidebar-section" id="sidebar-annexe" style="display:none;">
         <div class="sidebar-section-label annexe">Lakowe Annexe</div>
@@ -2425,7 +2425,7 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
         <button class="sidebar-item annexe-btn" onclick="showDept(this,'Annexe','Sales')">Sales <span class="dept-count">0</span></button>
         <button class="sidebar-item annexe-btn" onclick="showDept(this,'Annexe','Legal')">Legal <span class="dept-count">0</span></button>
         <button class="sidebar-item annexe-btn" onclick="showDept(this,'Annexe','Collections')">Collections <span class="dept-count">0</span></button>
-        <button class="sidebar-item annexe-btn" onclick="showDept(this,'Annexe','Fin Planning')">Fin Planning <span class="dept-count">0</span></button>
+        <button class="sidebar-item annexe-btn" onclick="showDept(this,'Annexe','FinPlanning')">FinPlanning <span class="dept-count">0</span></button>
       </div>
     </div>
     <div class="dept-main">
@@ -3452,10 +3452,10 @@ const USER_ROLES = {
   'm.apuh@mixtafrica.com':        { name: 'M. Apuh',         dept: 'Telemarketing', project: 'Both',  role: 'editor' },
 
   // ── COLLECTIONS — appears in both projects ──
-  'o.odumade@mixtafrica.com':        { name: 'O. Odumade',         dept: 'Collections', project: 'Both',  role: 'editor' },
+  'o.odumade@mixtafrica.com':     { name: 'O. Odumade',         dept: 'Collections', project: 'Both',  role: 'editor' },
 
-  // ── FIN PLANNING — appears in both projects ──
-  's.edadagbon@mixtafrica.com':        { name: 'S. Edadagbon',         dept: 'Fin Planning', project: 'Both',  role: 'editor' },
+  // ── FINPLANNING — appears in both projects ──
+  's.edadagbon@mixtafrica.com':   { name: 'S. Edadagbon',       dept: 'FinPlanning', project: 'Both',  role: 'editor' },
 
   // ── Legacy placeholder logins (kept for backward compat) ──
   'admin@mixta.ng':               { name: 'Admin',           dept: null,          project: 'Both',      role: 'admin'  },
@@ -6096,8 +6096,8 @@ function renderDiagPanel() {
 
 function renderAdminUpdatesFeed() {
   const ALL_DEPTS = {
-    Crossings: ['Design','Costing','AMC','IPD','Landscape','Operations','Fincon','Sales','MCC','Legal','General', 'Collections', 'Fin Planning'],
-    Annexe: ['Design','Costing','IPD','Operations','Fincon','Telemarketing','MCC','Sales','Legal', 'Collections', 'Fin Planning']
+    Crossings: ['Design','Costing','AMC','IPD','Landscape','Operations','Fincon','Sales','MCC','Legal','General', 'Collections', 'FinPlanning'],
+    Annexe: ['Design','Costing','IPD','Operations','Fincon','Telemarketing','MCC','Sales','Legal', 'Collections', 'FinPlanning']
   };
 
   let allUpdates = [];
@@ -7420,7 +7420,7 @@ const MAILING_LIST = {
     FINCON:     ['mixta_fincon@mixtafrica.com'],
     Operations: ['realestateoperations_nigeria@mixtafrica.com'],
     Collections:['o.odumade@mixtafrica.com'],
-    Fin Planning:['s.edadagbon@mixtafrica.com'],
+    FinPlanning:['s.edadagbon@mixtafrica.com'],
   },
   Annexe: {
     Design:        ['dcs_nigeria@mixtafrica.com'],
@@ -7433,8 +7433,8 @@ const MAILING_LIST = {
     FINCON:        ['mixta_fincon@mixtafrica.com'],
     Operations:    ['realestateoperations_nigeria@mixtafrica.com'],
     Telemarketing: ['m.apuh@mixtafrica.com'],
-    Collections:['o.odumade@mixtafrica.com'],
-    Fin Planning:['s.edadagbon@mixtafrica.com']
+    Collections:   ['o.odumade@mixtafrica.com'],
+    FinPlanning:   ['s.edadagbon@mixtafrica.com'],
   }
 };
 
