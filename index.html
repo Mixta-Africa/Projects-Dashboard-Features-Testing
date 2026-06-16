@@ -3981,7 +3981,7 @@ const DEPT_NORMALIZE_MAP = {
   'legal': 'Legal', 'telemarketing': 'Telemarketing',
   'general': 'General', 'amc': 'AMC',
   'da': 'DA', 'mrs h': 'Mrs H', 'risk': 'Risk',
-  'financial planning': 'FinPlanning', 'finplanning': 'FinPlanning', 'fin planning': 'FinPlanning',
+  'financial planning': 'FinPlanning', 'finplanning': 'FinPlanning', 'fin planning': 'FinPlanning', 'fin  planning': 'FinPlanning',
   'collections': 'Collections',
 };
 
@@ -4990,18 +4990,19 @@ function processSheet(rows, proj, sheetName, isLatest) {
   
   const fuzzyMatchDept = (val) => {
     if (!val) return null;
-    const clean = String(val).trim();
-    const lower = clean.toLowerCase();
+    // Collapse all whitespace variants (including non-breaking spaces) to single space
+    const clean = String(val).replace(/[\u00a0\u2009\u202f\t]+/g, ' ').trim();
+    const lower = clean.toLowerCase().replace(/\s+/g, ' ');
 
     if (DEPT_NORMALIZE_MAP[lower]) return DEPT_NORMALIZE_MAP[lower];
     for (const key of Object.keys(DEPT_NORMALIZE_MAP)) {
       if (lower.startsWith(key)) return DEPT_NORMALIZE_MAP[key];
     }
     for (const dept of KNOWN_DEPTS) {
-      const regex = new RegExp(`\\b${dept.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`, 'i');
+      const regex = new RegExp(`\\b${dept.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
       if (regex.test(clean)) return dept;
     }
-    if (clean.length > 1 && !/^(department|dept|s\/n|next step|action point|status|result|explanation|due|timeline|target|note)$/i.test(clean) && !/^\\d{5,}$/.test(clean)) {
+    if (clean.length > 1 && !/^(department|dept|s\/n|next step|action point|status|result|explanation|due|timeline|target|note)$/i.test(clean) && !/^\d{5,}$/.test(clean)) {
       return clean; 
     }
     return null;
