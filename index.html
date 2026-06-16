@@ -2760,7 +2760,7 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
     <div class="uh-toolbar-group" style="margin-left:auto;">
       <button class="uh-dl-btn secondary" onclick="copyUpdatesDoc()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button>
       <button class="uh-dl-btn" onclick="downloadUpdatesDoc()">&#8595; Download .txt</button>
-      <button class="uh-dl-btn" onclick="openExportModal()" style="background:#1565c0;">&#128196; Export Word</button>
+      <button class="uh-dl-btn" id="export-word-btn" onclick="openExportModal()" style="background:#1565c0;display:none;">&#128196; Export Word</button>
     </div>
   </div>
 
@@ -4161,6 +4161,9 @@ function submitAdmin() {
     if (currentDept && currentProject) {
       renderDeptUpdates();
     }
+    // Reveal Export Word button — admin only
+    const _ewb = document.getElementById('export-word-btn');
+    if (_ewb) _ewb.style.display = 'inline-flex';
     // Honour any pending nav triggered before admin unlocked
     if (window._pendingAfterAdmin) {
       const _p = window._pendingAfterAdmin;
@@ -4975,10 +4978,16 @@ function extractMetricValue(rowArray, isCurrency, dept, actionColIdx) {
 
 function processSheet(rows, proj, sheetName, isLatest) {
   // ── LAYER 3: Department whitelist + fuzzy matching ──
+  // Include hardcoded depts + any custom depts added via admin panel
+  const _customDepts = (function() {
+    try { const c = JSON.parse(localStorage.getItem('mgmt_custom_depts') || '{"Crossings":[],"Annexe":[]}'); return [...(c.Crossings||[]),...(c.Annexe||[])]; } catch(e) { return []; }
+  })();
   const KNOWN_DEPTS = [
     'Design', 'Costing', 'IPD', 'Landscape', 'Operations',
     'Fincon', 'Sales', 'MCC', 'Legal', 'Telemarketing', 'General', 'AMC',
-    'DA', 'Mrs H', 'Risk', 'Financial Planning'
+    'Collections', 'FinPlanning',
+    'DA', 'Mrs H', 'Risk', 'Financial Planning',
+    ..._customDepts
   ];
   
   const fuzzyMatchDept = (val) => {
@@ -5326,13 +5335,67 @@ function updateSidebarCounts() {
   rebuildMobilePills();
   applyDeptTabLocks();
 }
-const CX_DEPTS = ['Design','Costing','AMC','IPD','Landscape','Operations','Fincon','Sales','MCC','Legal','General'];
-const ANNEX_DEPTS = ['Design','Costing','IPD','Operations','Fincon','Telemarketing','MCC','Sales','Legal'];
+const CX_DEPTS = ['Design','Costing','AMC','IPD','Landscape','Operations','Fincon','Sales','MCC','Legal','General','Collections','FinPlanning'];
+const ANNEX_DEPTS = ['Design','Costing','IPD','Operations','Fincon','Telemarketing','MCC','Sales','Legal','Collections','FinPlanning'];
+
+// ── Sync the uh-dept dropdown in Updates Hub with CX_DEPTS + ANNEX_DEPTS ──
+function _syncDeptDropdown() {
+  const sel = document.getElementById('uh-dept');
+  if (!sel) return;
+  const current = sel.value;
+  // Build combined unique list
+  const all = ['all', ...[...new Set([...CX_DEPTS, ...ANNEX_DEPTS])].sort()];
+  sel.innerHTML = all.map(d =>
+    `<option value="${d}">${d === 'all' ? 'All Departments' : d}</option>`
+  ).join('');
+  // Restore selection if still valid
+  sel.value = all.includes(current) ? current : 'all';
+}
 function rebuildMobilePills() {
   const container = document.getElementById('mobile-dept-pills'); if (!container || !currentProject) { if(container) container.innerHTML=''; return; }
   const depts = currentProject === 'Crossings' ? CX_DEPTS : ANNEX_DEPTS; const activeClass = currentProject === 'Crossings' ? 'active-cx' : 'active-annex';
   const latest = availableSessions[currentProject] && availableSessions[currentProject][0];
   container.innerHTML = depts.map(d => { const count = taskDatabase.filter(t => t.project === currentProject && t.dept.toLowerCase() === d.toLowerCase() && t.session === latest).length; const isActive = currentDept === d ? activeClass : ''; return `<button class="mobile-dept-pill ${isActive}" onclick="showDeptMobile('${d}')">${d} <span class="pill-count">${count}</span></button>`; }).join('');
+}
+
+// ── Rebuild the sidebar button list dynamically from CX_DEPTS / ANNEX_DEPTS ──
+// Called after any dept add/remove so the UI reflects the change instantly.
+function rebuildSidebarButtons() {
+  const cxSection = document.getElementById('sidebar-crossings');
+  const axSection = document.getElementById('sidebar-annexe');
+  if (!cxSection || !axSection) return;
+
+  const latest = {
+    Crossings: availableSessions['Crossings'] && availableSessions['Crossings'][0],
+    Annexe:    availableSessions['Annexe']    && availableSessions['Annexe'][0],
+  };
+
+  function countTasks(proj, dept) {
+    if (!latest[proj]) return 0;
+    return taskDatabase.filter(t =>
+      t.project === proj && t.dept.toLowerCase() === dept.toLowerCase() && t.session === latest[proj]
+    ).length;
+  }
+
+  // Rebuild Crossings buttons (preserve section label)
+  const cxLabel = cxSection.querySelector('.sidebar-section-label').outerHTML;
+  cxSection.innerHTML = cxLabel + CX_DEPTS.map(d => {
+    const label  = d === 'IPD' ? 'IPD/PMU' : d;
+    const active = (currentProject === 'Crossings' && currentDept === d) ? ' active' : '';
+    return `<button class="sidebar-item${active}" onclick="showDept(this,'Crossings','${d}')">${label} <span class="dept-count">${countTasks('Crossings', d)}</span></button>`;
+  }).join('');
+
+  // Rebuild Annexe buttons (preserve section label)
+  const axLabel = axSection.querySelector('.sidebar-section-label').outerHTML;
+  axSection.innerHTML = axLabel + ANNEX_DEPTS.map(d => {
+    const active = (currentProject === 'Annexe' && currentDept === d) ? ' active' : '';
+    return `<button class="sidebar-item annexe-btn${active}" onclick="showDept(this,'Annexe','${d}')">${d} <span class="dept-count">${countTasks('Annexe', d)}</span></button>`;
+  }).join('');
+
+  // Sync all downstream consumers
+  rebuildMobilePills();
+  if (typeof applyDeptTabLocks === 'function') applyDeptTabLocks();
+  _syncDeptDropdown();
 }
 function showDeptMobile(dept) { currentDept = dept; viewingSessionDate = 'current'; _clearMediaState(); cancelReply(); updateSidebarCounts(); renderDeptContent(currentProject, dept); if(window._resubscribeDeptUpdates) window._resubscribeDeptUpdates(); }
 function buildHistoryBar() {
@@ -9679,6 +9742,7 @@ function mgmtApplyCustomMailing() {
 function openMgmtPanel() {
   if (!diagUnlocked) { alert('Please unlock the admin panel first.'); return; }
   mgmtApplyCustomDepts();
+  rebuildSidebarButtons();
   document.getElementById('mgmt-overlay').classList.add('open');
   mgmtPopulateDeptDropdown();
   mgmtRenderUsers();
@@ -9730,6 +9794,8 @@ function mgmtAddUser() {
   // Apply immediately to live objects
   USER_ROLES[email] = { name, role, dept: dept || null, project };
   mgmtApplyCustomMailing();
+  // Extend auth gate allowlist so this user can sign in immediately
+  if (typeof window._extendAllowlist === 'function') window._extendAllowlist(email, project);
   updateSidebarCounts();
 
   // Clear form
@@ -9747,6 +9813,7 @@ function mgmtDeleteUser(email) {
   delete custom[email];
   localStorage.setItem(MGMT_USERS_KEY, JSON.stringify(custom));
   delete USER_ROLES[email];
+  if (typeof window._removeFromAllowlist === 'function') window._removeFromAllowlist(email);
   if (_fbReady && _fbDb) _fbDb.ref('mgmt_users/' + email.replace(/\./g,'_')).remove();
   mgmtRenderUsers();
   document.getElementById('mgmt-user-status').textContent = 'User removed';
@@ -9797,8 +9864,8 @@ function mgmtAddDept() {
   statusEl.textContent = `"${name}" added to ${project}`;
   mgmtRenderDepts();
   mgmtPopulateDeptDropdown();
+  rebuildSidebarButtons();
   updateSidebarCounts();
-  rebuildMobilePills();
 }
 
 function mgmtDeleteDept(name, proj) {
@@ -9810,6 +9877,7 @@ function mgmtDeleteDept(name, proj) {
   if (proj === 'Annexe')    { const i = ANNEX_DEPTS.indexOf(name); if (i > -1) ANNEX_DEPTS.splice(i,1); }
   if (_fbReady && _fbDb) _fbDb.ref('mgmt_depts').set(custom);
   mgmtRenderDepts();
+  rebuildSidebarButtons();
   updateSidebarCounts();
 }
 
@@ -9933,6 +10001,8 @@ function mgmtInitOnLoad() {
   mgmtApplyCustomUsers();
   mgmtApplyCustomDepts();
   mgmtApplyCustomMailing();
+  // Rebuild sidebar so any custom depts saved from previous sessions appear immediately
+  if (typeof rebuildSidebarButtons === 'function') rebuildSidebarButtons();
 
   // Sync mgmt data from Firebase
   if (_fbReady && _fbDb) {
@@ -9943,6 +10013,8 @@ function mgmtInitOnLoad() {
         const email = key.replace(/_/g, '.');
         custom[email] = val;
         USER_ROLES[email] = val;
+        // Also extend the auth allowlist so Firebase-synced users can sign in
+        if (typeof window._extendAllowlist === 'function') window._extendAllowlist(email, val.project || 'Both');
       });
       localStorage.setItem(MGMT_USERS_KEY, JSON.stringify(custom));
       mgmtApplyCustomMailing();
@@ -9953,6 +10025,8 @@ function mgmtInitOnLoad() {
       if (!data) return;
       localStorage.setItem(MGMT_DEPTS_KEY, JSON.stringify(data));
       mgmtApplyCustomDepts();
+      // Rebuild sidebar so Firebase-synced depts appear immediately for all users
+      if (typeof rebuildSidebarButtons === 'function') rebuildSidebarButtons();
     });
 
     _fbDb.ref('mgmt_deleted').on('value', snap => {
