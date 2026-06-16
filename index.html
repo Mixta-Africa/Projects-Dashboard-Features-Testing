@@ -2412,7 +2412,6 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
         <button class="sidebar-item" onclick="showDept(this,'Crossings','Legal')">Legal <span class="dept-count">0</span></button>
         <button class="sidebar-item" onclick="showDept(this,'Crossings','General')">General <span class="dept-count">0</span></button>
         <button class="sidebar-item" onclick="showDept(this,'Crossings','Collections')">Collections <span class="dept-count">0</span></button>
-        <button class="sidebar-item" onclick="showDept(this,'Crossings','FinPlanning')">FinPlanning <span class="dept-count">0</span></button>
       </div>
       <div class="sidebar-section" id="sidebar-annexe" style="display:none;">
         <div class="sidebar-section-label annexe">Lakowe Annexe</div>
@@ -2426,7 +2425,6 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
         <button class="sidebar-item annexe-btn" onclick="showDept(this,'Annexe','Sales')">Sales <span class="dept-count">0</span></button>
         <button class="sidebar-item annexe-btn" onclick="showDept(this,'Annexe','Legal')">Legal <span class="dept-count">0</span></button>
         <button class="sidebar-item annexe-btn" onclick="showDept(this,'Annexe','Collections')">Collections <span class="dept-count">0</span></button>
-        <button class="sidebar-item annexe-btn" onclick="showDept(this,'Annexe','FinPlanning')">FinPlanning <span class="dept-count">0</span></button>
       </div>
     </div>
     <div class="dept-main">
@@ -3983,7 +3981,7 @@ const DEPT_NORMALIZE_MAP = {
   'legal': 'Legal', 'telemarketing': 'Telemarketing',
   'general': 'General', 'amc': 'AMC',
   'da': 'DA', 'mrs h': 'Mrs H', 'risk': 'Risk',
-  'financial planning': 'FinPlanning', 'finplanning': 'FinPlanning',
+  'financial planning': 'FinPlanning', 'finplanning': 'FinPlanning', 'fin planning': 'FinPlanning',
   'collections': 'Collections',
 };
 
@@ -5335,8 +5333,8 @@ function updateSidebarCounts() {
   rebuildMobilePills();
   applyDeptTabLocks();
 }
-const CX_DEPTS = ['Design','Costing','AMC','IPD','Landscape','Operations','Fincon','Sales','MCC','Legal','General','Collections','FinPlanning'];
-const ANNEX_DEPTS = ['Design','Costing','IPD','Operations','Fincon','Telemarketing','MCC','Sales','Legal','Collections','FinPlanning'];
+const CX_DEPTS = ['Design','Costing','AMC','IPD','Landscape','Operations','Fincon','Sales','MCC','Legal','General','Collections'];
+const ANNEX_DEPTS = ['Design','Costing','IPD','Operations','Fincon','Telemarketing','MCC','Sales','Legal','Collections'];
 
 // ── Sync the uh-dept dropdown in Updates Hub with CX_DEPTS + ANNEX_DEPTS ──
 function _syncDeptDropdown() {
