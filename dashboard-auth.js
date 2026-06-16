@@ -69,8 +69,8 @@
   let _access      = null; // "Both"|"Crossings"|"Annexe"|null
 
   // ── IDLE TIMEOUT CONFIG ───────────────────────────────────────────────────
-  const IDLE_MINUTES        = 30;           // sign out after this many minutes of inactivity
-  const WARNING_BEFORE_SECS = 60;           // show warning this many seconds before sign-out
+  const IDLE_MINUTES        = 10;           // sign out after this many minutes of inactivity
+  const WARNING_BEFORE_SECS = 30;           // show warning this many seconds before sign-out
   const IDLE_MS             = IDLE_MINUTES * 60 * 1000;
   const WARNING_MS          = IDLE_MS - (WARNING_BEFORE_SECS * 1000);
 
@@ -594,6 +594,44 @@
 
   // Also expose staySignedIn at top level for the onclick in the warning banner
   window.staySignedIn = staySignedIn;
+
+  // ── RUNTIME ALLOWLIST EXTENSION ───────────────────────────────────────────
+  // Called by mgmtAddUser() when admin adds a new user via the admin panel.
+  // This patches the in-memory ALLOWED object so the new user can sign in
+  // immediately without requiring a code change or redeployment.
+  // Persisted via localStorage so it survives page reload.
+  const EXTRA_ALLOWED_KEY = 'mgmt_extra_allowed';
+  function _loadExtraAllowed() {
+    try {
+      const extras = JSON.parse(localStorage.getItem(EXTRA_ALLOWED_KEY) || '{}');
+      Object.entries(extras).forEach(([email, access]) => {
+        ALLOWED[email.toLowerCase().trim()] = access;
+      });
+    } catch(e) {}
+  }
+  _loadExtraAllowed(); // Apply on every page load
+
+  window._extendAllowlist = function(email, access) {
+    const key = (email || '').toLowerCase().trim();
+    if (!key) return;
+    ALLOWED[key] = access || 'Both';
+    try {
+      const extras = JSON.parse(localStorage.getItem(EXTRA_ALLOWED_KEY) || '{}');
+      extras[key] = access || 'Both';
+      localStorage.setItem(EXTRA_ALLOWED_KEY, JSON.stringify(extras));
+    } catch(e) {}
+  };
+
+  window._removeFromAllowlist = function(email) {
+    const key = (email || '').toLowerCase().trim();
+    if (!key) return;
+    delete ALLOWED[key];
+    try {
+      const extras = JSON.parse(localStorage.getItem(EXTRA_ALLOWED_KEY) || '{}');
+      delete extras[key];
+      localStorage.setItem(EXTRA_ALLOWED_KEY, JSON.stringify(extras));
+    } catch(e) {}
+  };
 
   // ── BOOT ─────────────────────────────────────────────────────────────────
   function boot() {
