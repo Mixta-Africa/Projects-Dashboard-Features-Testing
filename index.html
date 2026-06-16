@@ -2737,9 +2737,30 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
         <option value="achieved">Achieved</option>
       </select>
     </div>
+    <div class="uh-toolbar-group">
+      <span class="uh-toolbar-label">Department</span>
+      <select id="uh-dept" onchange="renderUpdatesDoc()">
+        <option value="all">All Departments</option>
+        <option value="Design">Design</option>
+        <option value="Costing">Costing</option>
+        <option value="AMC">AMC</option>
+        <option value="IPD">IPD</option>
+        <option value="Landscape">Landscape</option>
+        <option value="Operations">Operations</option>
+        <option value="Fincon">Fincon</option>
+        <option value="Sales">Sales</option>
+        <option value="MCC">MCC</option>
+        <option value="Legal">Legal</option>
+        <option value="Collections">Collections</option>
+        <option value="FinPlanning">FinPlanning</option>
+        <option value="Telemarketing">Telemarketing</option>
+        <option value="General">General</option>
+      </select>
+    </div>
     <div class="uh-toolbar-group" style="margin-left:auto;">
       <button class="uh-dl-btn secondary" onclick="copyUpdatesDoc()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button>
-      <button class="uh-dl-btn" onclick="downloadUpdatesDoc()">⬇ Download .txt</button>
+      <button class="uh-dl-btn" onclick="downloadUpdatesDoc()">&#8595; Download .txt</button>
+      <button class="uh-dl-btn" onclick="openExportModal()" style="background:#1565c0;">&#128196; Export Word</button>
     </div>
   </div>
 
@@ -2750,6 +2771,39 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
     </div>
   </div>
 
+</div>
+
+<!-- ══ WORD EXPORT MODAL ══ -->
+<div class="tool-modal-overlay" id="export-modal-overlay" onclick="if(event.target===this)closeExportModal()">
+  <div class="tool-modal" style="max-width:480px;">
+    <div class="tool-modal-header">
+      <div>
+        <h2>&#128196; Export Meeting Report</h2>
+        <p>Confirm selections then download as an editable Word document</p>
+      </div>
+      <button class="tool-modal-close" onclick="closeExportModal()">&#10005;</button>
+    </div>
+    <div class="tool-modal-body">
+      <!-- Summary of current toolbar selections -->
+      <div id="export-summary" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:18px;font-size:13px;line-height:1.8;color:var(--text-secondary);"></div>
+      <!-- Report title field -->
+      <div class="tool-field">
+        <label>Report Title (editable)</label>
+        <input type="text" id="export-title" placeholder="e.g. Pre-Meeting Briefing — June 16 2026" />
+      </div>
+      <div class="tool-field">
+        <label>Prepared By</label>
+        <input type="text" id="export-author" placeholder="e.g. O. Olasunkanmi" />
+      </div>
+      <!-- Warning if nothing will export -->
+      <div id="export-warn" style="display:none;background:#fff3e0;border:1px solid #ffb300;border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:#e65100;margin-top:8px;"></div>
+    </div>
+    <div class="tool-modal-footer">
+      <button class="uh-dl-btn" onclick="triggerDocxDownload()" style="background:#1565c0;flex:1;">&#128196; Download Word (.docx)</button>
+      <button class="uh-dl-btn" onclick="downloadUpdatesDoc();closeExportModal();" style="flex:1;">&#8595; Download .txt</button>
+      <button onclick="closeExportModal()" style="padding:8px 16px;border:1px solid var(--border);background:#fff;border-radius:var(--radius-sm);cursor:pointer;font-weight:600;font-family:inherit;font-size:13px;">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <!-- ══ ADMIN WARNING BANNER (admin-only) ══ -->
@@ -2959,6 +3013,7 @@ function renderUpdatesDoc() {
   const projFilter  = (document.getElementById('uh-proj')     || {}).value || 'both';
   const sessScope   = (document.getElementById('uh-sessions') || {}).value || 'latest';
   const showFilter  = (document.getElementById('uh-show')     || {}).value || 'all';
+  const deptFilter  = (document.getElementById('uh-dept')     || {}).value || 'all';
   const projects    = projFilter === 'both' ? ['Crossings', 'Annexe'] : [projFilter];
 
   const today = new Date().toLocaleDateString('en-NG', {
@@ -2977,7 +3032,8 @@ function renderUpdatesDoc() {
     if (!useSessions.length) return;
 
     const projTasks = taskDatabase.filter(t =>
-      t.project === proj && useSessions.includes(t.session)
+      t.project === proj && useSessions.includes(t.session) &&
+      (deptFilter === 'all' || t.dept === deptFilter)
     );
     if (!projTasks.length) return;
 
@@ -3147,10 +3203,12 @@ function renderUpdatesDoc() {
 }
 
 /* ── Plain-text export ───────────────────────────────────────────────── */
-function _buildPlainText() {
-  const projFilter  = (document.getElementById('uh-proj')     || {}).value || 'both';
-  const sessScope   = (document.getElementById('uh-sessions') || {}).value || 'latest';
-  const showFilter  = (document.getElementById('uh-show')     || {}).value || 'all';
+function _buildPlainText(overrides) {
+  const _o       = overrides || {};
+  const projFilter  = _o.proj    || (document.getElementById('uh-proj')     || {}).value || 'both';
+  const sessScope   = _o.sess    || (document.getElementById('uh-sessions') || {}).value || 'latest';
+  const showFilter  = _o.show    || (document.getElementById('uh-show')     || {}).value || 'all';
+  const deptFilter  = _o.dept    || (document.getElementById('uh-dept')     || {}).value || 'all';
   const projects    = projFilter === 'both' ? ['Crossings', 'Annexe'] : [projFilter];
   const today       = new Date().toLocaleDateString('en-NG', {
     weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
@@ -3169,7 +3227,8 @@ function _buildPlainText() {
     if (!useSess.length) return;
 
     const projTasks  = taskDatabase.filter(t =>
-      t.project === proj && useSess.includes(t.session)
+      t.project === proj && useSess.includes(t.session) &&
+      (deptFilter === 'all' || t.dept === deptFilter)
     );
     if (!projTasks.length) return;
 
@@ -11015,6 +11074,388 @@ function switchHelpTab(section, btn) {
   document.getElementById('help-' + section).classList.add('active');
   btn.classList.add('active');
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// WORD DOCUMENT EXPORT  — in-browser .docx generation via docx.js (CDN)
+// No GAS call needed. All data is already in memory.
+// ════════════════════════════════════════════════════════════════════════════
+
+function openExportModal() {
+  const overlay = document.getElementById('export-modal-overlay');
+  if (!overlay) return;
+
+  // Pre-fill author from current user
+  const authorEl = document.getElementById('export-author');
+  if (authorEl && currentUser && currentUser.displayName && !authorEl.value) {
+    authorEl.value = currentUser.displayName;
+  }
+
+  // Build summary of current toolbar selections
+  const proj    = (document.getElementById('uh-proj')     || {}).value || 'both';
+  const sess    = (document.getElementById('uh-sessions') || {}).value || 'latest';
+  const show    = (document.getElementById('uh-show')     || {}).value || 'all';
+  const dept    = (document.getElementById('uh-dept')     || {}).value || 'all';
+
+  const projLabel = proj === 'both' ? 'Both Projects' : (proj === 'Crossings' ? 'Lakowe Crossings' : 'Lakowe Annexe');
+  const sessLabel = sess === 'latest' ? 'Latest session only' : 'All sessions';
+  const showLabel = { all:'All tasks', updates:'Tasks with updates only', delayed:'Delayed / At Risk only', achieved:'Achieved only' }[show] || show;
+  const deptLabel = dept === 'all' ? 'All departments' : dept;
+
+  document.getElementById('export-summary').innerHTML =
+    '<strong>Project:</strong> ' + projLabel + '<br>' +
+    '<strong>Sessions:</strong> ' + sessLabel + '<br>' +
+    '<strong>Department:</strong> ' + deptLabel + '<br>' +
+    '<strong>Filter:</strong> ' + showLabel + '<br><br>' +
+    '<span style="font-size:11px;color:var(--text-muted);">Change selections in the toolbar above, then return here to export.</span>';
+
+  // Prefill title
+  const titleEl = document.getElementById('export-title');
+  if (titleEl && !titleEl.value) {
+    const today = new Date().toLocaleDateString('en-NG', { day:'2-digit', month:'long', year:'numeric' });
+    titleEl.value = 'Pre-Meeting Briefing — ' + (proj === 'both' ? 'All Projects' : projLabel) + ' — ' + today;
+  }
+
+  // Check if there's anything to export
+  const projects = proj === 'both' ? ['Crossings','Annexe'] : [proj];
+  const sessions = proj === 'both'
+    ? [...(availableSessions['Crossings']||[]), ...(availableSessions['Annexe']||[])]
+    : (availableSessions[proj] || []);
+  const useSess  = sess === 'latest'
+    ? (proj === 'both'
+        ? [(availableSessions['Crossings']||[])[0], (availableSessions['Annexe']||[])[0]].filter(Boolean)
+        : (availableSessions[proj]||[]).slice(0,1))
+    : sessions;
+  const count = taskDatabase.filter(t =>
+    projects.includes(t.project) &&
+    useSess.includes(t.session) &&
+    (dept === 'all' || t.dept === dept)
+  ).length;
+
+  const warnEl = document.getElementById('export-warn');
+  if (count === 0) {
+    warnEl.style.display = 'block';
+    warnEl.textContent = 'Warning: No tasks match the current selections. Adjust the toolbar filters and try again.';
+  } else {
+    warnEl.style.display = 'none';
+  }
+
+  overlay.classList.add('open');
+}
+
+function closeExportModal() {
+  const overlay = document.getElementById('export-modal-overlay');
+  if (overlay) overlay.classList.remove('open');
+}
+
+// ── Load docx.js from CDN (only once, on first export) ───────────────────
+let _docxLibLoaded = false;
+function _loadDocxLib() {
+  return new Promise((resolve, reject) => {
+    if (window.docx) { resolve(); return; }
+    if (_docxLibLoaded) {
+      // Already loading — poll
+      const poll = setInterval(() => {
+        if (window.docx) { clearInterval(poll); resolve(); }
+      }, 100);
+      setTimeout(() => { clearInterval(poll); reject(new Error('docx lib timeout')); }, 10000);
+      return;
+    }
+    _docxLibLoaded = true;
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/docx/7.8.2/docx.umd.min.js';
+    script.onload  = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load docx library. Check internet connection.'));
+    document.head.appendChild(script);
+  });
+}
+
+// ── Main export trigger ───────────────────────────────────────────────────
+function triggerDocxDownload() {
+  const btn = document.querySelector('#export-modal-overlay .uh-dl-btn');
+  const origText = btn ? btn.innerHTML : '';
+  if (btn) { btn.innerHTML = '&#8987; Building document...'; btn.disabled = true; }
+
+  _loadDocxLib()
+    .then(() => _generateDocx())
+    .then(blob => {
+      // Download the blob
+      const url = URL.createObjectURL(blob);
+      const a   = document.createElement('a');
+      const title = (document.getElementById('export-title') || {}).value || 'Meeting_Report';
+      const safeName = title.replace(/[^a-zA-Z0-9\s\-_]/g, '').replace(/\s+/g, '_');
+      a.href = url;
+      a.download = safeName + '.docx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      closeExportModal();
+    })
+    .catch(err => {
+      alert('Export failed: ' + err.message);
+    })
+    .finally(() => {
+      if (btn) { btn.innerHTML = origText; btn.disabled = false; }
+    });
+}
+
+// ── Build the .docx in memory ─────────────────────────────────────────────
+function _generateDocx() {
+  const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+          AlignmentType, HeadingLevel, BorderStyle, WidthType, ShadingType,
+          VerticalAlign, LevelFormat } = window.docx;
+
+  // Read toolbar selections
+  const projFilter = (document.getElementById('uh-proj')     || {}).value || 'both';
+  const sessScope  = (document.getElementById('uh-sessions') || {}).value || 'latest';
+  const showFilter = (document.getElementById('uh-show')     || {}).value || 'all';
+  const deptFilter = (document.getElementById('uh-dept')     || {}).value || 'all';
+  const reportTitle = (document.getElementById('export-title')  || {}).value || 'Pre-Meeting Briefing';
+  const reportAuthor= (document.getElementById('export-author') || {}).value || 'Mixta Africa';
+
+  const projects = projFilter === 'both' ? ['Crossings','Annexe'] : [projFilter];
+  const today    = new Date().toLocaleDateString('en-NG', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+
+  // Colour palette
+  const CX_COLOR   = '1b5e20'; // dark green (Crossings)
+  const AN_COLOR   = '8B0000'; // dark red   (Annexe)
+  const GREY_BG    = 'F5F5F5';
+  const WHITE      = 'FFFFFF';
+  const STATUS_COLORS = {
+    achieved: { bg:'E8F5E9', text:'1B5E20', label:'Achieved'   },
+    ontrack:  { bg:'E3F2FD', text:'0D47A1', label:'On Track'   },
+    delayed:  { bg:'FFEBEE', text:'B71C1C', label:'Delayed'     },
+    atrisk:   { bg:'FFF8E1', text:'E65100', label:'At Risk'     },
+    onhold:   { bg:'F3E5F5', text:'4A148C', label:'On Hold'     },
+    paused:   { bg:'ECEFF1', text:'37474F', label:'Paused'      },
+  };
+
+  // Helper: thin border
+  const thinBorder = { style: BorderStyle.SINGLE, size: 1, color: 'DDDDDD' };
+  const allBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+  const noBorders  = { top:{style:BorderStyle.NONE,size:0}, bottom:{style:BorderStyle.NONE,size:0},
+                        left:{style:BorderStyle.NONE,size:0}, right:{style:BorderStyle.NONE,size:0} };
+
+  // Helper: cell
+  function cell(children, opts) {
+    const o = opts || {};
+    return new TableCell({
+      borders: o.borders !== undefined ? o.borders : allBorders,
+      width: { size: o.width || 9360, type: WidthType.DXA },
+      shading: o.fill ? { fill: o.fill, type: ShadingType.CLEAR } : undefined,
+      margins: { top:80, bottom:80, left:o.leftPad||120, right:120 },
+      verticalAlign: VerticalAlign.CENTER,
+      children: Array.isArray(children) ? children : [children],
+    });
+  }
+
+  // Helper: text run
+  function run(text, opts) {
+    const o = opts || {};
+    return new TextRun({ text: String(text||''), bold: o.bold, size: o.size||22,
+      font: 'Arial', color: o.color, italics: o.italic });
+  }
+
+  // Helper: paragraph
+  function para(children, opts) {
+    const o = opts || {};
+    return new Paragraph({
+      alignment: o.align || AlignmentType.LEFT,
+      spacing: { before: o.spaceBefore||0, after: o.spaceAfter||80 },
+      children: Array.isArray(children) ? children : [children],
+    });
+  }
+
+  const docChildren = [];
+
+  // ── Title block ──────────────────────────────────────────────────────────
+  docChildren.push(new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { before:0, after:100 },
+    children: [run('MIXTA AFRICA', { bold:true, size:32, color:'1B1B1B' })],
+  }));
+  docChildren.push(new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { before:0, after:60 },
+    children: [run(reportTitle, { bold:true, size:26, color:'1b5e20' })],
+  }));
+  docChildren.push(new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { before:0, after:40 },
+    children: [run('Generated: ' + today + '  ·  Prepared by: ' + reportAuthor, { size:18, color:'777777' })],
+  }));
+  // Horizontal rule via paragraph border
+  docChildren.push(new Paragraph({
+    spacing: { before:100, after:200 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: '1b5e20', space:1 } },
+    children: [],
+  }));
+
+  // ── Sections per project ─────────────────────────────────────────────────
+  projects.forEach((proj, pIdx) => {
+    const sessions   = availableSessions[proj] || [];
+    const useSess    = sessScope === 'latest' ? sessions.slice(0,1) : sessions;
+    if (!useSess.length) return;
+
+    const projTasks = taskDatabase.filter(t =>
+      t.project === proj &&
+      useSess.includes(t.session) &&
+      (deptFilter === 'all' || t.dept === deptFilter)
+    );
+    if (!projTasks.length) return;
+
+    const projColor  = proj === 'Crossings' ? CX_COLOR : AN_COLOR;
+    const projLabel  = proj === 'Crossings' ? 'LAKOWE CROSSINGS' : 'LAKOWE ANNEXE';
+    const sessLabel  = useSess.length === 1 ? 'Session: ' + useSess[0] : 'Sessions: ' + useSess.join(', ');
+
+    // Project heading
+    if (pIdx > 0) {
+      docChildren.push(new Paragraph({ spacing:{ before:360, after:0 }, children:[] }));
+    }
+    docChildren.push(new Paragraph({
+      spacing: { before: 200, after: 60 },
+      border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: projColor, space:1 } },
+      children: [run(projLabel, { bold:true, size:28, color:projColor })],
+    }));
+    docChildren.push(para([run(sessLabel, { size:18, color:'777777', italic:true })], { spaceAfter:160 }));
+
+    // Group by dept
+    const deptMap = {};
+    projTasks.forEach(t => {
+      if (!deptMap[t.dept]) deptMap[t.dept] = {};
+      if (!deptMap[t.dept][t.session]) deptMap[t.dept][t.session] = [];
+      deptMap[t.dept][t.session].push(t);
+    });
+
+    Object.keys(deptMap).sort().forEach(dept => {
+      // Dept heading row (full-width shaded)
+      docChildren.push(new Table({
+        width: { size:9360, type:WidthType.DXA },
+        columnWidths: [9360],
+        rows: [new TableRow({ children: [
+          cell(para([run(dept.toUpperCase(), { bold:true, size:22, color:WHITE })]),
+               { fill: projColor, borders: noBorders, width:9360 })
+        ]})]
+      }));
+
+      // Tasks
+      let taskNum = 0;
+      const sessionKeys = Object.keys(deptMap[dept]);
+
+      sessionKeys.forEach(session => {
+        deptMap[dept][session].forEach(task => {
+          const st = task.status || 'ontrack';
+          const sc = STATUS_COLORS[st] || STATUS_COLORS.ontrack;
+
+          // Apply show filter
+          if (showFilter === 'delayed' && !['delayed','atrisk'].includes(st)) return;
+          if (showFilter === 'achieved' && st !== 'achieved') return;
+          if (showFilter === 'updates') {
+            const hasUpdate = _getDeptUpdates(proj, dept, session).some(u =>
+              u.linkedTask && u.linkedTask.toLowerCase().includes(task.action.substring(0,30).toLowerCase()));
+            if (!hasUpdate) return;
+          }
+
+          taskNum++;
+          const due = task.due ? task.due.replace(/^26-/,'').replace(/-/g,'/') : '';
+
+          // Task row: [#] [status badge] [action text] [due]
+          docChildren.push(new Table({
+            width: { size:9360, type:WidthType.DXA },
+            columnWidths: [400, 1200, 6760, 1000],
+            rows: [new TableRow({ children: [
+              // Row number
+              cell(para([run(String(taskNum), { bold:true, size:20, color:'888888' })]),
+                   { fill: GREY_BG, borders:allBorders, width:400 }),
+              // Status badge
+              cell(para([run(sc.label, { bold:true, size:18, color:sc.text })], { align:AlignmentType.CENTER }),
+                   { fill: sc.bg, borders:allBorders, width:1200 }),
+              // Action text
+              cell(para([run(task.action, { size:20 })]),
+                   { fill: WHITE, borders:allBorders, width:6760, leftPad:160 }),
+              // Due date
+              cell(para([run(due, { size:18, color:'888888' })], { align:AlignmentType.CENTER }),
+                   { fill: GREY_BG, borders:allBorders, width:1000 }),
+            ]})]
+          }));
+
+          // Team updates linked to this task
+          const linkedUpdates = _getDeptUpdates(proj, dept, session).filter(u =>
+            u.linkedTask && u.linkedTask.toLowerCase().includes(task.action.substring(0,30).toLowerCase()));
+
+          linkedUpdates.forEach(u => {
+            const ts = new Date(u.timestamp).toLocaleString('en-GB', {
+              day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+            docChildren.push(new Table({
+              width: { size:9360, type:WidthType.DXA },
+              columnWidths: [400, 8960],
+              rows: [new TableRow({ children: [
+                cell(para([run('NOTE', { bold:true, size:16, color:'888888' })]),
+                     { fill:'FFFDE7', borders:allBorders, width:400 }),
+                cell([
+                  para([run((u.author||'Anonymous') + ' · ' + ts, { size:16, color:'888888', italic:true })], { spaceAfter:20 }),
+                  para([run(u.text||'', { size:20 })]),
+                ], { fill:'FFFDE7', borders:allBorders, width:8960, leftPad:160 }),
+              ]})]
+            }));
+          });
+        });
+      });
+
+      // Unlinked notes for this dept
+      sessionKeys.forEach(session => {
+        const unlinked = _getDeptUpdates(proj, dept, session).filter(u => !u.linkedTask);
+        unlinked.forEach(u => {
+          const ts = new Date(u.timestamp).toLocaleString('en-GB', {
+            day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+          docChildren.push(new Table({
+            width: { size:9360, type:WidthType.DXA },
+            columnWidths: [400, 8960],
+            rows: [new TableRow({ children: [
+              cell(para([run('GEN', { bold:true, size:16, color:WHITE })]),
+                   { fill:'607D8B', borders:allBorders, width:400 }),
+              cell([
+                para([run((u.author||'Anonymous') + ' · ' + ts + ' (General note)', { size:16, color:'888888', italic:true })], { spaceAfter:20 }),
+                para([run(u.text||'', { size:20 })]),
+              ], { fill:'ECEFF1', borders:allBorders, width:8960, leftPad:160 }),
+            ]})]
+          }));
+        });
+      });
+
+      // Dept spacer
+      docChildren.push(new Paragraph({ spacing:{ before:120, after:0 }, children:[] }));
+    });
+  });
+
+  // ── Footer ──────────────────────────────────────────────────────────────
+  docChildren.push(new Paragraph({
+    spacing: { before:300, after:0 },
+    border: { top: { style:BorderStyle.SINGLE, size:4, color:'CCCCCC', space:1 } },
+    alignment: AlignmentType.CENTER,
+    children: [run('Mixta Africa — Confidential  ·  Auto-generated from Projects Tracker  ·  ' + today,
+                   { size:16, color:'AAAAAA', italic:true })],
+  }));
+
+  // ── Assemble document ───────────────────────────────────────────────────
+  const doc = new Document({
+    styles: {
+      default: { document: { run: { font:'Arial', size:22 } } },
+    },
+    sections: [{
+      properties: {
+        page: {
+          size: { width:12240, height:15840 },
+          margin: { top:1080, right:1080, bottom:1080, left:1080 },
+        },
+      },
+      children: docChildren,
+    }],
+  });
+
+  return Packer.toBlob(doc);
+}
+
 </script>
 
 </body>
