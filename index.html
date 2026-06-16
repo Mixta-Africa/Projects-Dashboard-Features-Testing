@@ -4098,6 +4098,10 @@ function submitAdmin() {
     // Reveal Updates Hub tab in bottom nav
     const _bnu = document.getElementById('bnav-updates');
     if (_bnu) _bnu.classList.add('admin-visible');
+    // RE-RENDER messages so delete buttons appear
+    if (currentDept && currentProject) {
+      renderDeptUpdates();
+    }
     // Honour any pending nav triggered before admin unlocked
     if (window._pendingAfterAdmin) {
       const _p = window._pendingAfterAdmin;
