@@ -832,7 +832,7 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
 
 .mgmt-overlay { display:none; position:fixed; inset:0; z-index:6000; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; backdrop-filter:blur(4px); padding:16px; }
 .mgmt-overlay.open { display:flex; animation:fadeInScale 0.2s ease; }
-.mgmt-panel { background:#fff; border-radius:var(--radius); width:100%; max-width:680px; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.2); overflow:hidden; font-family:'DM Sans',sans-serif; }
+.mgmt-panel { background:#fff; border-radius:var(--radius); width:100%; max-width:760px; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.2); overflow:hidden; font-family:'DM Sans',sans-serif; }
 .mgmt-header { display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--border); flex-shrink:0; background:var(--text-primary); }
 .mgmt-header h2 { font-size:16px; font-weight:800; color:#fff; }
 .mgmt-close { background:rgba(255,255,255,0.15); border:none; border-radius:var(--radius-sm); width:30px; height:30px; cursor:pointer; font-size:16px; color:#fff; display:flex; align-items:center; justify-content:center; }
@@ -863,6 +863,27 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
 .mgmt-task-item.s-onhold  { border-left-color:var(--status-grey-border); background:var(--status-grey-bg); }
 .mgmt-task-text { flex:1; min-width:0; font-size:12px; color:var(--text-primary); line-height:1.5; }
 .mgmt-task-meta { font-size:10px; color:var(--text-muted); margin-top:3px; }
+/* Edit user inline form */
+.mgmt-edit-form { background:#f8f9fa; border:1px solid var(--border-md); border-radius:var(--radius-sm); padding:12px; margin-top:6px; display:none; flex-direction:column; gap:8px; }
+.mgmt-edit-form.open { display:flex; }
+.mgmt-edit-form .mgmt-row { margin-bottom:0; }
+.mgmt-edit-btn { padding:5px 10px; background:#e3f2fd; color:#1565c0; border:1px solid #90caf9; border-radius:var(--radius-sm); font-size:11px; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap; flex-shrink:0; }
+.mgmt-edit-btn:hover { background:#1565c0; color:#fff; }
+.mgmt-save-btn { padding:7px 16px; background:#1b5e20; color:#fff; border:none; border-radius:var(--radius-sm); font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; }
+.mgmt-save-btn:hover { background:#145214; }
+.mgmt-cancel-btn { padding:7px 12px; background:#fff; color:var(--text-muted); border:1px solid var(--border-md); border-radius:var(--radius-sm); font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; }
+/* Settings tab */
+.mgmt-setting-row { display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--border); gap:16px; }
+.mgmt-setting-row:last-child { border-bottom:none; }
+.mgmt-setting-label { font-size:13px; font-weight:700; color:var(--text-primary); }
+.mgmt-setting-desc { font-size:11px; color:var(--text-muted); margin-top:2px; line-height:1.4; }
+.mgmt-setting-control { flex-shrink:0; }
+.mgmt-toggle { appearance:none; width:40px; height:22px; background:#ddd; border-radius:11px; cursor:pointer; position:relative; transition:background 0.2s; }
+.mgmt-toggle:checked { background:#1b5e20; }
+.mgmt-toggle::after { content:''; position:absolute; width:18px; height:18px; background:#fff; border-radius:50%; top:2px; left:2px; transition:left 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+.mgmt-toggle:checked::after { left:20px; }
+.mgmt-access-item { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--status-yellow-bg,#fffde7); border:1px solid #ffe082; border-radius:var(--radius-sm); font-size:12px; gap:10px; margin-bottom:6px; }
+.mgmt-approve-btn { padding:5px 12px; background:#1b5e20; color:#fff; border:none; border-radius:var(--radius-sm); font-size:11px; font-weight:700; cursor:pointer; font-family:inherit; }
 .btn-cancel { background: var(--brand-grey-light); color: var(--text-secondary); }
 .btn-login { background: var(--text-primary); color: #fff; }
 .show-done-toggle { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--text-muted); cursor: pointer; user-select: none; padding: 0 2px; }
@@ -3658,18 +3679,32 @@ function initFirebase() {
       // Hook: called by dashboard-auth.js after successful sign-in
       window.onAuthGateSignedIn = function(user, access) {
         currentUser = user;
-        const role = USER_ROLES[(user.email || '').toLowerCase()] || null;
+        const email = (user.email || '').toLowerCase();
+        // Try hardcoded USER_ROLES first (fast, no network)
+        let role = USER_ROLES[email] || null;
         currentUserRole = role;
         _drainWriteQueue();
         applyDeptTabLocks();
         if (role && role.project !== 'Both') {
           if (currentProject !== role.project) selectProject(role.project);
         }
-        // ── Activate presence now that we know the user ──
+        // If not found in hardcoded roles, check Firebase mgmt_users
+        // (covers admin-panel-added users whose roles/depts aren't hardcoded)
+        if (!role && _fbReady && _fbDb) {
+          _fbDb.ref('mgmt_users/' + email.replace(/\./g, '_')).once('value').then(snap => {
+            const fbRole = snap.val();
+            if (fbRole) {
+              USER_ROLES[email] = fbRole; // cache for session
+              currentUserRole = fbRole;
+              applyDeptTabLocks();
+              if (fbRole.project && fbRole.project !== 'Both') {
+                if (currentProject !== fbRole.project) selectProject(fbRole.project);
+              }
+            }
+          }).catch(() => {});
+        }
         if (!_presenceRef) _initPresence();
-        // ── Auto-fill author name now that we have user identity ──
         autoFillAuthorName();
-        // ── Load this user's personal task reminders & check due ones ──
         loadUserReminders();
         setTimeout(checkDueReminders, 1500);
       };
@@ -9742,7 +9777,31 @@ function openMgmtPanel() {
   if (!diagUnlocked) { alert('Please unlock the admin panel first.'); return; }
   mgmtApplyCustomDepts();
   rebuildSidebarButtons();
+  mgmtRenderUsers();
+  mgmtRenderDepts();
+  mgmtPopulateDeptDropdown();
+  // Populate quick-grant dept dropdown too
+  const qd = document.getElementById('mgmt-quick-dept');
+  if (qd) {
+    qd.innerHTML = '<option value="">— Department —</option>' +
+      [...new Set([...CX_DEPTS,...ANNEX_DEPTS])].sort().map(d=>`<option value="${d}">${d}</option>`).join('');
+  }
+  mgmtLoadSettings();
   document.getElementById('mgmt-overlay').classList.add('open');
+}
+
+function switchMgmtTab(tab, btn) {
+  ['users','depts','access','settings','tasks'].forEach(t => {
+    const el = document.getElementById('mgmt-tab-'+t);
+    if (el) el.style.display = t===tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('.mgmt-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  // Load tab-specific data
+  if (tab==='access') mgmtLoadAccessRequests();
+  if (tab==='settings') mgmtLoadSettings();
+  if (tab==='tasks') mgmtPopulateTaskFilters();
+}
   mgmtPopulateDeptDropdown();
   mgmtRenderUsers();
   mgmtRenderDepts();
@@ -9750,19 +9809,10 @@ function openMgmtPanel() {
 }
 function closeMgmtPanel() { document.getElementById('mgmt-overlay').classList.remove('open'); }
 
-// ── Tab switching ──
-function switchMgmtTab(tab, btn) {
-  ['users','depts','tasks'].forEach(t => {
-    document.getElementById('mgmt-tab-' + t).style.display = t === tab ? 'block' : 'none';
-  });
-  document.querySelectorAll('.mgmt-tab').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  if (tab === 'tasks') mgmtLoadTasks();
-}
-
 // ── Populate dept dropdown for new user form ──
 function mgmtPopulateDeptDropdown() {
   const sel = document.getElementById('mgmt-new-dept');
+  if (!sel) return;
   const allDepts = [...new Set([...CX_DEPTS, ...ANNEX_DEPTS])].sort();
   sel.innerHTML = '<option value="">— Select Department —</option>' +
     allDepts.map(d => `<option value="${d}">${d}</option>`).join('');
@@ -9820,20 +9870,197 @@ function mgmtDeleteUser(email) {
 
 function mgmtRenderUsers() {
   const list = document.getElementById('mgmt-user-list');
+  if (!list) return;
+
   const custom = mgmtGetCustomUsers();
-  const entries = Object.entries(custom);
-  if (!entries.length) {
-    list.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:8px 0;">No custom users added yet.</div>';
-    return;
-  }
-  list.innerHTML = entries.map(([email, data]) => `
-    <div class="mgmt-list-item">
-      <div class="mgmt-list-item-info">
-        <div class="mgmt-list-item-name">${data.name} <span style="font-weight:400;color:var(--text-muted);">(${data.role})</span></div>
-        <div class="mgmt-list-item-sub">${email} · ${data.dept || 'All depts'} · ${data.project}</div>
+  const all = {};
+  Object.entries(USER_ROLES).forEach(([e,v]) => { all[e] = v; });
+  Object.entries(custom).forEach(([e,v]) => { all[e] = v; });
+
+  const entries = Object.entries(all).sort((a,b) => (a[1].name||'').localeCompare(b[1].name||''));
+  const countEl = document.getElementById('mgmt-user-count');
+  if (countEl) countEl.textContent = entries.length;
+
+  if (!entries.length) { list.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:8px;">No users found.</div>'; return; }
+
+  const deptOptions = [...new Set([...CX_DEPTS,...ANNEX_DEPTS])].sort()
+    .map(d=>`<option value="${d}">${d}</option>`).join('');
+
+  list.innerHTML = entries.map(([email,u]) => {
+    const safeId  = email.replace(/[^a-zA-Z0-9]/g,'-');
+    const roleTag = u.role==='admin'
+      ? `<span style="background:#1b5e20;color:#fff;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:800;margin-left:6px;">ADMIN</span>`
+      : u.role==='viewer'
+      ? `<span style="background:#e3f2fd;color:#1565c0;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:800;margin-left:6px;">VIEWER</span>`
+      : `<span style="background:#f3f4f6;color:#555;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:800;margin-left:6px;">EDITOR</span>`;
+    const isCustom = !!custom[email];
+    const deptSel = [...new Set([...CX_DEPTS,...ANNEX_DEPTS])].sort()
+      .map(d=>`<option value="${d}" ${d===(u.dept||'')?'selected':''}>${d}</option>`).join('');
+    return `
+    <div class="mgmt-list-item" style="flex-direction:column;align-items:stretch;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div class="mgmt-list-item-info">
+          <div class="mgmt-list-item-name">${u.name||email}${roleTag}</div>
+          <div class="mgmt-list-item-sub">${email} · ${u.dept||'No dept'} · ${u.project||'Both'}${isCustom?' · <em style="color:#1565c0;">Admin-added</em>':''}</div>
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0;">
+          <button class="mgmt-edit-btn" onclick="mgmtToggleEditUser('${email.replace(/'/g,"\\'")}')">✏ Edit</button>
+          <button class="mgmt-delete-btn" onclick="mgmtDeleteUser('${email.replace(/'/g,"\\'")}')">Remove</button>
+        </div>
       </div>
-      <button class="mgmt-delete-btn" onclick="mgmtDeleteUser('${email}')">Remove</button>
-    </div>`).join('');
+      <div class="mgmt-edit-form" id="edit-form-${safeId}">
+        <div class="mgmt-row">
+          <input type="text" id="edit-name-${safeId}" value="${(u.name||'').replace(/"/g,'&quot;')}" placeholder="Display name">
+          <select id="edit-role-${safeId}">
+            <option value="editor" ${u.role==='editor'?'selected':''}>Editor</option>
+            <option value="viewer" ${u.role==='viewer'?'selected':''}>Viewer</option>
+            <option value="admin"  ${u.role==='admin' ?'selected':''}>Admin</option>
+          </select>
+        </div>
+        <div class="mgmt-row">
+          <select id="edit-dept-${safeId}">
+            <option value="">— No Department —</option>${deptSel}
+          </select>
+          <select id="edit-proj-${safeId}">
+            <option value="Both"      ${(u.project||'Both')==='Both'?'selected':''}>Both Projects</option>
+            <option value="Crossings" ${u.project==='Crossings'?'selected':''}>Crossings Only</option>
+            <option value="Annexe"    ${u.project==='Annexe'?'selected':''}>Annexe Only</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button class="mgmt-cancel-btn" onclick="mgmtToggleEditUser('${email.replace(/'/g,"\\'")}')">Cancel</button>
+          <button class="mgmt-save-btn" onclick="mgmtSaveEditUser('${email.replace(/'/g,"\\'")}')">Save Changes</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function mgmtToggleEditUser(email) {
+  const id   = 'edit-form-' + email.replace(/[^a-zA-Z0-9]/g,'-');
+  const form = document.getElementById(id);
+  if (!form) return;
+  const isOpen = form.classList.contains('open');
+  document.querySelectorAll('.mgmt-edit-form.open').forEach(f => f.classList.remove('open'));
+  if (!isOpen) form.classList.add('open');
+}
+
+function mgmtSaveEditUser(email) {
+  const id      = email.replace(/[^a-zA-Z0-9]/g,'-');
+  const name    = (document.getElementById('edit-name-'+id)||{}).value || '';
+  const role    = (document.getElementById('edit-role-'+id)||{}).value || 'editor';
+  const dept    = (document.getElementById('edit-dept-'+id)||{}).value || '';
+  const project = (document.getElementById('edit-proj-'+id)||{}).value || 'Both';
+  if (!name) { alert('Display name is required.'); return; }
+
+  if (USER_ROLES[email]) USER_ROLES[email] = { ...USER_ROLES[email], name, role, dept, project };
+  const custom = mgmtGetCustomUsers();
+  custom[email] = { ...(custom[email]||{}), name, role, dept, project };
+  localStorage.setItem(MGMT_USERS_KEY, JSON.stringify(custom));
+  if (_fbReady && _fbDb) _fbDb.ref('mgmt_users/'+email.replace(/\./g,'_')).update({ name, role, dept:dept||null, project });
+  if (typeof window._extendAllowlist === 'function') window._extendAllowlist(email, project);
+
+  // If editing the currently signed-in user, apply their new role immediately
+  if (currentUser && currentUser.email === email) {
+    currentUserRole = { name, role, dept, project };
+    applyDeptTabLocks();
+  }
+  mgmtRenderUsers();
+  const s = document.getElementById('mgmt-user-status');
+  if (s) { s.textContent = name + ' updated.'; setTimeout(()=>s.textContent='',3000); }
+}
+
+// ── Quick Grant (Access tab) ───────────────────────────────────────────────
+function mgmtQuickGrant() {
+  const email   = ((document.getElementById('mgmt-quick-email')||{}).value||'').trim().toLowerCase();
+  const dept    = (document.getElementById('mgmt-quick-dept')||{}).value||'';
+  const project = (document.getElementById('mgmt-quick-project')||{}).value||'Both';
+  const statusEl = document.getElementById('mgmt-access-status');
+  if (!email||!email.includes('@')) { if(statusEl) statusEl.textContent='Enter a valid email.'; return; }
+  if (!email.endsWith('@mixtafrica.com')) { if(statusEl) statusEl.textContent='Only @mixtafrica.com emails allowed.'; return; }
+  const name = email.split('@')[0].replace(/\./g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+  const d = { name, role:'editor', dept:dept||null, project, mailingEmail:email };
+  USER_ROLES[email] = d;
+  const custom = mgmtGetCustomUsers();
+  custom[email] = d;
+  localStorage.setItem(MGMT_USERS_KEY, JSON.stringify(custom));
+  if (_fbReady && _fbDb) _fbDb.ref('mgmt_users/'+email.replace(/\./g,'_')).set(d);
+  if (typeof window._extendAllowlist === 'function') window._extendAllowlist(email, project);
+  if (statusEl) { statusEl.textContent='✓ Access granted to '+email+'. They can sign in immediately.'; setTimeout(()=>statusEl.textContent='',5000); }
+  if (document.getElementById('mgmt-quick-email')) document.getElementById('mgmt-quick-email').value='';
+  mgmtRenderUsers();
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────
+const MGMT_SETTINGS_KEY = 'mgmt_dashboard_settings';
+function mgmtLoadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem(MGMT_SETTINGS_KEY)||'{}');
+    const $ = id => document.getElementById(id);
+    if ($('setting-idle-mins')   && s.idleMins)        $('setting-idle-mins').value   = s.idleMins;
+    if ($('setting-viewer-updates'))                    $('setting-viewer-updates').checked = !!s.viewerUpdates;
+    if ($('setting-dept-lock'))                         $('setting-dept-lock').checked  = s.deptLock!==false;
+    if ($('setting-show-counts'))                       $('setting-show-counts').checked= s.showCounts!==false;
+    if ($('setting-admin-email') && s.adminEmail)       $('setting-admin-email').value  = s.adminEmail;
+    if ($('mgmt-build-info'))                           $('mgmt-build-info').innerHTML  = 'Build: '+new Date().toISOString().slice(0,10)+'<br>Project: '+(currentProject||'—');
+  } catch(e) {}
+}
+function mgmtSaveSetting(key, value) {
+  try {
+    const s = JSON.parse(localStorage.getItem(MGMT_SETTINGS_KEY)||'{}');
+    s[key] = value;
+    localStorage.setItem(MGMT_SETTINGS_KEY, JSON.stringify(s));
+    if (key==='deptLock')    applyDeptTabLocks();
+    if (key==='showCounts')  updateSidebarCounts();
+  } catch(e) {}
+}
+function mgmtClearLocalStorage() {
+  if (!confirm('Clear all cached sheet data? Dashboard will re-sync on next load.')) return;
+  const keep = ['mgmt_custom_users','mgmt_custom_depts','mgmt_deleted_tasks','mgmt_dashboard_settings'];
+  Object.keys(localStorage).forEach(k => { if (!keep.some(p=>k.startsWith(p))) localStorage.removeItem(k); });
+  location.reload();
+}
+
+// ── Access Requests ────────────────────────────────────────────────────────
+function mgmtLoadAccessRequests() {
+  const list = document.getElementById('mgmt-access-list');
+  if (!list||!_fbReady||!_fbDb) return;
+  _fbDb.ref('access_requests').once('value').then(snap => {
+    const data = snap.val()||{};
+    const entries = Object.entries(data).sort((a,b)=>(b[1].time||0)-(a[1].time||0));
+    if (!entries.length) {
+      list.innerHTML='<div style="font-size:12px;color:var(--text-muted);padding:14px;text-align:center;background:var(--bg);border-radius:var(--radius-sm);border:1px dashed var(--border-md);">No pending requests.</div>';
+      return;
+    }
+    const deptOpts=[...new Set([...CX_DEPTS,...ANNEX_DEPTS])].sort().map(d=>`<option value="${d}">${d}</option>`).join('');
+    list.innerHTML=entries.map(([key,req])=>`
+      <div class="mgmt-access-item">
+        <div style="flex:1;">
+          <div style="font-weight:700;font-size:13px;">${req.email||key.replace(/_/g,'.')}</div>
+          <div style="font-size:11px;color:var(--text-muted);">Requested: ${req.time?new Date(req.time).toLocaleString('en-NG'):'Unknown'}</div>
+        </div>
+        <select id="req-dept-${key}" style="padding:6px;font-size:12px;border:1px solid var(--border-md);border-radius:4px;font-family:inherit;">
+          <option value="">— Dept —</option>${deptOpts}
+        </select>
+        <button class="mgmt-approve-btn" onclick="mgmtApproveRequest('${key}','${req.email||key.replace(/_/g,'.')}')">✓ Approve</button>
+        <button class="mgmt-delete-btn" onclick="mgmtDismissRequest('${key}')">Dismiss</button>
+      </div>`).join('');
+  }).catch(()=>{});
+}
+function mgmtApproveRequest(key, email) {
+  const dept=(document.getElementById('req-dept-'+key)||{}).value||'';
+  const d={name:email.split('@')[0].replace(/\./g,' ').replace(/\b\w/g,c=>c.toUpperCase()),role:'editor',dept:dept||null,project:'Both',mailingEmail:email};
+  USER_ROLES[email]=d;
+  const custom=mgmtGetCustomUsers(); custom[email]=d;
+  localStorage.setItem(MGMT_USERS_KEY,JSON.stringify(custom));
+  if(_fbReady&&_fbDb){_fbDb.ref('mgmt_users/'+email.replace(/\./g,'_')).set(d);_fbDb.ref('access_requests/'+key).remove();}
+  if(typeof window._extendAllowlist==='function') window._extendAllowlist(email,'Both');
+  mgmtLoadAccessRequests(); mgmtRenderUsers();
+  alert('✓ Access granted to '+email+'. They can now sign in.');
+}
+function mgmtDismissRequest(key) {
+  if(_fbReady&&_fbDb) _fbDb.ref('access_requests/'+key).remove();
+  mgmtLoadAccessRequests();
 }
 
 // ══ DEPARTMENTS ══
@@ -10432,32 +10659,31 @@ window._authSafetyTimer = setTimeout(function() {
 <div class="mgmt-overlay" id="mgmt-overlay">
   <div class="mgmt-panel">
     <div class="mgmt-header">
-      <h2><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Admin Management</h2>
+      <h2><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Admin Control Centre</h2>
       <button class="mgmt-close" onclick="closeMgmtPanel()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="mgmt-tabs">
-      <button class="mgmt-tab active" onclick="switchMgmtTab('users',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Users</button>
-      <button class="mgmt-tab" onclick="switchMgmtTab('depts',this)">Departments</button>
-      <button class="mgmt-tab" onclick="switchMgmtTab('tasks',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg> Delete Tasks</button>
+      <button class="mgmt-tab active" onclick="switchMgmtTab('users',this)">👥 Users</button>
+      <button class="mgmt-tab" onclick="switchMgmtTab('depts',this)">🏢 Departments</button>
+      <button class="mgmt-tab" onclick="switchMgmtTab('access',this)">🔐 Access</button>
+      <button class="mgmt-tab" onclick="switchMgmtTab('settings',this)">⚙️ Settings</button>
+      <button class="mgmt-tab" onclick="switchMgmtTab('tasks',this)">🗑 Tasks</button>
     </div>
     <div class="mgmt-body">
 
-      <!-- USERS TAB -->
+      <!-- ══ USERS TAB ══ -->
       <div id="mgmt-tab-users">
         <div class="mgmt-section-title">Add New User</div>
         <div class="mgmt-row">
-          <input type="email" id="mgmt-new-email" placeholder="Email address e.g. name@mixtafrica.com">
+          <input type="email" id="mgmt-new-email" placeholder="Email e.g. name@mixtafrica.com">
+          <input type="text" id="mgmt-new-name" placeholder="Display name e.g. T. Adebule">
         </div>
         <div class="mgmt-row">
-          <input type="text" id="mgmt-new-name" placeholder="Display name e.g. T. Adebule">
+          <select id="mgmt-new-dept"><option value="">— Department —</option></select>
           <select id="mgmt-new-role">
             <option value="editor">Editor</option>
+            <option value="viewer">Viewer</option>
             <option value="admin">Admin</option>
-          </select>
-        </div>
-        <div class="mgmt-row">
-          <select id="mgmt-new-dept">
-            <option value="">— Select Department —</option>
           </select>
           <select id="mgmt-new-project">
             <option value="Both">Both Projects</option>
@@ -10466,16 +10692,15 @@ window._authSafetyTimer = setTimeout(function() {
           </select>
         </div>
         <div class="mgmt-row">
-          <input type="text" id="mgmt-new-mailing" placeholder="Mailing list email (if different from login email)">
+          <input type="text" id="mgmt-new-mailing" placeholder="Mailing email (if different from login email)">
           <button class="mgmt-add-btn" onclick="mgmtAddUser()">+ Add User</button>
         </div>
         <p class="mgmt-status-msg" id="mgmt-user-status"></p>
-
-        <div class="mgmt-section-title">Current Users</div>
+        <div class="mgmt-section-title">All Users (<span id="mgmt-user-count">0</span>)</div>
         <div class="mgmt-list" id="mgmt-user-list"></div>
       </div>
 
-      <!-- DEPARTMENTS TAB -->
+      <!-- ══ DEPARTMENTS TAB ══ -->
       <div id="mgmt-tab-depts" style="display:none;">
         <div class="mgmt-section-title">Add New Department</div>
         <div class="mgmt-row">
@@ -10488,15 +10713,119 @@ window._authSafetyTimer = setTimeout(function() {
           <button class="mgmt-add-btn" onclick="mgmtAddDept()">+ Add</button>
         </div>
         <p class="mgmt-status-msg" id="mgmt-dept-status"></p>
-
-        <div class="mgmt-section-title">Crossings Departments</div>
+        <div class="mgmt-section-title">Lakowe Crossings</div>
         <div class="mgmt-list" id="mgmt-cx-dept-list"></div>
-
-        <div class="mgmt-section-title" style="margin-top:20px;">Annexe Departments</div>
+        <div class="mgmt-section-title" style="margin-top:20px;">Lakowe Annexe</div>
         <div class="mgmt-list" id="mgmt-annex-dept-list"></div>
       </div>
 
-      <!-- DELETE TASKS TAB -->
+      <!-- ══ ACCESS TAB ══ -->
+      <div id="mgmt-tab-access" style="display:none;">
+        <div class="mgmt-section-title">Pending Access Requests</div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+          When a colleague clicks "Request Access" on the sign-in screen, their email appears here.
+          Approving instantly adds them as a user and grants sign-in access.
+        </p>
+        <div id="mgmt-access-list">
+          <div style="font-size:12px;color:var(--text-muted);padding:14px;text-align:center;background:var(--bg);border-radius:var(--radius-sm);border:1px dashed var(--border-md);">
+            No pending requests. Requests appear here when colleagues click "Request Access" on the sign-in screen.
+          </div>
+        </div>
+        <div class="mgmt-section-title" style="margin-top:24px;">Quick Grant Access</div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Grant access to any @mixtafrica.com email immediately without going to the Users tab.</p>
+        <div class="mgmt-row">
+          <input type="email" id="mgmt-quick-email" placeholder="Email address">
+          <select id="mgmt-quick-dept"><option value="">— Department —</option></select>
+          <select id="mgmt-quick-project">
+            <option value="Both">Both Projects</option>
+            <option value="Crossings">Crossings Only</option>
+            <option value="Annexe">Annexe Only</option>
+          </select>
+          <button class="mgmt-add-btn" onclick="mgmtQuickGrant()">Grant</button>
+        </div>
+        <p class="mgmt-status-msg" id="mgmt-access-status"></p>
+      </div>
+
+      <!-- ══ SETTINGS TAB ══ -->
+      <div id="mgmt-tab-settings" style="display:none;">
+        <div class="mgmt-section-title">Dashboard Settings</div>
+
+        <div class="mgmt-setting-row">
+          <div>
+            <div class="mgmt-setting-label">Auto Sign-Out Timer</div>
+            <div class="mgmt-setting-desc">Sign out inactive users automatically</div>
+          </div>
+          <div class="mgmt-setting-control">
+            <select id="setting-idle-mins" onchange="mgmtSaveSetting('idleMins',this.value)" style="padding:7px 12px;border:1px solid var(--border-md);border-radius:var(--radius-sm);font-family:inherit;font-size:13px;">
+              <option value="5">5 minutes</option>
+              <option value="10" selected>10 minutes</option>
+              <option value="15">15 minutes</option>
+              <option value="20">20 minutes</option>
+              <option value="30">30 minutes</option>
+              <option value="60">1 hour</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mgmt-setting-row">
+          <div>
+            <div class="mgmt-setting-label">Allow Viewers to Post Updates</div>
+            <div class="mgmt-setting-desc">If off, only editors and admins can post team updates</div>
+          </div>
+          <div class="mgmt-setting-control">
+            <input type="checkbox" class="mgmt-toggle" id="setting-viewer-updates" onchange="mgmtSaveSetting('viewerUpdates',this.checked)">
+          </div>
+        </div>
+
+        <div class="mgmt-setting-row">
+          <div>
+            <div class="mgmt-setting-label">Restrict Users to Own Department</div>
+            <div class="mgmt-setting-desc">If off, all users can view and post in any department</div>
+          </div>
+          <div class="mgmt-setting-control">
+            <input type="checkbox" class="mgmt-toggle" id="setting-dept-lock" checked onchange="mgmtSaveSetting('deptLock',this.checked)">
+          </div>
+        </div>
+
+        <div class="mgmt-setting-row">
+          <div>
+            <div class="mgmt-setting-label">Show Task Counts in Sidebar</div>
+            <div class="mgmt-setting-desc">Display number of tasks per department in the sidebar</div>
+          </div>
+          <div class="mgmt-setting-control">
+            <input type="checkbox" class="mgmt-toggle" id="setting-show-counts" checked onchange="mgmtSaveSetting('showCounts',this.checked)">
+          </div>
+        </div>
+
+        <div class="mgmt-setting-row">
+          <div>
+            <div class="mgmt-setting-label">Admin Email</div>
+            <div class="mgmt-setting-desc">Access requests are sent to this address</div>
+          </div>
+          <div class="mgmt-setting-control">
+            <input type="email" id="setting-admin-email" value="o.olasunkanmi@mixtafrica.com"
+              style="padding:7px 12px;border:1px solid var(--border-md);border-radius:var(--radius-sm);font-family:inherit;font-size:12px;width:240px;"
+              onblur="mgmtSaveSetting('adminEmail',this.value)">
+          </div>
+        </div>
+
+        <div class="mgmt-setting-row">
+          <div>
+            <div class="mgmt-setting-label">Dashboard Version / Build</div>
+            <div class="mgmt-setting-desc">Current deployment info</div>
+          </div>
+          <div class="mgmt-setting-control" style="font-size:12px;color:var(--text-muted);text-align:right;" id="mgmt-build-info">
+            Loading…
+          </div>
+        </div>
+
+        <div style="margin-top:20px;">
+          <button class="mgmt-add-btn" onclick="mgmtClearLocalStorage()" style="background:#b71c1c;">⚠ Clear Local Cache</button>
+          <span style="font-size:11px;color:var(--text-muted);margin-left:10px;">Clears cached sheet data and resyncs from Google Sheets on next load</span>
+        </div>
+      </div>
+
+      <!-- ══ DELETE TASKS TAB ══ -->
       <div id="mgmt-tab-tasks" style="display:none;">
         <div class="mgmt-section-title">Filter Tasks to Delete</div>
         <div class="mgmt-row">
