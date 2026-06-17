@@ -2,23 +2,24 @@
  * dashboard-auth.js
  * Mixta Africa Projects Dashboard — Google Sign-In Gate
  *
- * SECURITY MODEL (two hard gates, both must pass):
- *   Gate 1 — Domain:  email must end with @mixtafrica.com
- *   Gate 2 — Allowlist: email must be in the exact list from Dashboard_Mailing_List.xlsx
+ * SECURITY MODEL (three gates, all must pass):
+ *   Gate 1 — Domain:     email must end with @mixtafrica.com
+ *   Gate 2 — Allowlist:  email must be in ALLOWED (hardcoded) OR Firebase mgmt_users
+ *   Gate 3 — Firebase:   allowlist is authoritative in Firebase for admin-added users
  *
- * If either gate fails → immediate sign-out + access denied screen.
- * Page content is hidden via CSS before ANY JavaScript runs.
- * Content only becomes visible after BOTH gates pass.
+ * Unauthorised @mixtafrica.com users see an explicit "Access Denied" screen
+ * with a one-click "Request Access" button that emails o.olasunkanmi@mixtafrica.com.
  *
- * 35 approved emails · Generated from Dashboard_Mailing_List.xlsx (May 2026)
+ * Admin panel additions are written to Firebase and take effect immediately
+ * on ALL browsers — no localStorage dependency.
  */
 
 (function () {
   'use strict';
 
-  // ── ALLOWLIST ─────────────────────────────────────────────────────────────
-  // Exact emails only. Any other address is denied, even if @mixtafrica.com.
+  // ── HARDCODED ALLOWLIST (base set) ────────────────────────────────────────
   // Values: "Both" | "Crossings" | "Annexe"
+  // Firebase mgmt_users overrides/extends this at runtime.
   const ALLOWED = {
     // Both projects
     "a.arokodare@mixtafrica.com":             "Both",
@@ -45,6 +46,7 @@
     "pmo_nigeria@mixtafrica.com":             "Both",
     "r.idaeho@mixtafrica.com":                "Both",
     "r.jolaiya@mixtafrica.com":               "Both",
+    "s.edadagbon@mixtafrica.com":             "Both",
     "s.hughes@mixtafrica.com":                "Both",
     "t.adebule@mixtafrica.com":               "Both",
     "t.adeniyi@mixtafrica.com":               "Both",
@@ -62,56 +64,47 @@
   };
 
   const REQUIRED_DOMAIN = 'mixtafrica.com';
+  const ADMIN_EMAIL     = 'o.olasunkanmi@mixtafrica.com';
+  const APPS_SCRIPT_URL = window.APPS_SCRIPT_URL || '';
 
   // ── STATE ─────────────────────────────────────────────────────────────────
   let _auth        = null;
+  let _db          = null;   // Firebase DB reference
   let _ready       = false;
-  let _access      = null; // "Both"|"Crossings"|"Annexe"|null
+  let _access      = null;   // "Both"|"Crossings"|"Annexe"|null
+  let _pendingUser = null;   // user object waiting for Firebase allowlist check
 
   // ── IDLE TIMEOUT CONFIG ───────────────────────────────────────────────────
-  const IDLE_MINUTES        = 10;           // sign out after this many minutes of inactivity
-  const WARNING_BEFORE_SECS = 30;           // show warning this many seconds before sign-out
+  const IDLE_MINUTES        = 10;
+  const WARNING_BEFORE_SECS = 30;
   const IDLE_MS             = IDLE_MINUTES * 60 * 1000;
   const WARNING_MS          = IDLE_MS - (WARNING_BEFORE_SECS * 1000);
 
-  let _idleTimer   = null;  // fires → sign out
-  let _warnTimer   = null;  // fires → show warning countdown
-  let _warnEl      = null;  // the warning banner element
-  let _countdownId = null;  // setInterval for the countdown seconds
+  let _idleTimer   = null;
+  let _warnTimer   = null;
+  let _warnEl      = null;
+  let _countdownId = null;
 
-  // ── CSS — injected before anything else renders ───────────────────────────
-  // This runs synchronously so the page is already hidden before Firebase loads.
+  // ── CSS ───────────────────────────────────────────────────────────────────
   (function injectCSS() {
     const s = document.createElement('style');
     s.id = 'auth-gate-style';
     s.textContent = `
-      /* Lock the page immediately — nothing visible until gate passes */
       body.auth-locked > *:not(#auth-gate-overlay) {
-        display: none !important;
-        visibility: hidden !important;
+        display: none !important; visibility: hidden !important;
         pointer-events: none !important;
       }
-      body.auth-locked #auth-gate-overlay {
-        display: flex !important;
-      }
+      body.auth-locked #auth-gate-overlay { display: flex !important; }
 
       #auth-gate-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        z-index: 2147483647; /* maximum z-index */
+        display: none; position: fixed; inset: 0; z-index: 2147483647;
         background: linear-gradient(135deg, #f0f4f0 0%, #f8f0f0 100%);
-        align-items: center;
-        justify-content: center;
+        align-items: center; justify-content: center;
         font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       }
-
       .ag-card {
-        background: #fff;
-        border-radius: 20px;
-        padding: 44px 40px 36px;
-        width: 100%;
-        max-width: 400px;
+        background: #fff; border-radius: 20px; padding: 44px 40px 36px;
+        width: 100%; max-width: 420px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.10), 0 24px 48px rgba(0,0,0,0.06);
         text-align: center;
       }
@@ -119,49 +112,57 @@
         width: 68px; height: 68px; border-radius: 14px; object-fit: contain;
         margin: 0 auto 18px; display: block; background: #f5f5f5;
       }
-      .ag-card h1 {
-        font-size: 21px; font-weight: 800; color: #1a1a1a;
-        letter-spacing: -0.03em; margin-bottom: 6px;
-      }
+      .ag-card h1 { font-size: 21px; font-weight: 800; color: #1a1a1a; letter-spacing: -0.03em; margin-bottom: 6px; }
       .ag-card h1 span { color: #D32F2F; }
-      .ag-subtitle {
-        font-size: 13px; color: #888; margin-bottom: 30px; line-height: 1.5;
-      }
+      .ag-subtitle { font-size: 13px; color: #888; margin-bottom: 30px; line-height: 1.5; }
 
-      /* Google button */
       .ag-google-btn {
         display: flex; align-items: center; justify-content: center; gap: 12px;
-        width: 100%; padding: 13px 20px;
-        background: #fff; color: #3c4043;
+        width: 100%; padding: 13px 20px; background: #fff; color: #3c4043;
         border: 1.5px solid #dadce0; border-radius: 10px;
-        font-size: 14px; font-weight: 600; cursor: pointer;
-        font-family: inherit;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        margin-bottom: 12px;
+        font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 12px;
         transition: all 0.18s;
       }
       .ag-google-btn:hover  { background: #f8f9fa; border-color: #bbb; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
       .ag-google-btn:active { transform: scale(0.99); }
       .ag-google-btn:disabled { opacity: 0.55; cursor: default; transform: none; }
 
-      .ag-hint {
-        font-size: 11.5px; color: #bbb; margin-bottom: 18px;
-        letter-spacing: 0.01em;
-      }
-      .ag-msg {
-        min-height: 18px; font-size: 12px; font-weight: 600;
-        color: #c62828; padding: 0 4px; line-height: 1.5;
-      }
+      .ag-hint  { font-size: 11.5px; color: #bbb; margin-bottom: 18px; letter-spacing: 0.01em; }
+      .ag-msg   { min-height: 18px; font-size: 12px; font-weight: 600; color: #c62828; padding: 0 4px; line-height: 1.5; }
       .ag-msg.info { color: #555; font-weight: 500; }
 
+      /* ── Access Denied block ── */
       .ag-denied {
-        background: #fff5f5; border: 1px solid #ffcdd2; border-radius: 10px;
-        padding: 14px 16px; font-size: 12.5px; color: #b71c1c;
+        background: #fff5f5; border: 1px solid #ffcdd2; border-radius: 12px;
+        padding: 18px 18px 14px; font-size: 13px; color: #b71c1c;
         line-height: 1.6; margin-top: 16px; text-align: left;
       }
-      .ag-denied strong { display: block; margin-bottom: 4px; font-size: 13px; }
+      .ag-denied strong { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 800; }
+      .ag-denied .ag-denied-email { font-size: 12px; color: #555; margin-bottom: 14px; word-break: break-all; }
 
-      /* Spinner inside button */
+      /* Request Access button */
+      .ag-request-btn {
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        width: 100%; padding: 11px 16px; margin-top: 4px;
+        background: #1b5e20; color: #fff;
+        border: none; border-radius: 8px;
+        font-size: 13px; font-weight: 700; cursor: pointer;
+        font-family: inherit; transition: background 0.18s;
+      }
+      .ag-request-btn:hover    { background: #145214; }
+      .ag-request-btn:disabled { opacity: 0.6; cursor: default; }
+      .ag-request-btn.sent     { background: #0d47a1; cursor: default; }
+
+      /* Wrong domain block */
+      .ag-wrong-domain {
+        background: #fff8e1; border: 1px solid #ffe082; border-radius: 12px;
+        padding: 14px 16px; font-size: 12.5px; color: #e65100;
+        line-height: 1.6; margin-top: 16px; text-align: left;
+      }
+      .ag-wrong-domain strong { display: block; margin-bottom: 4px; font-size: 13px; }
+
+      /* Spinner */
       .ag-spin {
         display: inline-block; width: 16px; height: 16px;
         border: 2px solid #dadce0; border-top-color: #4285f4;
@@ -169,66 +170,45 @@
       }
       @keyframes agSpin { to { transform: rotate(360deg); } }
 
-      /* Idle timeout warning banner */
+      /* Checking access state */
+      .ag-checking {
+        display: flex; align-items: center; gap: 10px; justify-content: center;
+        font-size: 13px; color: #666; margin-top: 12px; padding: 10px;
+      }
+
+      /* Idle warning banner */
       #ag-idle-warning {
-        position: fixed;
-        bottom: 24px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 2147483646;
-        background: #1a1a1a;
-        color: #fff;
-        border-radius: 12px;
-        padding: 14px 22px;
-        font-family: 'DM Sans', -apple-system, sans-serif;
-        font-size: 13px;
-        font-weight: 600;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.28);
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        white-space: nowrap;
-        animation: agWarnSlide 0.25s cubic-bezier(0.34,1.56,0.64,1);
+        position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+        z-index: 2147483646; background: #1a1a1a; color: #fff;
+        border-radius: 12px; padding: 14px 22px; font-family: 'DM Sans', -apple-system, sans-serif;
+        font-size: 13px; font-weight: 600; box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+        display: flex; align-items: center; gap: 14px;
+        white-space: nowrap; animation: agWarnSlide 0.25s cubic-bezier(0.34,1.56,0.64,1);
         max-width: calc(100vw - 40px);
       }
       @keyframes agWarnSlide {
         from { opacity:0; transform: translateX(-50%) translateY(12px); }
         to   { opacity:1; transform: translateX(-50%) translateY(0); }
       }
-      #ag-idle-warning .ag-warn-icon { font-size: 16px; flex-shrink: 0; }
-      #ag-idle-warning .ag-warn-text { flex: 1; }
-      #ag-idle-warning .ag-warn-secs {
-        background: rgba(255,255,255,0.15);
-        border-radius: 6px;
-        padding: 2px 8px;
-        font-size: 12px;
-        min-width: 36px;
-        text-align: center;
-        font-variant-numeric: tabular-nums;
+      #ag-idle-warning .ag-warn-icon  { font-size: 16px; flex-shrink: 0; }
+      #ag-idle-warning .ag-warn-text  { flex: 1; }
+      #ag-idle-warning .ag-warn-secs  {
+        background: rgba(255,255,255,0.15); border-radius: 6px; padding: 2px 8px;
+        font-size: 12px; min-width: 36px; text-align: center; font-variant-numeric: tabular-nums;
       }
-      #ag-idle-warning .ag-warn-stay {
-        background: #2e7d32;
-        color: #fff;
-        border: none;
-        border-radius: 7px;
-        padding: 6px 14px;
-        font-size: 12px;
-        font-weight: 700;
-        cursor: pointer;
-        font-family: inherit;
-        flex-shrink: 0;
-        transition: background 0.15s;
+      #ag-idle-warning .ag-warn-stay  {
+        background: #2e7d32; color: #fff; border: none; border-radius: 7px;
+        padding: 6px 14px; font-size: 12px; font-weight: 700;
+        cursor: pointer; font-family: inherit; flex-shrink: 0; transition: background 0.15s;
       }
       #ag-idle-warning .ag-warn-stay:hover { background: #1b5e20; }
 
-      /* Nav badge after sign-in */
+      /* Nav badge */
       .ag-nav-badge {
         display: inline-flex; align-items: center; gap: 6px;
         font-size: 11px; font-weight: 600; color: #fff;
-        background: rgba(255,255,255,0.12);
-        border: 1px solid rgba(255,255,255,0.22);
-        border-radius: 100px; padding: 3px 10px 3px 7px;
-        white-space: nowrap;
+        background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22);
+        border-radius: 100px; padding: 3px 10px 3px 7px; white-space: nowrap;
       }
       .ag-nav-badge::before {
         content: ''; width: 7px; height: 7px; border-radius: 50%;
@@ -254,36 +234,29 @@
     el.id = 'auth-gate-overlay';
     el.innerHTML = `
       <div class="ag-card">
-        <img src="Mixta Africa.jpg" alt="Mixta Africa" class="ag-logo"
-             onerror="this.style.display='none'">
+        <img src="Mixta Africa.jpg" alt="Mixta Africa" class="ag-logo" onerror="this.style.display='none'">
         <h1>Projects <span>Tracker</span></h1>
         <p class="ag-subtitle">Mixta Africa — Live Performance Dashboard</p>
         <button class="ag-google-btn" id="ag-btn" onclick="_authGate.signIn()">
           ${GOOGLE_SVG}
           <span id="ag-btn-label">Sign in with Google</span>
         </button>
-        <p class="ag-hint">Your company email</p>
+        <p class="ag-hint">Use your @mixtafrica.com company email</p>
         <p class="ag-msg" id="ag-msg"></p>
       </div>
     `;
-    // Insert as very first child so it's definitely not hidden by auth-locked CSS
     document.body.insertBefore(el, document.body.firstChild);
   }
 
-  // ── UNLOCK — only called after both gates pass ────────────────────────────
+  // ── UNLOCK ────────────────────────────────────────────────────────────────
   function unlock(user, access) {
     _access = access;
     document.body.classList.remove('auth-locked');
     const overlay = document.getElementById('auth-gate-overlay');
     if (overlay) overlay.style.display = 'none';
-
     injectNavBadge(user, access);
     restrictProjects(access);
-
-    // Start 30-minute idle timeout tracking
     startIdleTracking();
-
-    // Notify the dashboard it can now load data
     if (typeof window.onAuthGateReady === 'function') {
       window.onAuthGateReady();
       window.onAuthGateReady = null;
@@ -293,11 +266,10 @@
     }
   }
 
-  // ── DENY — sign out and show rejection message ────────────────────────────
-  function deny(email) {
-    // Sign out immediately — do not leave them authenticated in Firebase
+  // ── DENY — show access denied + request access button ────────────────────
+  function deny(user, reason) {
+    const email = user ? (user.email || '') : (typeof user === 'string' ? user : '');
     if (_auth) _auth.signOut().catch(() => {});
-
     setBtnReady();
     setMsg('', true);
 
@@ -308,45 +280,155 @@
 
     const block = document.createElement('div');
     block.id = 'ag-denied-block';
-    block.className = 'ag-denied';
-    const domain = (email || '').split('@')[1] || '';
-    const isDomainWrong = domain !== REQUIRED_DOMAIN;
-    block.innerHTML = isDomainWrong
-      ? `<strong>Wrong account</strong>
-         <b>${esc(email)}</b> is a personal Google account. Please sign in with your
-         <b>@mixtafrica.com</b> company email instead.`
-      : `<strong>Access not granted</strong>
-         <b>${esc(email)}</b> is not on the approved list for this dashboard.
-         Contact <a href="mailto:o.olasunkanmi@mixtafrica.com" style="color:#c62828">o.olasunkanmi@mixtafrica.com</a> to request access.`;
+
+    if (reason === 'domain') {
+      block.className = 'ag-wrong-domain';
+      block.innerHTML = `
+        <strong>Wrong account</strong>
+        <b>${esc(email)}</b> is not a Mixta Africa email.<br>
+        Please sign in with your <b>@mixtafrica.com</b> company email.`;
+    } else {
+      // Authorised domain but not on the allowlist
+      block.className = 'ag-denied';
+      block.innerHTML = `
+        <strong>Access Not Granted</strong>
+        <div class="ag-denied-email">${esc(email)}</div>
+        Your account is not authorised for this dashboard.
+        You can request access from the dashboard administrator.
+        <button class="ag-request-btn" id="ag-request-btn" onclick="_authGate.requestAccess('${esc(email)}')">
+          ✉ Request Access
+        </button>`;
+    }
     card.appendChild(block);
+  }
+
+  // ── REQUEST ACCESS ────────────────────────────────────────────────────────
+  function requestAccess(email) {
+    const btn = document.getElementById('ag-request-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending request…'; }
+
+    const now   = new Date().toLocaleString('en-NG', { dateStyle:'full', timeStyle:'short' });
+    const html  = `
+      <div style="font-family:Arial,sans-serif;max-width:560px;padding:24px;background:#f9f9f9;border-radius:8px;">
+        <h2 style="color:#1b5e20;margin-bottom:4px;">Dashboard Access Request</h2>
+        <p style="color:#555;font-size:13px;margin-bottom:20px;">Mixta Africa Projects Tracker</p>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <tr><td style="padding:8px 12px;background:#fff;border:1px solid #eee;font-weight:700;width:120px;">Requester</td>
+              <td style="padding:8px 12px;background:#fff;border:1px solid #eee;">${esc(email)}</td></tr>
+          <tr><td style="padding:8px 12px;background:#f5f5f5;border:1px solid #eee;font-weight:700;">Time</td>
+              <td style="padding:8px 12px;background:#f5f5f5;border:1px solid #eee;">${esc(now)}</td></tr>
+          <tr><td style="padding:8px 12px;background:#fff;border:1px solid #eee;font-weight:700;">Action</td>
+              <td style="padding:8px 12px;background:#fff;border:1px solid #eee;">
+                To grant access, open the Projects Tracker Admin Panel → Users tab → Add this email.
+              </td></tr>
+        </table>
+        <p style="font-size:11px;color:#aaa;margin-top:20px;">Auto-generated by Mixta Africa Projects Tracker</p>
+      </div>`;
+
+    // Send via GAS if available, otherwise fall back to mailto
+    const gasUrl = APPS_SCRIPT_URL;
+    if (gasUrl && gasUrl.length > 10) {
+      fetch(gasUrl, {
+        method: 'POST',
+        body: JSON.stringify({
+          action:   'sendEmail',
+          token:    window.SCRIPT_TOKEN || 'MixtaMail2026',
+          to:       [ADMIN_EMAIL],
+          subject:  'Dashboard Access Request — ' + email,
+          html:     html,
+          reply_to: email,
+        }),
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (btn) {
+          btn.className = 'ag-request-btn sent';
+          btn.textContent = res.success
+            ? '✓ Request sent! You will be notified when access is granted.'
+            : '✉ Sent (check your email for confirmation)';
+        }
+      })
+      .catch(() => _fallbackMailto(email, btn));
+    } else {
+      _fallbackMailto(email, btn);
+    }
+  }
+
+  function _fallbackMailto(email, btn) {
+    const subject = encodeURIComponent('Dashboard Access Request — ' + email);
+    const body    = encodeURIComponent(
+      'Hi,\n\nI would like to request access to the Mixta Africa Projects Tracker Dashboard.\n\nEmail: ' + email + '\n\nPlease add me to the approved list.\n\nThank you.'
+    );
+    window.open('mailto:' + ADMIN_EMAIL + '?subject=' + subject + '&body=' + body);
+    if (btn) {
+      btn.className = 'ag-request-btn sent';
+      btn.textContent = '✓ Email opened — send it to request access.';
+    }
   }
 
   // ── AUTH STATE HANDLER ────────────────────────────────────────────────────
   function onAuthState(user) {
-    if (!user) {
-      // Not signed in — gate stays locked, button ready
-      setBtnReady();
-      return;
-    }
+    if (!user) { setBtnReady(); return; }
 
     const email  = (user.email || '').toLowerCase().trim();
     const domain = email.split('@')[1] || '';
 
-    // Gate 1: domain must be mixtafrica.com
+    // Gate 1: must be @mixtafrica.com — hard block, no request access
     if (domain !== REQUIRED_DOMAIN) {
-      deny(email);
+      deny(user, 'domain');
       return;
     }
 
-    // Gate 2: email must be in the exact allowlist
-    const access = ALLOWED[email];
-    if (!access) {
-      deny(email);
+    // Gate 2: check hardcoded allowlist first (fast, no network)
+    if (ALLOWED[email]) {
+      unlock(user, ALLOWED[email]);
       return;
     }
 
-    // Both gates passed — unlock
-    unlock(user, access);
+    // Gate 3: check Firebase mgmt_users (admin-added users)
+    // Show a "Checking access…" state while we wait
+    setMsg('Checking access…', true);
+    setBtnLoading();
+
+    if (_db) {
+      const fbKey = email.replace(/\./g, '_');
+      _db.ref('mgmt_users/' + fbKey).once('value')
+        .then(snap => {
+          const data = snap.val();
+          if (data && data.project) {
+            // Found in Firebase — grant access
+            ALLOWED[email] = data.project; // cache in memory for this session
+            unlock(user, data.project);
+          } else {
+            // Not in Firebase either — deny with request access button
+            deny(user, 'notallowed');
+          }
+        })
+        .catch(() => {
+          // Firebase read failed — deny conservatively
+          deny(user, 'notallowed');
+        });
+    } else {
+      // DB not ready yet — retry once after a short wait
+      setTimeout(() => {
+        if (_db) {
+          const fbKey = email.replace(/\./g, '_');
+          _db.ref('mgmt_users/' + fbKey).once('value')
+            .then(snap => {
+              const data = snap.val();
+              if (data && data.project) {
+                ALLOWED[email] = data.project;
+                unlock(user, data.project);
+              } else {
+                deny(user, 'notallowed');
+              }
+            })
+            .catch(() => deny(user, 'notallowed'));
+        } else {
+          deny(user, 'notallowed');
+        }
+      }, 2000);
+    }
   }
 
   // ── SIGN IN ───────────────────────────────────────────────────────────────
@@ -354,15 +436,11 @@
     if (!_ready) { setMsg('Loading… please wait.', true); return; }
     setBtnLoading();
     setMsg('Opening Google sign-in…', true);
-
     const provider = new firebase.auth.GoogleAuthProvider();
-    // Force account picker every time so users can't accidentally reuse a personal account
     provider.setCustomParameters({ prompt: 'select_account', hd: REQUIRED_DOMAIN });
-
     _auth.signInWithPopup(provider).catch(err => {
       setBtnReady();
-      if (err.code === 'auth/popup-closed-by-user' ||
-          err.code === 'auth/cancelled-popup-request') {
+      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
         setMsg('Sign-in cancelled.', true);
       } else {
         setMsg('Error: ' + err.message, false);
@@ -372,30 +450,25 @@
 
   // ── SIGN OUT ──────────────────────────────────────────────────────────────
   function signOut(reason) {
-    stopIdleTracking(); // stop timers before anything else
+    stopIdleTracking();
     if (_auth) _auth.signOut().catch(() => {});
     _access = null;
     document.body.classList.add('auth-locked');
     const overlay = document.getElementById('auth-gate-overlay');
     if (overlay) overlay.style.display = 'flex';
-    // Remove denied block if present
     const denied = document.getElementById('ag-denied-block');
     if (denied) denied.remove();
     setBtnReady();
-    // Show specific message if timed out
     if (reason === 'idle') {
       setMsg('You were signed out after ' + IDLE_MINUTES + ' minutes of inactivity.', true);
     } else {
       setMsg('', true);
     }
-    // Remove nav badge
     const badge = document.getElementById('ag-nav-badge');
     if (badge) badge.remove();
   }
 
   // ── FIREBASE INIT ─────────────────────────────────────────────────────────
-  // Firebase config — hardcoded here so this file never depends on index.html
-  // having executed first (fixes race condition on fast refresh).
   const FIREBASE_CFG = {
     apiKey:            "AIzaSyC7SI9u4iRLVl3BMSX3WTDt1QCRnwwA5lk",
     authDomain:        "mixta-projects-dashboard.firebaseapp.com",
@@ -412,26 +485,13 @@
       else setMsg('Firebase SDK failed to load. Check your internet connection and refresh.', false);
       return;
     }
-
-    // Initialize Firebase app if not already done.
-    // Uses the config hardcoded above — never reads window.FIREBASE_CONFIG
-    // so there is no race condition with index.html's inline scripts.
     if (!firebase.apps || firebase.apps.length === 0) {
-      try {
-        firebase.initializeApp(FIREBASE_CFG);
-      } catch (e) {
-        // "already initialized" is fine — another script got there first
-        if (!e.message || !e.message.includes('already')) {
-          setMsg('Firebase init failed: ' + e.message, false);
-          return;
-        }
-      }
+      try { firebase.initializeApp(FIREBASE_CFG); }
+      catch (e) { if (!e.message || !e.message.includes('already')) { setMsg('Firebase init failed: ' + e.message, false); return; } }
     }
-
-    _auth  = firebase.auth();
+    _auth = firebase.auth();
+    _db   = firebase.database();
     _ready = true;
-
-    // onAuthStateChanged is the only gate — fires immediately if a session persists
     _auth.onAuthStateChanged(onAuthState);
   }
 
@@ -442,36 +502,27 @@
     el.textContent = text;
     el.className = 'ag-msg' + (isInfo ? ' info' : '');
   }
-
   function setBtnLoading() {
     const btn = document.getElementById('ag-btn');
     const lbl = document.getElementById('ag-btn-label');
     if (btn) btn.disabled = true;
     if (lbl) lbl.innerHTML = '<span class="ag-spin"></span>';
   }
-
   function setBtnReady() {
     const btn = document.getElementById('ag-btn');
     const lbl = document.getElementById('ag-btn-label');
     if (btn) btn.disabled = false;
     if (lbl) lbl.textContent = 'Sign in with Google';
   }
-
   function injectNavBadge(user, access) {
-    // Remove existing
     const old = document.getElementById('ag-nav-badge');
     if (old) old.remove();
-
-    // Hide old auth buttons
     ['auth-user-badge','auth-login-btn','auth-logout-btn'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
+      const el = document.getElementById(id); if (el) el.style.display = 'none';
     });
-
     const name  = user.displayName ? user.displayName.split(' ')[0] : (user.email || '').split('@')[0];
     const label = access === 'Both' ? 'All Projects' : 'Lakowe ' + access;
-
-    const wrap = document.createElement('div');
+    const wrap  = document.createElement('div');
     wrap.id = 'ag-nav-badge';
     wrap.style.cssText = 'display:flex;align-items:center;gap:8px;';
     wrap.innerHTML = `
@@ -481,164 +532,91 @@
                border:1px solid rgba(255,255,255,0.2);background:rgba(211,47,47,0.15);
                color:#fff;cursor:pointer;font-family:inherit;transition:background 0.15s;"
         onmouseover="this.style.background='rgba(211,47,47,0.35)'"
-        onmouseout="this.style.background='rgba(211,47,47,0.15)'">Sign out</button>
-    `;
-
+        onmouseout="this.style.background='rgba(211,47,47,0.15)'">Sign out</button>`;
     const navRight = document.querySelector('.nav-right');
     if (navRight) navRight.insertBefore(wrap, navRight.firstChild);
   }
-
   function restrictProjects(access) {
     if (access === 'Crossings') {
       const el = document.querySelector('.landing-btn.btn-annex');
       const nb = document.getElementById('btn-nav-annex');
-      if (el) el.style.display = 'none';
-      if (nb) nb.style.display = 'none';
+      if (el) el.style.display = 'none'; if (nb) nb.style.display = 'none';
     } else if (access === 'Annexe') {
       const el = document.querySelector('.landing-btn.btn-cx');
       const nb = document.getElementById('btn-nav-cx');
-      if (el) el.style.display = 'none';
-      if (nb) nb.style.display = 'none';
+      if (el) el.style.display = 'none'; if (nb) nb.style.display = 'none';
     }
   }
-
   function esc(s) {
     return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  // ── IDLE TIMEOUT LOGIC ───────────────────────────────────────────────────
-
-  // Activity events that reset the timer
-  const ACTIVITY_EVENTS = [
-    'mousemove', 'mousedown', 'keydown', 'touchstart',
-    'touchmove', 'click', 'scroll', 'wheel'
-  ];
-
+  // ── IDLE TIMEOUT ─────────────────────────────────────────────────────────
+  const ACTIVITY_EVENTS = ['mousemove','mousedown','keydown','touchstart','touchmove','click','scroll','wheel'];
   function resetIdleTimer() {
-    // Only run if user is signed in
     if (!_access) return;
-
-    clearTimeout(_idleTimer);
-    clearTimeout(_warnTimer);
-    clearInterval(_countdownId);
+    clearTimeout(_idleTimer); clearTimeout(_warnTimer); clearInterval(_countdownId);
     hideIdleWarning();
-
-    // Warning fires WARNING_BEFORE_SECS seconds before logout
     _warnTimer = setTimeout(showIdleWarning, WARNING_MS);
-
-    // Hard logout fires after full IDLE_MS of inactivity
-    _idleTimer = setTimeout(() => {
-      hideIdleWarning();
-      signOut('idle');
-    }, IDLE_MS);
+    _idleTimer = setTimeout(() => { hideIdleWarning(); signOut('idle'); }, IDLE_MS);
   }
-
   function startIdleTracking() {
-    resetIdleTimer(); // start the clock
-    ACTIVITY_EVENTS.forEach(ev =>
-      document.addEventListener(ev, resetIdleTimer, { passive: true })
-    );
+    resetIdleTimer();
+    ACTIVITY_EVENTS.forEach(ev => document.addEventListener(ev, resetIdleTimer, { passive: true }));
   }
-
   function stopIdleTracking() {
-    clearTimeout(_idleTimer);
-    clearTimeout(_warnTimer);
-    clearInterval(_countdownId);
+    clearTimeout(_idleTimer); clearTimeout(_warnTimer); clearInterval(_countdownId);
     hideIdleWarning();
-    ACTIVITY_EVENTS.forEach(ev =>
-      document.removeEventListener(ev, resetIdleTimer)
-    );
+    ACTIVITY_EVENTS.forEach(ev => document.removeEventListener(ev, resetIdleTimer));
   }
-
   function showIdleWarning() {
-    if (_warnEl) return; // already showing
+    if (_warnEl) return;
     let secsLeft = WARNING_BEFORE_SECS;
-
     _warnEl = document.createElement('div');
     _warnEl.id = 'ag-idle-warning';
     _warnEl.innerHTML = `
       <span class="ag-warn-icon">⏱</span>
       <span class="ag-warn-text">You'll be signed out due to inactivity in</span>
       <span class="ag-warn-secs" id="ag-warn-secs">${secsLeft}s</span>
-      <button class="ag-warn-stay" onclick="_authGate.staySignedIn()">Stay signed in</button>
-    `;
+      <button class="ag-warn-stay" onclick="_authGate.staySignedIn()">Stay signed in</button>`;
     document.body.appendChild(_warnEl);
-
-    // Count down every second
     _countdownId = setInterval(() => {
       secsLeft--;
       const el = document.getElementById('ag-warn-secs');
       if (el) el.textContent = secsLeft + 's';
-      if (secsLeft <= 0) {
-        clearInterval(_countdownId);
-      }
+      if (secsLeft <= 0) clearInterval(_countdownId);
     }, 1000);
   }
-
   function hideIdleWarning() {
     clearInterval(_countdownId);
-    if (_warnEl) {
-      _warnEl.remove();
-      _warnEl = null;
-    }
+    if (_warnEl) { _warnEl.remove(); _warnEl = null; }
   }
+  function staySignedIn() { resetIdleTimer(); }
 
-  function staySignedIn() {
-    resetIdleTimer(); // user clicked — reset the full timer
-  }
-
-  // ── PUBLIC API ────────────────────────────────────────────────────────────
-  window._authGate = { signIn, signOut, getAccess: () => _access, staySignedIn };
-  // backward compat
-  window.authGate  = window._authGate;
-
-  // Also expose staySignedIn at top level for the onclick in the warning banner
-  window.staySignedIn = staySignedIn;
-
-  // ── RUNTIME ALLOWLIST EXTENSION ───────────────────────────────────────────
-  // Called by mgmtAddUser() when admin adds a new user via the admin panel.
-  // This patches the in-memory ALLOWED object so the new user can sign in
-  // immediately without requiring a code change or redeployment.
-  // Persisted via localStorage so it survives page reload.
-  const EXTRA_ALLOWED_KEY = 'mgmt_extra_allowed';
-  function _loadExtraAllowed() {
-    try {
-      const extras = JSON.parse(localStorage.getItem(EXTRA_ALLOWED_KEY) || '{}');
-      Object.entries(extras).forEach(([email, access]) => {
-        ALLOWED[email.toLowerCase().trim()] = access;
-      });
-    } catch(e) {}
-  }
-  _loadExtraAllowed(); // Apply on every page load
-
+  // ── RUNTIME ALLOWLIST EXTENSION (called by admin panel) ──────────────────
+  // Writes to Firebase — works across ALL browsers immediately.
   window._extendAllowlist = function(email, access) {
-    const key = (email || '').toLowerCase().trim();
+    const key = (email || '').toLowerCase().trim().replace(/\./g, '_');
     if (!key) return;
-    ALLOWED[key] = access || 'Both';
-    try {
-      const extras = JSON.parse(localStorage.getItem(EXTRA_ALLOWED_KEY) || '{}');
-      extras[key] = access || 'Both';
-      localStorage.setItem(EXTRA_ALLOWED_KEY, JSON.stringify(extras));
-    } catch(e) {}
+    // Patch in-memory for current session
+    ALLOWED[email.toLowerCase().trim()] = access || 'Both';
+    // Firebase is the source of truth — already written by mgmtAddUser()
+    // This function is kept for backward compatibility.
   };
-
   window._removeFromAllowlist = function(email) {
     const key = (email || '').toLowerCase().trim();
     if (!key) return;
     delete ALLOWED[key];
-    try {
-      const extras = JSON.parse(localStorage.getItem(EXTRA_ALLOWED_KEY) || '{}');
-      delete extras[key];
-      localStorage.setItem(EXTRA_ALLOWED_KEY, JSON.stringify(extras));
-    } catch(e) {}
+    // Firebase deletion already handled by mgmtDeleteUser()
   };
 
-  // ── BOOT ─────────────────────────────────────────────────────────────────
-  function boot() {
-    injectOverlay();
-    initAuth(0);
-  }
+  // ── PUBLIC API ────────────────────────────────────────────────────────────
+  window._authGate = { signIn, signOut, getAccess: () => _access, staySignedIn, requestAccess };
+  window.authGate  = window._authGate;
+  window.staySignedIn = staySignedIn;
 
+  // ── BOOT ──────────────────────────────────────────────────────────────────
+  function boot() { injectOverlay(); initAuth(0); }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
   } else {
