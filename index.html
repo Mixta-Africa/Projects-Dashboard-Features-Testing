@@ -9802,11 +9802,6 @@ function switchMgmtTab(tab, btn) {
   if (tab==='settings') mgmtLoadSettings();
   if (tab==='tasks') mgmtPopulateTaskFilters();
 }
-  mgmtPopulateDeptDropdown();
-  mgmtRenderUsers();
-  mgmtRenderDepts();
-  mgmtPopulateTaskFilters();
-}
 function closeMgmtPanel() { document.getElementById('mgmt-overlay').classList.remove('open'); }
 
 // ── Populate dept dropdown for new user form ──
