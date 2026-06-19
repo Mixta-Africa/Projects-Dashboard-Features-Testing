@@ -3568,6 +3568,12 @@ function initFirebase() {
       _fbDb   = firebase.database();
       _fbReady = true;
 
+      // Once connected: flush anything queued offline, then self-heal by re-pushing
+      // any locally-stored updates that never made it to Firebase (old write bug).
+      // Delayed slightly so the initial dept_updates snapshot can load first, keeping
+      // the existence checks accurate and avoiding needless duplicate-path reads.
+      setTimeout(() => { try { _flushDeptUpdateQueue(); _reconcileLocalDeptUpdates(); } catch(e){ console.warn('[recovery] ', e); } }, 2500);
+
       // Listen for metric updates and paint the DOM instantly
       _fbDb.ref('metrics').on('value', snap => {
         window._firebaseMetrics = snap.val() || {};
@@ -3612,6 +3618,23 @@ function initFirebase() {
         const all = snap.val() || {};
         let needsRender = false;
 
+        // A Firebase push() key ALWAYS starts with "-" (e.g. "-Nxyz..."), so we must
+        // NOT use the leaf key to decide "session vs legacy". Instead we look at the
+        // path segments above the update and decide which one is the session folder by
+        // its NAME: session folders are date labels like "Jun 18" / "May 7" (or whatever
+        // currently lives in availableSessions). Everything before the session is the
+        // department (segments joined with "/" so "IPD/PMU" reconstructs correctly).
+        const _knownSessions = new Set([
+          ...(availableSessions.Crossings || []),
+          ...(availableSessions.Annexe || [])
+        ]);
+        const _isSessionLike = (s) => {
+          if (!s) return false;
+          if (s === 'current' || s === 'latest') return true;
+          if (_knownSessions.has(s)) return true;
+          return /^[A-Z][a-z]{2}\s+\d{1,2}$/.test(s); // "Jun 18", "May 7", etc.
+        };
+
         // Collect every update as {proj, dept, session|null, update}
         const collected = [];
         const _isUpdate = (v) => v && typeof v === 'object'
@@ -3622,20 +3645,16 @@ function initFirebase() {
           if (!node || typeof node !== 'object') return;
           Object.entries(node).forEach(([key, value]) => {
             if (_isUpdate(value)) {
-              // value is an update; `parts` holds the path segments below the project.
-              // Last segment is the session (date folder); anything before it is the dept.
-              // Legacy flat updates live directly under the dept (parent key starts "-"),
-              // in which case there is no session segment.
-              if (key.startsWith('-')) {
-                const dept = parts.join('/');
-                collected.push({ proj, dept, session: null, update: value });
-              } else if (parts.length >= 2) {
+              // `parts` = path segments from project down to this update's container
+              // (the pushId `key` itself is NOT in parts).
+              //   normal:        parts = [dept..., session]
+              //   legacy flat:   parts = [dept...]            (no session folder)
+              if (parts.length >= 1 && _isSessionLike(parts[parts.length - 1])) {
                 const session = parts[parts.length - 1];
-                const dept = parts.slice(0, -1).join('/');
+                const dept = parts.slice(0, -1).join('/') || '(unknown)';
                 collected.push({ proj, dept, session, update: value });
               } else {
-                // Update sitting directly under dept with a non-"-" key — treat as legacy flat
-                const dept = parts.join('/');
+                const dept = parts.join('/') || '(unknown)';
                 collected.push({ proj, dept, session: null, update: value });
               }
             } else if (value && typeof value === 'object') {
@@ -4432,19 +4451,100 @@ function submitTeamUpdate() {
   }
 }
 
+// ── Resilient dept-update persistence ────────────────────────────────
+// Problem this solves: previously the Firebase push was guarded by
+// `if (_fbReady && _fbDb)`. If a user posted before the DB listeners had
+// attached (they retry for up to ~15s, and need auth first), the push was
+// silently skipped — yet the alert email was still sent. The update then
+// lived ONLY in that device's localStorage and never reached other devices.
+let _deptUpdateQueue = [];
+try { _deptUpdateQueue = JSON.parse(localStorage.getItem('_deptUpdateQueue') || '[]'); } catch(e) { _deptUpdateQueue = []; }
+function _persistDeptQueue() {
+  try { localStorage.setItem('_deptUpdateQueue', JSON.stringify(_deptUpdateQueue)); } catch(e){}
+}
+function _queueDeptUpdate(proj, dept, session, update) {
+  if (_deptUpdateQueue.some(q => q.update && q.update.timestamp === update.timestamp)) return;
+  _deptUpdateQueue.push({ proj, dept, session, update });
+  _persistDeptQueue();
+}
+function _pushDeptUpdate(proj, dept, session, update) {
+  if (_fbReady && _fbDb) {
+    _fbDb.ref('dept_updates/' + proj + '/' + dept + '/' + session)
+      .push(update)
+      .catch(e => { console.warn('[Firebase] dept push failed, queueing for retry:', e); _queueDeptUpdate(proj, dept, session, update); });
+  } else {
+    _queueDeptUpdate(proj, dept, session, update);
+  }
+}
+// Flush queued updates once Firebase is available. Idempotent: checks the target
+// path for an existing record with the same timestamp before pushing.
+function _flushDeptUpdateQueue() {
+  if (!(_fbReady && _fbDb) || !_deptUpdateQueue.length) return;
+  const pending = _deptUpdateQueue.slice();
+  pending.forEach(item => {
+    if (!item || !item.update || !item.update.timestamp) {
+      _deptUpdateQueue = _deptUpdateQueue.filter(q => q !== item); _persistDeptQueue(); return;
+    }
+    const path = 'dept_updates/' + item.proj + '/' + item.dept + '/' + item.session;
+    _fbDb.ref(path).once('value').then(snap => {
+      let exists = false;
+      snap.forEach(c => { const v = c.val(); if (v && v.timestamp === item.update.timestamp) exists = true; });
+      if (!exists) return _fbDb.ref(path).push(item.update);
+    }).then(() => {
+      _deptUpdateQueue = _deptUpdateQueue.filter(q => !(q.update && q.update.timestamp === item.update.timestamp));
+      _persistDeptQueue();
+    }).catch(e => console.warn('[Firebase] queue flush failed (will retry next load):', e));
+  });
+}
+// Self-healing recovery: scan every locally-stored dept update and push any that
+// aren't already in Firebase. Run this on the device that posted the missing
+// updates (e.g. H. Kacou's) — it re-sends anything stranded by the old write bug.
+// Exposed as window.recoverLocalUpdates() so it can also be triggered manually.
+function _reconcileLocalDeptUpdates() {
+  if (!(_fbReady && _fbDb)) return;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith('deptupdate:')) continue;
+    // key form: deptupdate:PROJ:DEPT:SESSION  (no segment contains ":")
+    const parts = k.slice('deptupdate:'.length).split(':');
+    if (parts.length < 2) continue;
+    const proj = parts[0];
+    const keySession = parts.length >= 3 ? parts[parts.length - 1] : null;
+    const dept = parts.length >= 3 ? parts.slice(1, -1).join(':') : parts.slice(1).join(':');
+    let arr; try { arr = JSON.parse(localStorage.getItem(k) || '[]'); } catch(e) { continue; }
+    if (!Array.isArray(arr)) continue;
+    arr.forEach(u => {
+      if (!u || !u.timestamp) return;
+      const session = u.session || keySession;
+      if (!session) return;
+      _queueDeptUpdate(u._proj || proj, u._dept || dept, session, u);
+    });
+  }
+  _flushDeptUpdateQueue();
+}
+window.recoverLocalUpdates = function() {
+  if (!(_fbReady && _fbDb)) { console.warn('Firebase not ready yet — try again in a few seconds.'); return; }
+  _reconcileLocalDeptUpdates();
+  console.log('Recovery started. Queued local updates are being pushed to Firebase (idempotent).');
+};
+
 function _saveUpdate(author, authorEmail, text, linkedTask, sessionKey, mediaItems, replyRef) {
   const update = {
     text, author, authorEmail: authorEmail || null,
     timestamp: new Date().toISOString(),
     session: sessionKey, linkedTask,
     replyTo: replyRef || null,
-    mediaItems: mediaItems || null
+    mediaItems: mediaItems || null,
+    // carry project/dept on the record so a stranded update can be recovered to the
+    // correct Firebase path later even if currentProject/currentDept have changed
+    _proj: currentProject, _dept: currentDept
   };
 
-  if (_fbReady && _fbDb) {
-    _fbDb.ref('dept_updates/' + currentProject + '/' + currentDept + '/' + sessionKey)
-      .push(update).catch(e => console.warn('[Firebase] dept update failed:', e));
-  }
+  // Resilient write: pushes now if Firebase is ready, otherwise queues and flushes
+  // automatically once it connects. This is what prevents the "got the email but the
+  // update never persisted" failure (the email is sent unconditionally below).
+  _pushDeptUpdate(currentProject, currentDept, sessionKey, update);
+
   const key = 'deptupdate:' + currentProject + ':' + currentDept + ':' + sessionKey;
   let updates = JSON.parse(localStorage.getItem(key) || '[]');
   updates.push(update);
