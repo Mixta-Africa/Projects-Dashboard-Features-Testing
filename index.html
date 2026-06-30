@@ -5174,7 +5174,12 @@ async function syncWithGoogleSheet() {
     // ── Reset PI + milestones so they regenerate with fresh data ──
     _piGenerated = { Crossings: false, Annexe: false };
     _milestonesLoaded = { Crossings: false, Annexe: false };
-    viewingSessionDate = 'current'; updateDashboardDates(); renderMetricTiles(); applyPriorityColors(); renderAlertStrips(); updateSidebarCounts(); renderOverduePanels(); if (currentDept) renderCurrentDept(); populateSessionPicker(); if(_dashboardSession!=='latest') refreshDashboardForSession(); renderDynamicCharts(); updateLandingPageMetrics(); setTimeout(renderAllCVIs, 200);
+    viewingSessionDate = 'current'; updateDashboardDates(); renderMetricTiles(); applyPriorityColors(); renderAlertStrips();
+    // ── Reconcile dept arrays with whatever processSheet() wrote to taskDatabase
+    //    (catches AMC and any newly-introduced sheet dept that admin panel may not know about)
+    if (typeof mgmtApplyCustomDepts === 'function') mgmtApplyCustomDepts();
+    if (typeof rebuildSidebarButtons === 'function') rebuildSidebarButtons(); else updateSidebarCounts();
+    renderOverduePanels(); if (currentDept) renderCurrentDept(); populateSessionPicker(); if(_dashboardSession!=='latest') refreshDashboardForSession(); renderDynamicCharts(); updateLandingPageMetrics(); setTimeout(renderAllCVIs, 200);
     // 25002500 Run Trend Intelligence Engine 25002500
     setTimeout(function() {
       try { runAndRenderTrend('Crossings'); } catch(e) { console.warn('[TI] Crossings:', e); }
@@ -9962,10 +9967,28 @@ function mgmtApplyCustomUsers() {
 }
 
 // ── Merge custom depts into CX_DEPTS / ANNEX_DEPTS at runtime ──
+// Also reconciles any dept that arrived via sheet sync (e.g. AMC) but was
+// accidentally shadowed or omitted — prevents the admin panel's stored list
+// from diverging from the live taskDatabase.
 function mgmtApplyCustomDepts() {
   const custom = mgmtGetCustomDepts();
   (custom.Crossings || []).forEach(d => { if (!CX_DEPTS.includes(d)) CX_DEPTS.push(d); });
   (custom.Annexe || []).forEach(d => { if (!ANNEX_DEPTS.includes(d)) ANNEX_DEPTS.push(d); });
+
+  // ── Auto-heal: scan taskDatabase for departments that processSheet() wrote
+  //    but that are absent from the live dept arrays (e.g. AMC after admin-panel
+  //    interference, or any newly-introduced department from the sheet).
+  if (typeof taskDatabase !== 'undefined' && Array.isArray(taskDatabase)) {
+    taskDatabase.forEach(t => {
+      if (!t.dept || !t.project) return;
+      if (t.project === 'Crossings' && !CX_DEPTS.includes(t.dept)) {
+        CX_DEPTS.push(t.dept);
+      }
+      if (t.project === 'Annexe' && !ANNEX_DEPTS.includes(t.dept)) {
+        ANNEX_DEPTS.push(t.dept);
+      }
+    });
+  }
 }
 
 // ── Merge custom mailing list entries ──
@@ -10273,11 +10296,49 @@ function mgmtDismissRequest(key) {
 
 // ══ DEPARTMENTS ══
 function mgmtAddDept() {
-  const name    = document.getElementById('mgmt-new-dept-name').value.trim();
-  const project = document.getElementById('mgmt-new-dept-project').value;
+  const rawName  = document.getElementById('mgmt-new-dept-name').value.trim();
+  const project  = document.getElementById('mgmt-new-dept-project').value;
   const statusEl = document.getElementById('mgmt-dept-status');
 
-  if (!name) { statusEl.textContent = 'Department name is required.'; return; }
+  if (!rawName) { statusEl.textContent = 'Department name is required.'; return; }
+
+  // ── Normalise the input through DEPT_NORMALIZE_MAP so "fin planning",
+  //    "finplanning", "FIN PLANNING" etc. all resolve to the canonical name
+  //    ("FinPlanning") before anything is stored or pushed to the sidebar. ──
+  const lower = rawName.toLowerCase().replace(/[\s\-_\/]+/g,'');
+  let name = rawName; // fallback: keep original capitalisation
+  if (typeof DEPT_NORMALIZE_MAP !== 'undefined') {
+    // Exact key match first (strip spaces for the lookup)
+    const stripped = rawName.toLowerCase().replace(/\s+/g,'');
+    if (DEPT_NORMALIZE_MAP[rawName.toLowerCase()]) {
+      name = DEPT_NORMALIZE_MAP[rawName.toLowerCase()];
+    } else if (DEPT_NORMALIZE_MAP[stripped]) {
+      name = DEPT_NORMALIZE_MAP[stripped];
+    } else {
+      // Prefix scan — same logic as fuzzyMatchDept in processSheet()
+      for (const key of Object.keys(DEPT_NORMALIZE_MAP).sort((a,b) => b.length - a.length)) {
+        if (rawName.toLowerCase().startsWith(key)) { name = DEPT_NORMALIZE_MAP[key]; break; }
+      }
+    }
+  }
+
+  // Check whether this dept already exists (case-insensitive) to prevent duplicates
+  const alreadyInCX    = CX_DEPTS.some(d => d.toLowerCase() === name.toLowerCase());
+  const alreadyInAnnex = ANNEX_DEPTS.some(d => d.toLowerCase() === name.toLowerCase());
+  const targetsBoth    = project === 'Both';
+  if ((project === 'Crossings' || targetsBoth) && alreadyInCX &&
+      (project === 'Annexe'    || targetsBoth) && alreadyInAnnex) {
+    statusEl.textContent = `"${name}" already exists in ${project}.`;
+    return;
+  }
+  if (project === 'Crossings' && alreadyInCX) {
+    statusEl.textContent = `"${name}" already exists in Crossings.`;
+    return;
+  }
+  if (project === 'Annexe' && alreadyInAnnex) {
+    statusEl.textContent = `"${name}" already exists in Annexe.`;
+    return;
+  }
 
   const custom = mgmtGetCustomDepts();
   const projects = project === 'Both' ? ['Crossings','Annexe'] : [project];
@@ -10295,7 +10356,9 @@ function mgmtAddDept() {
   if (_fbReady && _fbDb) _fbDb.ref('mgmt_depts').set(custom);
 
   document.getElementById('mgmt-new-dept-name').value = '';
-  statusEl.textContent = `"${name}" added to ${project}`;
+  // Inform admin of the resolved canonical name if input differed
+  const resolvedNote = name !== rawName ? ` (normalised from "${rawName}")` : '';
+  statusEl.textContent = `"${name}" added to ${project}${resolvedNote}`;
   mgmtRenderDepts();
   mgmtPopulateDeptDropdown();
   rebuildSidebarButtons();
@@ -10848,9 +10911,61 @@ window.onAuthGateSignedIn = window.onAuthGateSignedIn || function(user, access) 
   }
 };
 
-// ── SAFETY UNLOCK — prevents permanent freeze if dashboard-auth.js fails silently ──
-// If auth-locked is still present after 8 seconds, force-remove it.
-// This surfaces the login screen even when Firebase or the auth script errors out.
+// ── ADMIN-PANEL USER AUTHORITY SHIMS ──────────────────────────────────────
+// dashboard-auth.js owns the auth gate and checks its own internal allowlist
+// before letting a user through.  The admin panel calls _extendAllowlist()
+// and _removeFromAllowlist() to add/remove users from that list at runtime.
+//
+// If dashboard-auth.js has NOT yet defined these functions (it does so as part
+// of its own init), we provide queue-based shims here so calls made during the
+// mgmtInitOnLoad() boot phase are not silently lost.
+//
+// When dashboard-auth.js eventually defines window._extendAllowlist for real,
+// it will flush the pending queue (_pendingAllowlist) automatically — OR we
+// flush it ourselves 3 s after DOMContentLoaded as a safety net.
+//
+// This gives admin-panel-added admins EXACTLY the same sign-in authority as
+// entries hardcoded in USER_ROLES / dashboard-auth.js.
+
+window._pendingAllowlist = window._pendingAllowlist || [];   // { email, project }
+window._pendingDenylist  = window._pendingDenylist  || [];   // email strings
+
+// Shim: buffer calls that arrive before dashboard-auth.js is ready
+if (typeof window._extendAllowlist !== 'function') {
+  window._extendAllowlist = function(email, project) {
+    // If dashboard-auth.js is already loaded and exposed its real function,
+    // it will have replaced this shim — so this path only runs early.
+    window._pendingAllowlist.push({ email: (email||'').toLowerCase(), project: project||'Both' });
+    // Eagerly merge into USER_ROLES so onAuthGateSignedIn picks it up immediately
+    const custom = (function() {
+      try { return JSON.parse(localStorage.getItem('mgmt_custom_users_v1') || '{}'); } catch(e) { return {}; }
+    })();
+    const lc = (email||'').toLowerCase();
+    const entry = custom[lc] || USER_ROLES[lc];
+    if (entry && !USER_ROLES[lc]) USER_ROLES[lc] = entry;
+  };
+}
+if (typeof window._removeFromAllowlist !== 'function') {
+  window._removeFromAllowlist = function(email) {
+    window._pendingDenylist.push((email||'').toLowerCase());
+  };
+}
+
+// Safety flush: 3 s after page loads, apply pending queue to whatever real
+// _extendAllowlist dashboard-auth.js may have registered by then.
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    // By now dashboard-auth.js should have replaced the shims.
+    // Flush any queued extends (no-op if _extendAllowlist is still the shim).
+    if (window._pendingAllowlist && window._pendingAllowlist.length) {
+      // Re-call with the (possibly updated) real function
+      const fn = window._extendAllowlist;
+      const q  = window._pendingAllowlist.splice(0);
+      if (typeof fn === 'function') q.forEach(function(o) { try { fn(o.email, o.project); } catch(e) {} });
+    }
+  }, 3000);
+});
+
 window._authSafetyTimer = setTimeout(function() {
   if (document.body && document.body.classList.contains('auth-locked')) {
     console.warn('[AUTH] Safety timeout fired — dashboard-auth.js may have failed. Force-unlocking body.');
