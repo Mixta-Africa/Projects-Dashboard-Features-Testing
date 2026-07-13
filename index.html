@@ -1850,6 +1850,54 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
 #page-updates.active { display: block; }
 #page-milestones, #page-predictive, #page-trends { display: none; margin-top: var(--nav-h); min-height: calc(100vh - var(--nav-h)); background: var(--bg); }
 #page-milestones.active, #page-predictive.active, #page-trends.active { display: block; }
+#page-briefing { display: none; margin-top: var(--nav-h); min-height: calc(100vh - var(--nav-h)); background: var(--bg); }
+#page-briefing.active { display: block; }
+/* ── Pre-Meeting Briefing page ── */
+.pmb-project-block { margin-bottom: 28px; }
+.pmb-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.pmb-controls-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+.pmb-session-pills { display: flex; gap: 6px; flex-wrap: nowrap; }
+.pmb-session-pill { padding: 5px 14px; border-radius: var(--radius-pill); font-size: 12px; font-weight: 700; cursor: pointer; border: 1.5px solid var(--border-md); background: var(--white); color: var(--text-secondary); transition: all 0.18s; user-select: none; }
+.pmb-session-pill.active-cx { background: var(--cx-color); color: #fff; border-color: var(--cx-color); }
+.pmb-session-pill.active-annex { background: var(--brand-red); color: #fff; border-color: var(--brand-red); }
+.pmb-session-pill:hover:not(.active-cx):not(.active-annex) { background: var(--brand-grey-light); }
+.pmb-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.pmb-card-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.pmb-card-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+.pmb-card-title.cx { color: var(--cx-color); }
+.pmb-card-title.annex { color: var(--brand-red); }
+.pmb-card-meta { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+.pmb-body { padding: 20px 18px; min-height: 120px; }
+.pmb-loading { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 13px; font-weight: 600; }
+.pmb-loading-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); animation: pmbPulse 1.2s ease-in-out infinite; }
+.pmb-loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.pmb-loading-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes pmbPulse { 0%,80%,100%{opacity:0.3;transform:scale(0.8)} 40%{opacity:1;transform:scale(1)} }
+.pmb-error { color: var(--status-orange); font-size: 12px; font-weight: 600; }
+.pmb-retry-btn { margin-left: 10px; font-size: 11px; padding: 4px 10px; border: 1px solid var(--border-md); border-radius: 4px; cursor: pointer; background: var(--white); font-family: inherit; font-weight: 600; }
+.pmb-agenda { font-size: 13px; line-height: 1.65; }
+.pmb-agenda-section { margin-bottom: 22px; }
+.pmb-agenda-heading { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid var(--border); }
+.pmb-agenda-item { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(0,0,0,0.04); }
+.pmb-agenda-item:last-child { border-bottom: none; }
+.pmb-agenda-num { font-size: 11px; font-weight: 800; color: var(--text-muted); min-width: 22px; padding-top: 1px; }
+.pmb-agenda-content { flex: 1; }
+.pmb-agenda-dept { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+.pmb-agenda-dept.cx { color: var(--cx-color); }
+.pmb-agenda-dept.annex { color: var(--brand-red); }
+.pmb-agenda-text { color: var(--text-primary); font-weight: 500; }
+.pmb-agenda-flag { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: var(--radius-pill); margin-top: 4px; }
+.pmb-agenda-flag.critical { background: var(--status-red-bg); color: var(--status-red); border: 1px solid var(--status-red-border); }
+.pmb-agenda-flag.watch { background: var(--status-orange-bg); color: var(--status-orange); border: 1px solid var(--status-orange-border); }
+.pmb-agenda-flag.ok { background: var(--status-green-bg); color: var(--status-green); border: 1px solid var(--status-green-border); }
+.pmb-footer { padding: 10px 18px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-muted); font-weight: 600; background: var(--bg); }
+.pmb-footer-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; animation: auPulse 2.5s infinite; flex-shrink: 0; }
+.pmb-regen-btn { margin-left: auto; font-size: 11px; padding: 5px 12px; border-radius: var(--radius-pill); border: 1.5px solid var(--border-md); background: var(--white); cursor: pointer; font-family: inherit; font-weight: 700; color: var(--text-secondary); transition: all 0.18s; }
+.pmb-regen-btn:hover { background: var(--brand-grey-light); }
+#bnav-briefing { display: none; }
+#bnav-briefing.admin-visible { display: flex; }
+.pmb-nav-tab { display: none; }
+.pmb-nav-tab.admin-visible { display: inline-flex; }
 
 /* toolbar above the document */
 .uh-toolbar {
@@ -2073,6 +2121,7 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
     <button class="nav-tab" onclick="showPage('milestones',this)">Milestones</button>
     <button class="nav-tab" onclick="showPage('predictive',this)">Predictive</button>
     <button class="nav-tab" onclick="showPage('trends',this)">Trends</button>
+    <button class="nav-tab pmb-nav-tab" id="nav-tab-briefing" onclick="showPage('briefing',this)">&#x1F4CB; Next Meeting</button>
   </div>
   <div class="nav-right">
     <span class="nav-date" id="last-updated-text">Last updated: Waiting for Sync</span>
@@ -2145,6 +2194,7 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
     <button class="bottom-nav-btn" id="bnav-departments" onclick="mobileNavClick('departments',this)"><span class="bnav-dot"></span><span class="bnav-icon"><svg width="1em" height="1em" xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'><path d='M4 3h16a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm4 2v2h10V5H8zM4 10h16a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2zm12 2v2h2v-2h-2zM4 17h16a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2zm7 2v2h7v-2h-7z'/></svg></span><span class="bnav-label">Tasks</span></button>
     <button class="bottom-nav-btn" id="bnav-ask-ai" onclick="openChatbot()"><span class="bnav-icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span class="bnav-label">Ask AI</span></button>
     <button class="bottom-nav-btn" id="bnav-updates" onclick="openUpdatesHub()"><span class="bnav-dot"></span><span class="bnav-icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span><span class="bnav-label">Updates</span></button>
+    <button class="bottom-nav-btn" id="bnav-briefing" onclick="mobileNavClick('briefing',this)"><span class="bnav-dot"></span><span class="bnav-icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="12" y1="9" x2="12" y2="9"/></svg></span><span class="bnav-label">Briefing</span></button>
     <!-- Hidden anchor buttons for showPage() active-state tracking on new pages -->
     <button class="bottom-nav-btn" id="bnav-milestones"  style="display:none;"></button>
     <button class="bottom-nav-btn" id="bnav-predictive"  style="display:none;"></button>
@@ -2725,6 +2775,113 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
 
 </div>
 </div>
+
+<!-- ══ PRE-MEETING BRIEFING PAGE — admin-only ══ -->
+<div id="page-briefing" class="page">
+<div class="analytics-page-container">
+
+  <!-- Page header -->
+  <div class="analytics-page-header">
+    <div class="analytics-page-header-left">
+      <div class="analytics-page-icon" style="background:linear-gradient(135deg,#1565C0,#0D47A1);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      </div>
+      <div>
+        <div class="analytics-page-title">Pre-Meeting Briefing</div>
+        <div class="analytics-page-sub" id="pmb-page-sub">AI-generated agenda · Critical flags · Cross-session analysis</div>
+      </div>
+    </div>
+    <div class="analytics-page-header-right">
+      <div class="analytics-live-chip"><div class="analytics-live-dot"></div>Admin Only</div>
+    </div>
+  </div>
+
+  <!-- Crossings briefing block -->
+  <div id="pmb-crossings-block">
+    <div class="analytics-section-label cx">
+      <span class="analytics-section-dot cx"></span>Lakowe Crossings · Pre-Meeting Intelligence
+    </div>
+    <div class="analytics-card" style="padding:0;overflow:hidden;">
+      <!-- Controls row -->
+      <div style="padding:14px 18px 0; border-bottom:1px solid var(--border); background:var(--cx-bg);">
+        <div class="pmb-controls">
+          <span class="pmb-controls-label">Analyse last</span>
+          <div class="pmb-session-pills" id="pmb-cx-pills">
+            <span class="pmb-session-pill" data-proj="Crossings" data-n="1" onclick="pmbSetN('Crossings',1,this)">1</span>
+            <span class="pmb-session-pill" data-proj="Crossings" data-n="2" onclick="pmbSetN('Crossings',2,this)">2</span>
+            <span class="pmb-session-pill active-cx" data-proj="Crossings" data-n="4" onclick="pmbSetN('Crossings',4,this)">4</span>
+            <span class="pmb-session-pill" data-proj="Crossings" data-n="5" onclick="pmbSetN('Crossings',5,this)">5</span>
+          </div>
+          <span class="pmb-controls-label" style="margin-left:4px;">meetings</span>
+          <span id="pmb-cx-session-range" style="font-size:11px;color:var(--cx-color);font-weight:700;margin-left:8px;"></span>
+        </div>
+      </div>
+      <!-- Card header -->
+      <div class="pmb-card-header">
+        <span class="pmb-card-title cx">&#x1F4CB; Next Meeting Agenda — Crossings</span>
+        <span class="pmb-card-meta" id="pmb-cx-meta">Generating…</span>
+      </div>
+      <!-- Body -->
+      <div class="pmb-body" id="pmb-cx-body">
+        <div class="pmb-loading" id="pmb-cx-loading">
+          <div class="pmb-loading-dot"></div><div class="pmb-loading-dot"></div><div class="pmb-loading-dot"></div>
+          <span>Building briefing from meeting history…</span>
+        </div>
+        <div id="pmb-cx-output" style="display:none;"></div>
+        <div class="pmb-error" id="pmb-cx-error" style="display:none;"></div>
+      </div>
+      <div class="pmb-footer">
+        <div class="pmb-footer-dot"></div>
+        <span id="pmb-cx-footer-text">Generating pre-meeting intelligence…</span>
+        <button class="pmb-regen-btn" onclick="pmbGenerate('Crossings')">&#x21bb; Regenerate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Annexe briefing block -->
+  <div id="pmb-annexe-block" style="margin-top:24px;">
+    <div class="analytics-section-label annex">
+      <span class="analytics-section-dot annex"></span>Lakowe Annexe · Pre-Meeting Intelligence
+    </div>
+    <div class="analytics-card" style="padding:0;overflow:hidden;">
+      <!-- Controls row -->
+      <div style="padding:14px 18px 0; border-bottom:1px solid var(--border); background:var(--annex-bg);">
+        <div class="pmb-controls">
+          <span class="pmb-controls-label">Analyse last</span>
+          <div class="pmb-session-pills" id="pmb-annex-pills">
+            <span class="pmb-session-pill" data-proj="Annexe" data-n="1" onclick="pmbSetN('Annexe',1,this)">1</span>
+            <span class="pmb-session-pill" data-proj="Annexe" data-n="2" onclick="pmbSetN('Annexe',2,this)">2</span>
+            <span class="pmb-session-pill active-annex" data-proj="Annexe" data-n="4" onclick="pmbSetN('Annexe',4,this)">4</span>
+            <span class="pmb-session-pill" data-proj="Annexe" data-n="5" onclick="pmbSetN('Annexe',5,this)">5</span>
+          </div>
+          <span class="pmb-controls-label" style="margin-left:4px;">meetings</span>
+          <span id="pmb-annex-session-range" style="font-size:11px;color:var(--brand-red);font-weight:700;margin-left:8px;"></span>
+        </div>
+      </div>
+      <!-- Card header -->
+      <div class="pmb-card-header">
+        <span class="pmb-card-title annex">&#x1F4CB; Next Meeting Agenda — Annexe</span>
+        <span class="pmb-card-meta" id="pmb-annex-meta">Generating…</span>
+      </div>
+      <!-- Body -->
+      <div class="pmb-body" id="pmb-annex-body">
+        <div class="pmb-loading" id="pmb-annex-loading">
+          <div class="pmb-loading-dot"></div><div class="pmb-loading-dot"></div><div class="pmb-loading-dot"></div>
+          <span>Building briefing from meeting history…</span>
+        </div>
+        <div id="pmb-annex-output" style="display:none;"></div>
+        <div class="pmb-error" id="pmb-annex-error" style="display:none;"></div>
+      </div>
+      <div class="pmb-footer">
+        <div class="pmb-footer-dot"></div>
+        <span id="pmb-annex-footer-text">Generating pre-meeting intelligence…</span>
+        <button class="pmb-regen-btn" onclick="pmbGenerate('Annexe')">&#x21bb; Regenerate</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div><!-- /page-briefing -->
 
 <!-- ══ UPDATES HUB PAGE — admin-only ══ -->
 <div id="page-updates">
@@ -3529,7 +3686,7 @@ const USER_ROLES = {
   // ── OPERATIONS — appears in both projects ──
   'u.ojembe@mixtafrica.com':      { name: 'U. Ojembe',       dept: 'Operations',  project: 'Both',      role: 'editor' },
   'o.ajala@mixtafrica.com':       { name: 'O. Ajala',        dept: 'Operations',  project: 'Both',      role: 'editor' },
-  'c.ajie@mixtafrica.com':        { name: 'C. Ajie',         dept: 'Operations',  project: 'Both',      role: 'editor' },
+  'c.ajie@mixtafrica.com':        { name: 'C. Ajie',         dept: null,          project: 'Both',      role: 'admin'  },
   'r.jolaiya@mixtafrica.com':     { name: 'R. Jolaiya',      dept: 'Operations',  project: 'Both',      role: 'editor' },
 
   // ── TELEMARKETING — appears in both projects ──
@@ -4253,6 +4410,11 @@ function submitAdmin() {
     // Reveal Updates Hub tab in bottom nav
     const _bnu = document.getElementById('bnav-updates');
     if (_bnu) _bnu.classList.add('admin-visible');
+    // Reveal Pre-Meeting Briefing in bottom nav + desktop nav tab
+    const _bnb = document.getElementById('bnav-briefing');
+    if (_bnb) _bnb.classList.add('admin-visible');
+    const _ntb = document.getElementById('nav-tab-briefing');
+    if (_ntb) _ntb.classList.add('admin-visible');
     // RE-RENDER messages so delete buttons appear
     if (currentDept && currentProject) {
       renderDeptUpdates();
@@ -5853,6 +6015,7 @@ function showPage(id, btn) {
   if (id === 'milestones') _onShowMilestones();
   if (id === 'predictive') _onShowPredictive();
   if (id === 'trends') _onShowTrends();
+  if (id === 'briefing') _onShowBriefing();
 }
 function mobileNavClick(id, btn) {
   const fakeBtn = document.querySelector(`.nav-tab[onclick*="'${id}'"]`) || document.querySelector(`.nav-tab[onclick*='"${id}"']`);
@@ -5932,6 +6095,350 @@ function _onShowTrends() {
   if (_tiCache[proj]) renderTrendPanel(proj, _tiCache[proj]);
   else setTimeout(function() { try { runAndRenderTrend(proj); } catch(e) {} }, 300);
 }
+
+// ══════════════════════════════════════════════════════════════════════
+// PRE-MEETING BRIEFING — AI agenda generator from last N sessions
+// Access: admin-only (diagUnlocked gate). Never touches non-admin data flows.
+// Projects: separate generation per project — never merged. (Crossings ≠ Annexe)
+// Session source: availableSessions[proj].slice(0, N) — dynamically read, never [0]-indexed
+// Token optimisation: conciseness scales with N — more sessions → tighter per-task summaries
+// ══════════════════════════════════════════════════════════════════════
+
+const _pmbN = { Crossings: 4, Annexe: 4 };         // currently selected N per project
+const _pmbGenerated = { Crossings: false, Annexe: false }; // track if auto-gen already ran this visit
+
+function _onShowBriefing() {
+  if (!diagUnlocked) return; // double-gate: page only reachable after admin unlock
+  // Auto-generate each project if not yet done this visit
+  ['Crossings', 'Annexe'].forEach(function(proj) {
+    if (!_pmbGenerated[proj]) {
+      pmbGenerate(proj);
+    }
+  });
+}
+
+function pmbSetN(proj, n, pillEl) {
+  _pmbN[proj] = n;
+  // Update pill active state
+  const pillsContainer = document.getElementById('pmb-' + (proj === 'Crossings' ? 'cx' : 'annex') + '-pills');
+  if (pillsContainer) {
+    pillsContainer.querySelectorAll('.pmb-session-pill').forEach(function(p) {
+      p.classList.remove('active-cx', 'active-annex');
+    });
+    pillEl.classList.add(proj === 'Crossings' ? 'active-cx' : 'active-annex');
+  }
+  // Reset generated flag and re-run
+  _pmbGenerated[proj] = false;
+  pmbGenerate(proj);
+}
+
+function _pmbBuildContext(proj, n) {
+  // Gather last N sessions for this project (newest first in availableSessions, index 0 = newest)
+  const sessions = (availableSessions[proj] || []).slice(0, n);
+  if (sessions.length === 0) return null;
+
+  // Update session range label
+  const rangeEl = document.getElementById('pmb-' + (proj === 'Crossings' ? 'cx' : 'annex') + '-session-range');
+  if (rangeEl) {
+    rangeEl.textContent = sessions.length > 1
+      ? sessions[sessions.length - 1] + ' \u2192 ' + sessions[0]
+      : sessions[0];
+  }
+
+  const NL = '\n';
+  const overrides = getStatusOverrides();
+  // Token budget: more sessions = tighter per-task excerpt. Scale to keep well under 6k tokens.
+  // n=1: full; n=2: moderate; n=3: concise; n=4: tighter; n=5: most compact
+  const actionMaxLen = n <= 1 ? 180 : n === 2 ? 130 : n === 3 ? 100 : n === 4 ? 75 : 60;
+  const noteMaxLen   = n <= 1 ? 140 : n === 2 ? 90  : n === 3 ? 65  : n === 4 ? 50  : 40;
+  const maxUpdatesPerDept = n <= 2 ? 4 : n === 3 ? 3 : 2;
+  const maxUpdateTextLen  = n <= 1 ? 120 : n === 2 ? 80 : n === 3 ? 60 : 45;
+
+  const trunc = function(s, max) { if (!s) return ''; s = String(s).trim(); return s.length > max ? s.substring(0, max) + '\u2026' : s; };
+
+  var ctx = 'PROJECT: Lakowe ' + proj + NL;
+  ctx += 'DATE: ' + new Date().toLocaleDateString('en-GB', { weekday:'long', day:'2-digit', month:'long', year:'numeric' }) + NL;
+  ctx += 'SESSIONS ANALYSED (' + sessions.length + '): ' + sessions.join(', ') + NL + NL;
+
+  // Financial snapshot (latest session only)
+  var latestMetrics = (window._firebaseMetrics && window._firebaseMetrics[proj])
+    ? window._firebaseMetrics[proj][sessions[0]]
+    : null;
+  if (latestMetrics) {
+    ctx += 'LATEST FINANCIALS (' + sessions[0] + '):' + NL;
+    if (latestMetrics.balance)    ctx += '  Balance: '    + latestMetrics.balance    + NL;
+    if (latestMetrics.inflow)     ctx += '  Inflow: '     + latestMetrics.inflow     + NL;
+    if (latestMetrics.salesValue) ctx += '  Sales: '      + latestMetrics.salesValue + NL;
+    if (latestMetrics.offers)     ctx += '  Offer Ltrs: ' + latestMetrics.offers     + NL;
+    ctx += NL;
+  }
+
+  // Tasks — organised by session (newest first) then department
+  sessions.forEach(function(sess, si) {
+    var sessLabel = 'SESSION ' + (si + 1) + ' OF ' + sessions.length + ': ' + sess + (si === 0 ? ' (latest)' : '');
+    ctx += '--- ' + sessLabel + ' ---' + NL;
+
+    var sessTasksByDept = {};
+    taskDatabase.forEach(function(t) {
+      if (t.project !== proj || t.session !== sess) return;
+      if (!sessTasksByDept[t.dept]) sessTasksByDept[t.dept] = [];
+      sessTasksByDept[t.dept].push(t);
+    });
+
+    var depts = Object.keys(sessTasksByDept).sort();
+    if (depts.length === 0) { ctx += '  (no tasks recorded)' + NL; }
+
+    depts.forEach(function(dept) {
+      ctx += '  [' + dept.toUpperCase() + ']' + NL;
+      sessTasksByDept[dept].forEach(function(t) {
+        var st = overrides[taskId(t)] || t.status || 'ontrack';
+        var statusTag = st === 'delayed' ? '\u26a0 DELAYED' : st === 'onhold' ? '\u23f8 ON HOLD' : st === 'achieved' ? '\u2713 DONE' : '\u25cf ON TRACK';
+        ctx += '    ' + statusTag + ' | ' + trunc(t.action, actionMaxLen);
+        if (t.due && t.due !== 'TBD') ctx += ' [Due: ' + t.due + ']';
+        if (isOverdue(t) && st !== 'achieved') ctx += ' \u2691OVERDUE';
+        if (t.explanation && n <= 3) ctx += ' | Note: ' + trunc(t.explanation, noteMaxLen);
+        ctx += NL;
+      });
+
+      // Team update comments for this dept/session
+      var updates = _getDeptUpdates(proj, dept, sess);
+      var recentUpdates = updates.slice(-maxUpdatesPerDept);
+      if (recentUpdates.length > 0) {
+        ctx += '    TEAM COMMENTS:' + NL;
+        recentUpdates.forEach(function(u) {
+          var ts = u.timestamp ? new Date(u.timestamp).toLocaleDateString('en-GB', { day:'2-digit', month:'short' }) : '';
+          var author = u.author ? u.author.split(' ')[0] : '?';
+          ctx += '      [' + ts + ' ' + author + '] ' + trunc(u.text, maxUpdateTextLen) + NL;
+        });
+      }
+    });
+    ctx += NL;
+  });
+
+  return ctx;
+}
+
+async function pmbGenerate(proj) {
+  if (!diagUnlocked) return;
+  const pfx  = proj === 'Crossings' ? 'cx' : 'annex';
+  const n    = _pmbN[proj];
+  const loadEl  = document.getElementById('pmb-' + pfx + '-loading');
+  const outputEl= document.getElementById('pmb-' + pfx + '-output');
+  const errorEl = document.getElementById('pmb-' + pfx + '-error');
+  const metaEl  = document.getElementById('pmb-' + pfx + '-meta');
+  const footEl  = document.getElementById('pmb-' + pfx + '-footer-text');
+
+  // Reset UI to loading state
+  if (loadEl)   { loadEl.style.display = 'flex'; }
+  if (outputEl) { outputEl.style.display = 'none'; outputEl.innerHTML = ''; }
+  if (errorEl)  { errorEl.style.display = 'none'; errorEl.innerHTML = ''; }
+  if (metaEl)   { metaEl.textContent = 'Analysing ' + n + ' meeting' + (n > 1 ? 's' : '') + '…'; }
+
+  const ctx = _pmbBuildContext(proj, n);
+  if (!ctx) {
+    if (loadEl) loadEl.style.display = 'none';
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.innerHTML = 'No session data available for Lakowe ' + proj + '. Sync the Google Sheet first.';
+    }
+    if (metaEl) metaEl.textContent = 'No data';
+    return;
+  }
+
+  const accentColor = proj === 'Crossings' ? '#1b5e20' : '#D32F2F';
+  const projLabel   = 'Lakowe ' + proj;
+  const sessions    = (availableSessions[proj] || []).slice(0, n);
+  const sessRange   = sessions.length > 1
+    ? sessions[sessions.length - 1] + ' to ' + sessions[0]
+    : sessions[0];
+
+  const systemPrompt = 'You are a Senior Project Management Associate at Mixta Africa, a real estate developer in Lagos, Nigeria. You produce tight, executive-grade pre-meeting agendas for the ' + projLabel + ' project. Be precise, factual, and action-focused. Output ONLY valid HTML using the exact class names provided — no markdown, no preamble, no postamble.';
+
+  const userPrompt = `You are preparing the agenda for the next project meeting for ${projLabel}.
+
+DATA BELOW covers the last ${n} meeting session${n > 1 ? 's' : ''} (${sessRange}).
+
+TASK STATUS KEY:
+⚠ DELAYED = behind schedule — MUST appear as a critical agenda item
+⏸ ON HOLD = blocked/paused — flag for discussion
+⑁ OVERDUE = past due date — escalate
+● ON TRACK = progressing — summarise briefly unless a pattern of stagnation exists
+✓ DONE = completed — only mention if relevant to an open item
+
+YOUR AGENDA RULES:
+1. SECTION 1 "CRITICAL FLAGS" — list EVERY delayed, overdue, or stalled item. This is the most important section. If an item has appeared across multiple sessions without resolution, call that out explicitly ("stalled for N meetings").
+2. SECTION 2 "ITEMS REQUIRING A DECISION" — items that are on-hold or have team comments indicating a blocker. Must be actionable — state what decision is needed.
+3. SECTION 3 "PROGRESS UPDATES" — concise status on on-track tasks that have meaningful updates or are approaching their due date. Skip trivially fine items.
+4. SECTION 4 "FINANCIAL PULSE" — if financial data was provided, a 2-sentence summary of the cash/sales position and what it means for the project. Skip if no financial data provided.
+5. Each agenda item must name the DEPARTMENT, the task, and a crisp reason it is on the agenda.
+6. Do NOT pad or add generic filler. If a section has no items, omit it entirely.
+7. Max total output: ~600 words to stay actionable.
+
+PROJECT DATA:
+${ctx}
+
+OUTPUT FORMAT — use EXACTLY these HTML structures, nothing else:
+
+<div class="pmb-agenda">
+
+  <div class="pmb-agenda-section">
+    <div class="pmb-agenda-heading">🔴 Critical Flags</div>
+    <!-- One pmb-agenda-item per delayed/overdue/stalled item -->
+    <div class="pmb-agenda-item">
+      <div class="pmb-agenda-num">C1</div>
+      <div class="pmb-agenda-content">
+        <div class="pmb-agenda-dept ${proj === 'Crossings' ? 'cx' : 'annex'}">[DEPT NAME]</div>
+        <div class="pmb-agenda-text">[Crisp statement of the issue and why it is critical]</div>
+        <span class="pmb-agenda-flag critical">⚠ Delayed</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="pmb-agenda-section">
+    <div class="pmb-agenda-heading">🟡 Requires a Decision</div>
+    <!-- One pmb-agenda-item per blocked/on-hold item -->
+    <div class="pmb-agenda-item">
+      <div class="pmb-agenda-num">D1</div>
+      <div class="pmb-agenda-content">
+        <div class="pmb-agenda-dept ${proj === 'Crossings' ? 'cx' : 'annex'}">[DEPT NAME]</div>
+        <div class="pmb-agenda-text">[What decision is needed and why it is blocking progress]</div>
+        <span class="pmb-agenda-flag watch">⏸ On Hold</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="pmb-agenda-section">
+    <div class="pmb-agenda-heading">🟢 Progress Updates</div>
+    <!-- One pmb-agenda-item per notable on-track task -->
+    <div class="pmb-agenda-item">
+      <div class="pmb-agenda-num">P1</div>
+      <div class="pmb-agenda-content">
+        <div class="pmb-agenda-dept ${proj === 'Crossings' ? 'cx' : 'annex'}">[DEPT NAME]</div>
+        <div class="pmb-agenda-text">[Status update — what is progressing and any upcoming milestone]</div>
+        <span class="pmb-agenda-flag ok">● On Track</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="pmb-agenda-section">
+    <div class="pmb-agenda-heading">💰 Financial Pulse</div>
+    <div class="pmb-agenda-item">
+      <div class="pmb-agenda-num">F1</div>
+      <div class="pmb-agenda-content">
+        <div class="pmb-agenda-dept ${proj === 'Crossings' ? 'cx' : 'annex'}">OPERATIONS / FINCON</div>
+        <div class="pmb-agenda-text">[2-sentence cash/sales position summary and its implication for this project]</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+Remember: output ONLY valid HTML using the exact class names shown. No markdown. No extra text before or after.`;
+
+  const GROQ_KEY = window.GROQ_API_KEY || localStorage.getItem('GROQ_API_KEY');
+  const CEREBRAS_KEY = window.CEREBRAS_API_KEY || localStorage.getItem('CEREBRAS_API_KEY');
+
+  const msgs = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user',   content: userPrompt }
+  ];
+
+  try {
+    let res;
+    // Primary: Groq llama-3.3-70b (fast, sufficient for structured agenda)
+    if (GROQ_KEY) {
+      res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          max_tokens: 1600,
+          temperature: 0.25,
+          messages: msgs
+        })
+      });
+    }
+    // Fallback: Cerebras
+    if (!GROQ_KEY || !res.ok) {
+      if (!CEREBRAS_KEY) throw new Error('No AI API key configured (GROQ_API_KEY or CEREBRAS_API_KEY).');
+      res = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CEREBRAS_KEY },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b',
+          max_tokens: 1600,
+          temperature: 0.25,
+          messages: msgs
+        })
+      });
+    }
+    // Final fallback: Anthropic API (available in this dashboard's chatbot path)
+    if (!res || !res.ok) {
+      res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1600,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }]
+        })
+      });
+      if (res.ok) {
+        const d = await res.json();
+        const raw = (d.content && d.content[0] && d.content[0].text) ? d.content[0].text.trim() : '';
+        _pmbRenderOutput(proj, raw, n, sessions);
+        return;
+      }
+    }
+
+    if (!res.ok) throw new Error('AI provider returned ' + res.status);
+    const data = await res.json();
+    const raw = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content)
+      ? data.choices[0].message.content.trim() : '';
+    if (!raw) throw new Error('Empty response from AI provider');
+    _pmbRenderOutput(proj, raw, n, sessions);
+
+  } catch (err) {
+    if (loadEl)  loadEl.style.display = 'none';
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.innerHTML = '⚠ Briefing generation failed: ' + err.message
+        + '<button class="pmb-retry-btn" onclick="pmbGenerate(\'' + proj + '\')">Retry</button>';
+    }
+    if (metaEl) metaEl.textContent = 'Error';
+  }
+}
+
+function _pmbRenderOutput(proj, raw, n, sessions) {
+  const pfx     = proj === 'Crossings' ? 'cx' : 'annex';
+  const loadEl  = document.getElementById('pmb-' + pfx + '-loading');
+  const outputEl= document.getElementById('pmb-' + pfx + '-output');
+  const metaEl  = document.getElementById('pmb-' + pfx + '-meta');
+  const footEl  = document.getElementById('pmb-' + pfx + '-footer-text');
+
+  // Strip accidental markdown fences
+  const clean = raw.replace(/^```html?\n?/i, '').replace(/\n?```$/, '').trim();
+
+  if (loadEl)   loadEl.style.display = 'none';
+  if (outputEl) {
+    outputEl.innerHTML = clean;
+    outputEl.style.display = 'block';
+  }
+  const sessRange = sessions.length > 1
+    ? sessions[sessions.length - 1] + ' – ' + sessions[0]
+    : sessions[0];
+  if (metaEl) metaEl.textContent = n + ' meeting' + (n > 1 ? 's' : '') + ' · ' + sessRange;
+  if (footEl) {
+    const now = new Date();
+    footEl.textContent = 'Generated from ' + n + ' session' + (n > 1 ? 's' : '') + ' · '
+      + now.toLocaleDateString('en-NG', { day:'2-digit', month:'short', year:'numeric' })
+      + ' ' + now.toLocaleTimeString('en-NG', { hour:'2-digit', minute:'2-digit' });
+  }
+  _pmbGenerated[proj] = true;
+}
+
+// ══ END PRE-MEETING BRIEFING ══
 
 function showLanding() {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-landing').classList.add('active');
