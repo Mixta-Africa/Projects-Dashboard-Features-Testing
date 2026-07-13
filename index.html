@@ -1899,6 +1899,40 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
 .pmb-nav-tab { display: none; }
 .pmb-nav-tab.admin-visible { display: inline-flex; }
 
+/* ── IMMUTABLE CHANGE LOG PANEL ─────────────────────────────────────────── */
+#changelog-panel { position:fixed; top:0; right:0; bottom:0; width:420px; max-width:95vw; background:#0f172a; color:#e2e8f0; z-index:5000; transform:translateX(100%); transition:transform 0.28s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; box-shadow:-4px 0 24px rgba(0,0,0,0.4); font-family:'DM Mono','DM Sans',monospace; }
+#changelog-panel.open { transform:translateX(0); }
+#changelog-panel-header { padding:16px 18px 14px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; gap:10px; flex-shrink:0; }
+#changelog-panel-header h3 { font-size:13px; font-weight:800; letter-spacing:0.04em; text-transform:uppercase; color:#fff; margin:0; flex:1; }
+#changelog-panel-header .cl-badge { font-size:10px; font-weight:800; padding:2px 8px; border-radius:100px; background:#1e40af; color:#93c5fd; letter-spacing:0.04em; }
+#changelog-close-btn { background:none; border:none; color:#94a3b8; cursor:pointer; padding:4px; line-height:1; font-size:18px; flex-shrink:0; }
+#changelog-close-btn:hover { color:#fff; }
+#changelog-body { flex:1; overflow-y:auto; padding:16px 18px; scrollbar-width:thin; scrollbar-color:#334155 transparent; }
+.cl-entry { border-left:2px solid #1e40af; padding:10px 0 10px 14px; margin-bottom:16px; position:relative; }
+.cl-entry:last-child { margin-bottom:0; }
+.cl-entry.breaking { border-color:#dc2626; }
+.cl-entry.fix { border-color:#16a34a; }
+.cl-entry.feature { border-color:#2563eb; }
+.cl-entry.hotfix { border-color:#d97706; }
+.cl-version { font-size:11px; font-weight:800; color:#93c5fd; letter-spacing:0.05em; margin-bottom:2px; }
+.cl-entry.breaking .cl-version { color:#fca5a5; }
+.cl-entry.fix .cl-version { color:#86efac; }
+.cl-entry.hotfix .cl-version { color:#fcd34d; }
+.cl-date { font-size:10px; color:#64748b; font-weight:600; margin-bottom:6px; }
+.cl-title { font-size:12px; font-weight:700; color:#f1f5f9; margin-bottom:5px; font-family:'DM Sans',sans-serif; }
+.cl-detail { font-size:11px; color:#94a3b8; line-height:1.6; font-family:'DM Sans',sans-serif; }
+.cl-detail li { margin-bottom:3px; }
+.cl-detail ul { margin:4px 0 0 0; padding-left:16px; }
+.cl-tag { display:inline-flex; align-items:center; font-size:9px; font-weight:800; padding:1px 6px; border-radius:100px; letter-spacing:0.05em; text-transform:uppercase; margin-right:4px; margin-bottom:4px; }
+.cl-tag.added { background:rgba(37,99,235,0.2); color:#93c5fd; }
+.cl-tag.fixed { background:rgba(22,163,74,0.2); color:#86efac; }
+.cl-tag.warning { background:rgba(220,38,38,0.2); color:#fca5a5; }
+.cl-tag.info { background:rgba(100,116,139,0.2); color:#94a3b8; }
+#changelog-footer { padding:12px 18px; border-top:1px solid rgba(255,255,255,0.06); font-size:10px; color:#475569; text-align:center; flex-shrink:0; font-family:'DM Sans',sans-serif; }
+.cl-open-btn { display:none; }
+.cl-open-btn.admin-visible { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; padding:6px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-md); background:var(--white); cursor:pointer; color:var(--text-secondary); transition:all 0.18s; font-family:inherit; }
+.cl-open-btn:hover { background:var(--brand-grey-light); }
+
 /* toolbar above the document */
 .uh-toolbar {
   position: sticky; top: var(--nav-h); z-index: 100;
@@ -2131,6 +2165,10 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
     <span class="nav-badge badge-cx nav-project-btn" id="btn-nav-cx" onclick="selectProject('Crossings')">Crossings</span>
     <span class="nav-badge badge-annex nav-project-btn" id="btn-nav-annex" onclick="selectProject('Annexe')">Annexe</span>
 
+    <button class="cl-open-btn" id="changelog-open-btn" onclick="openChangelog()" title="View dashboard change log">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Change Log
+    </button>
     <button class="admin-btn" onclick="openDiagAuth()" title="Admin Panel">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
       <span class="diag-badge-count" id="admin-badge">0</span>
@@ -3853,33 +3891,71 @@ function initFirebase() {
       (function _subscribeCurrentDeptUpdates() {
         let _deptRef = null;
         let _deptRefPath = null;
+        // Track all active child_added listeners so we can unsubscribe cleanly
+        var _deptRefs = []; // array of {ref, path} for all currently active listeners
+
         window._resubscribeDeptUpdates = function() {
           if (!_fbReady || !_fbDb || !currentProject || !currentDept) return;
-          const sessionKey = (viewingSessionDate && viewingSessionDate !== 'current')
-            ? viewingSessionDate
-            : ((availableSessions[currentProject] && availableSessions[currentProject][0]) || 'current');
-          const path = 'dept_updates/' + currentProject + '/' + currentDept + '/' + sessionKey;
-          if (path === _deptRefPath) return; // already subscribed to this path
-          // Unsubscribe from old path
-          if (_deptRef) { try { _deptRef.off('child_added'); } catch(e){} }
-          _deptRef = _fbDb.ref(path);
-          _deptRefPath = path;
-          _deptRef.on('child_added', childSnap => {
-            const update = childSnap.val();
-            if (!update || !update.timestamp) return;
-            // Write into fb_dept: localStorage key
-            const fbKey = 'fb_dept:' + currentProject + ':' + currentDept + ':' + sessionKey;
-            try {
-              const existing = JSON.parse(localStorage.getItem(fbKey) || '[]');
-              const alreadyIn = existing.some(u => u.timestamp === update.timestamp);
-              if (!alreadyIn) {
-                existing.push(update);
-                existing.sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
-                localStorage.setItem(fbKey, JSON.stringify(existing));
-                renderUpdatesList(); // instant re-render on receiving new message
-              }
-            } catch(e){}
-          }, err => console.warn('[Firebase] child_added error:', err));
+
+          // Build the set of session paths to subscribe to:
+          //   [0] = latest session (or viewingSessionDate if browsing history)
+          //   [1] = previous session — catches updates posted just before a new tab synced
+          var pathsToWatch = [];
+          if (viewingSessionDate && viewingSessionDate !== 'current') {
+            // Viewing a specific historical session — only subscribe to that one
+            pathsToWatch.push({
+              path: 'dept_updates/' + currentProject + '/' + currentDept + '/' + viewingSessionDate,
+              sessionKey: viewingSessionDate
+            });
+          } else {
+            var _ss = availableSessions[currentProject] || [];
+            var _s0 = _ss[0] || 'current';
+            var _s1 = _ss[1] || null;
+            pathsToWatch.push({
+              path: 'dept_updates/' + currentProject + '/' + currentDept + '/' + _s0,
+              sessionKey: _s0
+            });
+            if (_s1) {
+              pathsToWatch.push({
+                path: 'dept_updates/' + currentProject + '/' + currentDept + '/' + _s1,
+                sessionKey: _s1
+              });
+            }
+          }
+
+          // Check if we are already subscribed to exactly these paths
+          var currentPaths = _deptRefs.map(function(r) { return r.path; }).sort().join('|');
+          var newPaths     = pathsToWatch.map(function(p) { return p.path; }).sort().join('|');
+          if (currentPaths === newPaths) return; // already correct, no change needed
+
+          // Unsubscribe all previous listeners
+          _deptRefs.forEach(function(r) { try { r.ref.off('child_added'); } catch(e){} });
+          _deptRefs = [];
+
+          // Subscribe to each path
+          pathsToWatch.forEach(function(target) {
+            var ref = _fbDb.ref(target.path);
+            var sessKey = target.sessionKey;
+            ref.on('child_added', function(childSnap) {
+              var update = childSnap.val();
+              if (!update || !update.timestamp) return;
+              var fbKey = 'fb_dept:' + currentProject + ':' + currentDept + ':' + sessKey;
+              try {
+                var existing = JSON.parse(localStorage.getItem(fbKey) || '[]');
+                var alreadyIn = existing.some(function(u) { return u.timestamp === update.timestamp; });
+                if (!alreadyIn) {
+                  existing.push(update);
+                  existing.sort(function(a,b) { return new Date(a.timestamp) - new Date(b.timestamp); });
+                  localStorage.setItem(fbKey, JSON.stringify(existing));
+                  renderUpdatesList(); // instant re-render on receiving new message
+                }
+              } catch(e){}
+            }, function(err) { console.warn('[Firebase] child_added error:', err); });
+            _deptRefs.push({ ref: ref, path: target.path });
+          });
+          // Update legacy single-ref for any code that still reads _deptRef
+          _deptRef = _deptRefs.length ? _deptRefs[0].ref : null;
+          _deptRefPath = _deptRefs.length ? _deptRefs[0].path : null;
         };
         // Subscribe now and re-subscribe whenever dept/project/session changes
         setTimeout(window._resubscribeDeptUpdates, 500);
@@ -4415,6 +4491,9 @@ function submitAdmin() {
     if (_bnb) _bnb.classList.add('admin-visible');
     const _ntb = document.getElementById('nav-tab-briefing');
     if (_ntb) _ntb.classList.add('admin-visible');
+    // Reveal Change Log button
+    const _clb = document.getElementById('changelog-open-btn');
+    if (_clb) _clb.classList.add('admin-visible');
     // RE-RENDER messages so delete buttons appear
     if (currentDept && currentProject) {
       renderDeptUpdates();
@@ -4771,14 +4850,25 @@ function renderUpdatesList() {
   //    "update posted but not showing" bug, without polluting genuine historical buckets.
   const allForDept = _collectDeptUpdates(currentProject, currentDept);
   const histSessions = new Set(availableSessions[currentProject] || []);
-  const latestKey = (availableSessions[currentProject] && availableSessions[currentProject][0]) || 'current';
+  const allSessions  = availableSessions[currentProject] || [];
+  const latestKey    = allSessions[0] || 'current';
+  // Also include the immediately previous session in the "current" view.
+  // Reason: when a new sheet tab syncs, availableSessions[0] shifts to the new
+  // session. Any update posted just before that sync was tagged to allSessions[1]
+  // (the old latest). Without this, those updates pass histSessions.has() and
+  // vanish — they are valid sessions, just no longer [0]. Including [1] permanently
+  // fixes the "email received but update not showing" pattern.
+  const prevKey      = allSessions[1] || null;
   const viewingHistory = !!(viewingSessionDate && viewingSessionDate !== 'current');
 
   let updates = allForDept.filter(u => {
     if (!u.session) return true; // legacy / untagged always shows
     if (viewingHistory) return u.session === sessionKey;
-    // current view:
-    return u.session === latestKey || !histSessions.has(u.session);
+    // current view: show latest session, previous session, AND true orphans
+    // (updates whose session has been completely removed from availableSessions).
+    return u.session === latestKey
+      || (prevKey && u.session === prevKey)
+      || !histSessions.has(u.session);
   });
 
   const heading = document.getElementById('team-updates-heading');
@@ -6439,6 +6529,24 @@ function _pmbRenderOutput(proj, raw, n, sessions) {
 }
 
 // ══ END PRE-MEETING BRIEFING ══
+
+// ══════════════════════════════════════════════════════════════════════
+// IMMUTABLE CHANGE LOG — open/close + admin reveal
+// ══════════════════════════════════════════════════════════════════════
+function openChangelog() {
+  document.getElementById('changelog-panel').classList.add('open');
+}
+function closeChangelog() {
+  document.getElementById('changelog-panel').classList.remove('open');
+}
+// Close on backdrop click (click outside panel)
+document.addEventListener('click', function(e) {
+  var panel = document.getElementById('changelog-panel');
+  if (!panel || !panel.classList.contains('open')) return;
+  if (!panel.contains(e.target) && !document.getElementById('changelog-open-btn').contains(e.target)) {
+    panel.classList.remove('open');
+  }
+});
 
 function showLanding() {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-landing').classList.add('active');
@@ -8842,6 +8950,135 @@ function buildReminderEmailBody(proj, dept, tasks) {
       </table>
     </td></tr>
   </table>
+
+<!-- ══ IMMUTABLE CHANGE LOG PANEL ══════════════════════════════════════════
+     Every change to this dashboard is permanently recorded here.
+     This block must never be deleted. Add entries only — never remove.
+     Format: version · date · type (feature/fix/hotfix/breaking) · description
+     ════════════════════════════════════════════════════════════════════════ -->
+<div id="changelog-panel">
+  <div id="changelog-panel-header">
+    <h3>&#x1F4CB; Dashboard Change Log</h3>
+    <span class="cl-badge">IMMUTABLE</span>
+    <button id="changelog-close-btn" onclick="closeChangelog()" title="Close">&#x2715;</button>
+  </div>
+  <div id="changelog-body">
+
+    <!-- ════════════════════════════════════════════════════════════════
+         INSTRUCTIONS FOR FUTURE ENTRIES:
+         Copy a .cl-entry block, fill in version/date/title/detail.
+         Types: class="cl-entry feature"  → new capability
+                class="cl-entry fix"      → bug fix
+                class="cl-entry hotfix"   → urgent patch
+                class="cl-entry breaking" → change that broke something
+         Add newest entries at the TOP of this list.
+         ════════════════════════════════════════════════════════════════ -->
+
+    <!-- v63 fix -->
+    <div class="cl-entry fix">
+      <div class="cl-version">v63 · FIX</div>
+      <div class="cl-date">July 2025</div>
+      <div class="cl-title">Updates posted by team members not appearing on other devices</div>
+      <div class="cl-detail">
+        <span class="cl-tag warning">Root Cause</span>
+        <ul>
+          <li><strong>Session key drift:</strong> when a new Google Sheet tab syncs, <code>availableSessions[proj][0]</code> shifts to the new session. Updates posted just before that sync are tagged to the previous <code>[0]</code> key (now <code>[1]</code>). The <code>renderUpdatesList</code> filter only showed <code>u.session === latestKey</code> or true orphans — so these updates, being valid but non-latest sessions, were permanently invisible on the admin dashboard.</li>
+          <li><strong>Listener gap:</strong> <code>_resubscribeDeptUpdates</code> subscribed to only one Firebase path (the current latest session). The <code>child_added</code> event for updates on the previous session never fired on the viewer's device.</li>
+          <li><strong>Reconciler blind spot:</strong> <code>_reconcileLocalToFirebase</code> used <code>k.split(':').length === 4</code> — silently skipping any dept name containing a colon.</li>
+        </ul>
+        <span class="cl-tag fixed">Three Fixes Applied</span>
+        <ul>
+          <li><strong>Fix 1 — renderUpdatesList filter:</strong> now includes <code>allSessions[1]</code> (previous session) in the "current" view. Updates from the immediately prior session always surface alongside the latest.</li>
+          <li><strong>Fix 2 — _resubscribeDeptUpdates:</strong> now subscribes to Firebase <code>child_added</code> on BOTH <code>[0]</code> and <code>[1]</code> session paths simultaneously. Each listener writes to its own <code>fb_dept:</code> localStorage key and calls <code>renderUpdatesList()</code> independently. Old single-ref (<code>_deptRef</code>/<code>_deptRefPath</code>) preserved as alias for backward compat.</li>
+          <li><strong>Fix 3 — reconciler key filter:</strong> changed from <code>=== 4</code> to <code>>= 4</code> so dept names with colons are no longer silently skipped during the 5-minute reconciliation cycle.</li>
+        </ul>
+        <span class="cl-tag info">Not Affected</span>
+        <ul>
+          <li>Updates already in Firebase (including H. Kacou's previously-missing updates) will appear immediately once the page is refreshed — the full <code>dept_updates.on('value')</code> snapshot listener already retrieved them into localStorage; the filter fix now lets them render.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- v62 hotfix -->
+    <div class="cl-entry hotfix">
+      <div class="cl-version">v62 · HOTFIX</div>
+      <div class="cl-date">July 2025</div>
+      <div class="cl-title">Syntax error fix — page was not loading past project selection</div>
+      <div class="cl-detail">
+        <span class="cl-tag warning">Root Cause</span>
+        <ul>
+          <li>Python heredoc string injection for the PMB JS treated <code>
+</code> as literal newlines inside single-quoted JS strings, splitting them across file lines. The browser JS engine failed to parse the entire main script block (block 9, ~462k chars), meaning <code>selectProject()</code>, <code>showPage()</code>, and every other function in that block never loaded.</li>
+          <li>Secondary: <code>pmbGenerate()</code> retry button had collapsed quotes from the same escape issue.</li>
+        </ul>
+        <span class="cl-tag fixed">Fixes Applied</span>
+        <ul>
+          <li>Rewrote <code>_pmbBuildContext()</code> to use <code>const NL = '
+'</code> variable — no escape sequences needed.</li>
+          <li>Fixed retry button onclick attribute escaping.</li>
+          <li>Validated all 13 script blocks with acorn (V8-spec JS parser) before shipping.</li>
+        </ul>
+        <span class="cl-tag info">Diagnosis</span>
+        <ul>
+          <li>Update reflection issue reported simultaneously was confirmed to be pre-existing (all update pipeline functions byte-for-byte identical to v61). Not introduced by v62.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- v62 main release -->
+    <div class="cl-entry feature">
+      <div class="cl-version">v62 · FEATURE + FIX</div>
+      <div class="cl-date">July 2025</div>
+      <div class="cl-title">Pre-Meeting Briefing page + c.ajie admin role fix</div>
+      <div class="cl-detail">
+        <span class="cl-tag fixed">Bug Fix</span>
+        <ul>
+          <li><code>c.ajie@mixtafrica.com</code> had <code>role:'editor', dept:'Operations'</code> in USER_ROLES — should be <code>role:'admin', dept:null</code>. This blocked admin panel access and diagUnlocked features for the second admin. Fixed in USER_ROLES only (auth file already had correct allowlist entry).</li>
+        </ul>
+        <span class="cl-tag added">New Feature — Pre-Meeting Briefing</span>
+        <ul>
+          <li>New page: <code>#page-briefing</code> — admin-only, hidden until <code>diagUnlocked</code>.</li>
+          <li>Toggle: 1 / 2 / 4 / 5 meetings back per project. Default: 4. Stored in session only.</li>
+          <li>Data source: <code>availableSessions[proj].slice(0, n)</code> — dynamic, never <code>[0]</code>-indexed. Pulls tasks from <code>taskDatabase</code>, statuses from <code>getStatusOverrides()</code>, team comments from <code>_getDeptUpdates()</code>, financials from <code>window._firebaseMetrics</code>.</li>
+          <li>Token optimisation: action text capped 60–180 chars, notes 40–140 chars, max 2–4 team updates per dept/session — all scaling with N to avoid token overflow.</li>
+          <li>AI chain: Groq (llama-3.3-70b) → Cerebras (llama-3.3-70b) → Anthropic (claude-sonnet). Matches existing PI pattern.</li>
+          <li>Output: agenda-style HTML with four sections — Critical Flags, Requires a Decision, Progress Updates, Financial Pulse. Omitted if empty.</li>
+          <li>Auto-generates on page open via <code>_onShowBriefing()</code> hook in <code>showPage()</code>.</li>
+          <li>Nav: desktop tab (hidden until admin unlock), mobile bottom nav button (hidden until admin unlock). Revealed in <code>submitAdmin()</code> alongside Updates Hub.</li>
+        </ul>
+        <span class="cl-tag info">No Deletions</span>
+        <ul>
+          <li>Zero existing functions modified or removed. Net addition: +523 lines / +27KB.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- v61 baseline -->
+    <div class="cl-entry feature">
+      <div class="cl-version">v61 · BASELINE</div>
+      <div class="cl-date">June–July 2025</div>
+      <div class="cl-title">Baseline version at start of changelog tracking</div>
+      <div class="cl-detail">
+        <span class="cl-tag info">Architecture at v61</span>
+        <ul>
+          <li>Single-file PWA: <code>index.html</code> + <code>dashboard-auth.js</code> (external). Hosted on GitHub Pages via <code>deploy.yml</code> with <code>sed</code> secret injection.</li>
+          <li>Data: dual Google Sheets (Crossings + Annexe) via XLSX.js published endpoints. Firebase Realtime DB for auth, dept_updates, metrics, reminders, access_requests.</li>
+          <li>Pages: Landing, Dashboard, Departments, Milestones, Predictive Intelligence, Trend Intelligence, Updates Hub (admin-only).</li>
+          <li>AI: Groq primary → Cerebras fallback for PI and reports. Anthropic claude-sonnet for chatbot.</li>
+          <li>Admin panel: password <code>PDadmin1234</code> gates diagUnlocked. Commercial Strategy role = admin. Write queue pattern for Firebase timing.</li>
+          <li>Known architectural rules: Crossings ≠ Annexe structurally (bullet vs dash format, K vs M balance, different target columns). Never merge parsing logic. Session keys read dynamically, never from fixed index.</li>
+          <li>Admin bugs fixed by v61: dept normalisation, AMC sync disconnect, user authority queue shims, Firebase session-key drift, silent write failures, slash-in-dept-name path parsing.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+  <div id="changelog-footer">
+    Mixta Africa Projects Tracker — Immutable Change Record &nbsp;·&nbsp; Add entries at top, never remove
+  </div>
+</div>
+<!-- /changelog-panel -->
+
 </body>
 </html>`;
 }
@@ -11105,7 +11342,8 @@ window.onload = function () {
           for (let i = 0; i < localStorage.length; i++) {
             const k = localStorage.key(i);
             // Match: deptupdate:{proj}:{dept}:{session}
-            if (k && k.startsWith('deptupdate:') && k.split(':').length === 4) {
+            // Use >= 4 (not === 4) so dept names containing colons are not skipped.
+            if (k && k.startsWith('deptupdate:') && k.split(':').length >= 4) {
               localKeys.push(k);
             }
           }
