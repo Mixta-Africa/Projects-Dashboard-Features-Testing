@@ -8971,8 +8971,85 @@ function buildReminderEmailBody(proj, dept, tasks) {
                 class="cl-entry fix"      → bug fix
                 class="cl-entry hotfix"   → urgent patch
                 class="cl-entry breaking" → change that broke something
-         Add newest entries at the TOP of this list.
+         Add newest entries at the TOP of the entries list (below the
+         PROTECTED FEATURES block, which must always remain first).
          ════════════════════════════════════════════════════════════════ -->
+
+    <!-- ══ PROTECTED FEATURES CONVENTION — READ BEFORE ANY EDIT ══════════
+         This block is PERMANENT. Never remove it. Never edit existing items.
+         Every feature listed here must be verified present before shipping
+         any new version. If a feature is missing from the output file,
+         the version must not be deployed.
+         ════════════════════════════════════════════════════════════════ -->
+    <div style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:14px 16px;margin-bottom:20px;">
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#f59e0b;margin-bottom:10px;">&#x26A0; Protected Features — Must Never Be Removed</div>
+      <div style="font-size:11px;color:#94a3b8;line-height:1.7;font-family:'DM Sans',sans-serif;">
+        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
+          <span style="color:#fbbf24;font-weight:700;">1. Date / Session History Control</span><br>
+          HTML: <code>#history-bar</code> div inside <code>#dynamic-dept-container</code> &gt; <code>.dept-header-right</code>.<br>
+          Label: <code>#viewing-date-label</code> span in dept subtitle.<br>
+          JS: <code>buildHistoryBar()</code>, <code>switchSession()</code>, <code>expandMonth()</code>.<br>
+          CSS: <code>.dept-history-bar</code>, <code>.history-pill</code>, <code>.date-pill</code>.<br>
+          State: <code>viewingSessionDate</code> global. Reset to <code>'current'</code> on every <code>showDept()</code> / <code>showDeptMobile()</code> / <code>selectProject()</code>.<br>
+          <em>Never remove. Never merge into another control. Never change IDs.</em>
+        </div>
+        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
+          <span style="color:#fbbf24;font-weight:700;">2. Active Users Bar</span><br>
+          HTML: bar above the main nav, toggled by <code>body.users-bar-visible</code>.<br>
+          JS: <code>_startPassiveMonitor()</code>, <code>_passiveFirebaseCheck()</code>.<br>
+          <em>Previously deleted accidentally. Must remain. Do not remove the passive monitor interval.</em>
+        </div>
+        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
+          <span style="color:#fbbf24;font-weight:700;">3. Firebase Write Queue + Reconciler</span><br>
+          JS: <code>_queueDeptUpdate()</code>, <code>_pushDeptUpdate()</code>, <code>_flushDeptUpdateQueue()</code>, <code>_reconcileLocalDeptUpdates()</code>, <code>_reconcileLocalToFirebase()</code>.<br>
+          The queue (<code>_deptUpdateQueue</code>) is persisted to localStorage key <code>_deptUpdateQueue</code>.<br>
+          <em>Never remove any of these five functions or the queue persistence. They prevent silent data loss.</em>
+        </div>
+        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
+          <span style="color:#fbbf24;font-weight:700;">4. Dual-Session Child_Added Listener</span><br>
+          JS: <code>_resubscribeDeptUpdates()</code> inside <code>_subscribeCurrentDeptUpdates()</code> IIFE.<br>
+          Must subscribe to BOTH <code>availableSessions[proj][0]</code> and <code>[1]</code> simultaneously.<br>
+          <code>_deptRefs[]</code> array tracks all active listeners. Backward-compat aliases: <code>_deptRef</code>, <code>_deptRefPath</code>.<br>
+          <em>Never collapse back to single-session subscription. This is the permanent session-drift fix.</em>
+        </div>
+        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
+          <span style="color:#fbbf24;font-weight:700;">5. Team Updates Feed + Chat UI</span><br>
+          HTML: <code>#updates-list</code>, <code>.update-input-group</code>, reply strip, media upload row.<br>
+          JS: <code>renderUpdatesList()</code>, <code>_collectDeptUpdates()</code>, <code>_saveUpdate()</code>, <code>submitTeamUpdate()</code>, <code>deleteUpdate()</code>, <code>setReply()</code>, <code>cancelReply()</code>.<br>
+          <em>The renderUpdatesList filter must always include latestKey, prevKey (allSessions[1]), and untagged legacy updates when in current view.</em>
+        </div>
+        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
+          <span style="color:#fbbf24;font-weight:700;">6. Updates Hub Page (admin-only)</span><br>
+          HTML: <code>#page-updates</code>. Gated by <code>diagUnlocked</code>.<br>
+          JS: <code>openUpdatesHub()</code>, <code>renderUpdatesDoc()</code>, <code>exportUpdatesAsWord()</code>.<br>
+          <em>Must not be merged with or replaced by the Pre-Meeting Briefing page.</em>
+        </div>
+        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
+          <span style="color:#fbbf24;font-weight:700;">7. Metric Extraction — Operations Row Rules</span><br>
+          Account balance only valid from the Operations row alongside inflow and sales value.<br>
+          Offer letters only sourced from Operations department rows.<br>
+          Crossings: metrics in bullet-separated action column, balance in K/thousands.<br>
+          Annexe: metrics in sub-rows, Result column, dash-separated, balance in M/millions.<br>
+          <em>Never unify these two extraction paths. They are structurally incompatible.</em>
+        </div>
+        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
+          <span style="color:#fbbf24;font-weight:700;">8. DEPT_NORMALIZE_MAP + Slash-Dept Path Walker</span><br>
+          JS: <code>DEPT_NORMALIZE_MAP</code>, <code>fuzzyMatchDept()</code>, <code>_walk()</code> recursive tree walker in <code>attachDbListeners</code>.<br>
+          <em>The _walk function must remain. Dept names like IPD/PMU create extra Firebase path levels; fixed-depth parsing breaks them silently.</em>
+        </div>
+        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
+          <span style="color:#fbbf24;font-weight:700;">9. Admin Panel + USER_ROLES</span><br>
+          Both <code>o.olasunkanmi@mixtafrica.com</code> AND <code>c.ajie@mixtafrica.com</code> must have <code>role:'admin', dept:null, project:'Both'</code>.<br>
+          Admin password: <code>PDadmin1234</code> sets <code>diagUnlocked = true</code>.<br>
+          <em>Never demote either admin to editor. Never set dept to a specific department for admins.</em>
+        </div>
+        <div>
+          <span style="color:#fbbf24;font-weight:700;">10. Seed Data + Historical Chart Arrays</span><br>
+          <code>const SEED_TASKS</code> and all hardcoded chart metric arrays (1,200+ lines of historical data).<br>
+          <em>Never truncate, summarise, or remove. These are the permanent historical record.</em>
+        </div>
+      </div>
+    </div>
 
     <!-- v63 fix -->
     <div class="cl-entry fix">
