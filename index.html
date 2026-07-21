@@ -9457,364 +9457,6 @@ function buildReminderEmailBody(proj, dept, tasks) {
   </table>
 
 
-<!-- ══ TRANSCRIPT UPLOAD MODAL ══════════════════════════════════════════════ -->
-<div id="transcript-modal-overlay">
-  <div id="transcript-modal">
-    <div class="tm-header">
-      <div class="tm-header-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      </div>
-      <div>
-        <div class="tm-header-title">Process Meeting Transcript</div>
-        <div class="tm-header-sub">AI extracts action points → appends new sheet to Google Sheets</div>
-      </div>
-      <button class="tm-close" onclick="closeTranscriptModal()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-
-    <div class="tm-body" id="tm-body">
-
-      <!-- Step 1: Config -->
-      <div id="tm-step-config">
-        <div class="tm-section">
-          <div class="tm-label">Meeting Details</div>
-          <div class="tm-row">
-            <select class="tm-select" id="tm-project">
-              <option value="Crossings">Lakowe Crossings</option>
-              <option value="Annexe">Lakowe Annexe</option>
-            </select>
-            <input type="text" class="tm-date-input" id="tm-date" placeholder="e.g. Jul 17" style="max-width:120px;" />
-            <span style="font-size:11px;color:var(--text-muted);font-weight:600;">Sheet tab name (auto-detected from transcript if blank)</span>
-          </div>
-        </div>
-
-        <div class="tm-section">
-          <div class="tm-label">Transcript</div>
-          <div class="tm-file-drop" id="tm-file-drop" onclick="document.getElementById('tm-file-input').click()" ondrop="tmHandleDrop(event)" ondragover="tmHandleDragOver(event)" ondragleave="tmHandleDragLeave(event)">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px;opacity:0.5;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            <div>Drop a .txt or .docx transcript here</div>
-            <div style="font-size:10px;margin-top:3px;opacity:0.7;">Supports plain text and Word documents</div>
-          </div>
-          <input type="file" id="tm-file-input" accept=".txt,.docx,.doc" style="display:none;" onchange="tmHandleFile(this)">
-          <div class="tm-or">— or paste transcript below —</div>
-          <textarea class="tm-textarea" id="tm-transcript-text" placeholder="Paste the full meeting transcript here. The AI will identify departments, action points, statuses, and timelines automatically..."></textarea>
-        </div>
-      </div>
-
-      <!-- Step 2: AI Processing progress -->
-      <div id="tm-step-processing" class="tm-progress" style="display:none;">
-        <div style="font-weight:700;font-size:12px;margin-bottom:8px;">Processing transcript…</div>
-        <div class="tm-progress-steps">
-          <div class="tm-step active" id="tmstep-parse"><div class="tm-step-dot"></div> Parsing transcript with AI</div>
-          <div class="tm-step" id="tmstep-structure"><div class="tm-step-dot"></div> Structuring into action-point rows</div>
-          <div class="tm-step" id="tmstep-preview"><div class="tm-step-dot"></div> Building preview table</div>
-          <div class="tm-step" id="tmstep-gas"><div class="tm-step-dot"></div> Writing new sheet tab to Google Sheets</div>
-          <div class="tm-step" id="tmstep-sync"><div class="tm-step-dot"></div> Syncing dashboard</div>
-        </div>
-      </div>
-
-      <!-- Step 3: Preview -->
-      <div id="tm-preview-section" style="display:none;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-          <div style="font-size:12px;font-weight:700;color:var(--text-primary);">Preview — <span id="tm-preview-count">0</span> action points extracted</div>
-          <span id="tm-preview-sheet-label" style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px;background:var(--brand-grey-light);color:var(--text-secondary);"></span>
-        </div>
-        <div style="overflow-x:auto;max-height:320px;overflow-y:auto;">
-          <table class="tm-preview-table">
-            <thead>
-              <tr><th>Dept</th><th>Next Steps / Action</th><th>Result/Context</th><th>Due</th><th>Status</th></tr>
-            </thead>
-            <tbody id="tm-preview-tbody"></tbody>
-          </table>
-        </div>
-        <div style="margin-top:10px;padding:10px;background:var(--brand-grey-light);border-radius:var(--radius-sm);font-size:11px;color:var(--text-muted);font-weight:600;">
-          Review the extracted rows above. Click <strong>Confirm &amp; Push to Sheets</strong> to append this as a new tab to your Google Sheet and sync the dashboard.
-        </div>
-      </div>
-
-      <!-- Step 4: Success -->
-      <div id="tm-step-success" style="display:none;" class="tm-success-box">
-        <div class="tm-success-icon">✅</div>
-        <div class="tm-success-title">Sheet tab created successfully</div>
-        <div class="tm-success-sub" id="tm-success-msg">New meeting session appended to Google Sheets. Dashboard syncing now…</div>
-      </div>
-
-    </div><!-- /tm-body -->
-
-    <div class="tm-footer" id="tm-footer">
-      <button class="tm-btn tm-btn-secondary" onclick="closeTranscriptModal()">Cancel</button>
-      <button class="tm-btn tm-btn-primary" id="tm-parse-btn" onclick="tmStartParse()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:5px;"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-        Parse with AI
-      </button>
-      <button class="tm-btn tm-btn-primary" id="tm-confirm-btn" style="display:none;" onclick="tmConfirmPush()">Confirm &amp; Push to Sheets</button>
-    </div>
-  </div>
-</div>
-<!-- /transcript-modal -->
-
-<!-- ══ IMMUTABLE CHANGE LOG PANEL ══════════════════════════════════════════
-     Every change to this dashboard is permanently recorded here.
-     This block must never be deleted. Add entries only — never remove.
-     Format: version · date · type (feature/fix/hotfix/breaking) · description
-     ════════════════════════════════════════════════════════════════════════ -->
-<div id="changelog-panel">
-  <div id="changelog-panel-header">
-    <h3>&#x1F4CB; Dashboard Change Log</h3>
-    <span class="cl-badge">IMMUTABLE</span>
-    <button id="changelog-close-btn" onclick="closeChangelog()" title="Close">&#x2715;</button>
-  </div>
-  <div id="changelog-body">
-
-    <!-- ════════════════════════════════════════════════════════════════
-         INSTRUCTIONS FOR FUTURE ENTRIES:
-         Copy a .cl-entry block, fill in version/date/title/detail.
-         Types: class="cl-entry feature"  → new capability
-                class="cl-entry fix"      → bug fix
-                class="cl-entry hotfix"   → urgent patch
-                class="cl-entry breaking" → change that broke something
-         Add newest entries at the TOP of the entries list (below the
-         PROTECTED FEATURES block, which must always remain first).
-         ════════════════════════════════════════════════════════════════ -->
-
-    <!-- ══ PROTECTED FEATURES CONVENTION — READ BEFORE ANY EDIT ══════════
-         This block is PERMANENT. Never remove it. Never edit existing items.
-         Every feature listed here must be verified present before shipping
-         any new version. If a feature is missing from the output file,
-         the version must not be deployed.
-         ════════════════════════════════════════════════════════════════ -->
-    <div style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:14px 16px;margin-bottom:20px;">
-      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#f59e0b;margin-bottom:10px;">&#x26A0; Protected Features — Must Never Be Removed</div>
-      <div style="font-size:11px;color:#94a3b8;line-height:1.7;font-family:'DM Sans',sans-serif;">
-        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
-          <span style="color:#fbbf24;font-weight:700;">1. Date / Session History Control</span><br>
-          HTML: <code>#history-bar</code> div inside <code>#dynamic-dept-container</code> &gt; <code>.dept-header-right</code>.<br>
-          Label: <code>#viewing-date-label</code> span in dept subtitle.<br>
-          JS: <code>buildHistoryBar()</code>, <code>switchSession()</code>, <code>expandMonth()</code>.<br>
-          CSS: <code>.dept-history-bar</code>, <code>.history-pill</code>, <code>.date-pill</code>.<br>
-          State: <code>viewingSessionDate</code> global. Reset to <code>'current'</code> on every <code>showDept()</code> / <code>showDeptMobile()</code> / <code>selectProject()</code>.<br>
-          <em>Never remove. Never merge into another control. Never change IDs.</em>
-        </div>
-        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
-          <span style="color:#fbbf24;font-weight:700;">2. Active Users Bar</span><br>
-          HTML: bar above the main nav, toggled by <code>body.users-bar-visible</code>.<br>
-          JS: <code>_startPassiveMonitor()</code>, <code>_passiveFirebaseCheck()</code>.<br>
-          <em>Previously deleted accidentally. Must remain. Do not remove the passive monitor interval.</em>
-        </div>
-        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
-          <span style="color:#fbbf24;font-weight:700;">3. Firebase Write Queue + Reconciler</span><br>
-          JS: <code>_queueDeptUpdate()</code>, <code>_pushDeptUpdate()</code>, <code>_flushDeptUpdateQueue()</code>, <code>_reconcileLocalDeptUpdates()</code>, <code>_reconcileLocalToFirebase()</code>.<br>
-          The queue (<code>_deptUpdateQueue</code>) is persisted to localStorage key <code>_deptUpdateQueue</code>.<br>
-          <em>Never remove any of these five functions or the queue persistence. They prevent silent data loss.</em>
-        </div>
-        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
-          <span style="color:#fbbf24;font-weight:700;">4. Dual-Session Child_Added Listener</span><br>
-          JS: <code>_resubscribeDeptUpdates()</code> inside <code>_subscribeCurrentDeptUpdates()</code> IIFE.<br>
-          Must subscribe to BOTH <code>availableSessions[proj][0]</code> and <code>[1]</code> simultaneously.<br>
-          <code>_deptRefs[]</code> array tracks all active listeners. Backward-compat aliases: <code>_deptRef</code>, <code>_deptRefPath</code>.<br>
-          <em>Never collapse back to single-session subscription. This is the permanent session-drift fix.</em>
-        </div>
-        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
-          <span style="color:#fbbf24;font-weight:700;">5. Team Updates Feed + Chat UI</span><br>
-          HTML: <code>#updates-list</code>, <code>.update-input-group</code>, reply strip, media upload row.<br>
-          JS: <code>renderUpdatesList()</code>, <code>_collectDeptUpdates()</code>, <code>_saveUpdate()</code>, <code>submitTeamUpdate()</code>, <code>deleteUpdate()</code>, <code>setReply()</code>, <code>cancelReply()</code>.<br>
-          <em>The renderUpdatesList filter must always include latestKey, prevKey (allSessions[1]), and untagged legacy updates when in current view.</em>
-        </div>
-        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
-          <span style="color:#fbbf24;font-weight:700;">6. Updates Hub Page (admin-only)</span><br>
-          HTML: <code>#page-updates</code>. Gated by <code>diagUnlocked</code>.<br>
-          JS: <code>openUpdatesHub()</code>, <code>renderUpdatesDoc()</code>, <code>exportUpdatesAsWord()</code>.<br>
-          <em>Must not be merged with or replaced by the Pre-Meeting Briefing page.</em>
-        </div>
-        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
-          <span style="color:#fbbf24;font-weight:700;">7. Metric Extraction — Operations Row Rules</span><br>
-          Account balance only valid from the Operations row alongside inflow and sales value.<br>
-          Offer letters only sourced from Operations department rows.<br>
-          Crossings: metrics in bullet-separated action column, balance in K/thousands.<br>
-          Annexe: metrics in sub-rows, Result column, dash-separated, balance in M/millions.<br>
-          <em>Never unify these two extraction paths. They are structurally incompatible.</em>
-        </div>
-        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
-          <span style="color:#fbbf24;font-weight:700;">8. DEPT_NORMALIZE_MAP + Slash-Dept Path Walker</span><br>
-          JS: <code>DEPT_NORMALIZE_MAP</code>, <code>fuzzyMatchDept()</code>, <code>_walk()</code> recursive tree walker in <code>attachDbListeners</code>.<br>
-          <em>The _walk function must remain. Dept names like IPD/PMU create extra Firebase path levels; fixed-depth parsing breaks them silently.</em>
-        </div>
-        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
-          <span style="color:#fbbf24;font-weight:700;">9. Admin Panel + USER_ROLES</span><br>
-          Both <code>o.olasunkanmi@mixtafrica.com</code> AND <code>c.ajie@mixtafrica.com</code> must have <code>role:'admin', dept:null, project:'Both'</code>.<br>
-          Admin password: <code>PDadmin1234</code> sets <code>diagUnlocked = true</code>.<br>
-          <em>Never demote either admin to editor. Never set dept to a specific department for admins.</em>
-        </div>
-        <div>
-          <span style="color:#fbbf24;font-weight:700;">10. Seed Data + Historical Chart Arrays</span><br>
-          <code>const SEED_TASKS</code> and all hardcoded chart metric arrays (1,200+ lines of historical data).<br>
-          <em>Never truncate, summarise, or remove. These are the permanent historical record.</em>
-        </div>
-      </div>
-    </div>
-
-    <!-- v65 fix+feature -->
-    <div class="cl-entry fix">
-      <div class="cl-version">v65 · FIX + FEATURE</div>
-      <div class="cl-date">July 2025</div>
-      <div class="cl-title">Co-admin email CC, transcript sync guard, prior meeting context injection</div>
-      <div class="cl-detail">
-        <span class="cl-tag fixed">Email CC fixes (3 paths)</span>
-        <ul>
-          <li><strong>Update alerts</strong> (<code>sendUpdateAlertEmail</code>): previously hardcoded to <code>o.olasunkanmi@mixtafrica.com</code> only. Now sends to <code>ADMIN_EMAILS_ALL</code> = both admins. Any update posted anywhere on the dashboard alerts both immediately.</li>
-          <li><strong>Reply notifications</strong> (<code>maybeSendAdminReplyEmail</code>): previously only fired when o.olasunkanmi replied. Now fires when EITHER admin replies, identifies the replying admin by name from USER_ROLES, and CCs the other admin.</li>
-          <li><strong>Reminders</strong> (reminder send loop): now includes <code>cc: ADMIN_EMAILS_ALL</code> (filtered to exclude recipients already in <code>to</code>) on every reminder email sent. Both admins see every outbound reminder.</li>
-          <li><strong>GAS handler</strong>: embedded <code>sendEmail</code> action updated to pass <code>cc</code> field through <code>GmailApp.sendEmail()</code> options. Update your live GAS deployment with the new handler.</li>
-          <li><strong>Constant</strong>: <code>ADMIN_EMAILS_ALL = ['o.olasunkanmi@mixtafrica.com', 'c.ajie@mixtafrica.com']</code> declared once near <code>GMAIL_REPLY_TO</code>. Add new admins here in future.</li>
-        </ul>
-        <span class="cl-tag added">Transcript sync guard</span>
-        <ul>
-          <li>Before parsing, <code>tmStartParse()</code> checks if <code>taskDatabase</code> has any records for the selected project. If empty, prompts user to sync first (recommended) or proceed anyway with a warning.</li>
-          <li>If user confirms sync, calls <code>syncWithGoogleSheet()</code> and awaits completion before continuing. Parse button shows "Syncing…" state during this.</li>
-          <li>Protects against AI classifying all items as "ontrack" due to missing historical context.</li>
-        </ul>
-        <span class="cl-tag added">Prior meeting context injection</span>
-        <ul>
-          <li><code>_tmBuildPriorContext()</code> logic inside <code>tmStartParse()</code>: reads last 3 sessions from <code>taskDatabase</code> for the selected project, organises by dept, and formats as structured text prepended to the AI prompt.</li>
-          <li>AI receives full prior status history: DELAYED / ON HOLD / DONE / on-track per task per session. Explicit instruction: if an item was delayed/onhold across multiple prior sessions and the transcript does not explicitly resolve it, carry forward that status.</li>
-          <li>Items stalled 3+ sessions flagged as "especially critical" in AI instructions.</li>
-          <li>Transcript token cap reduced from 18k to 14k chars to accommodate prior context within model limits.</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- v64 feature -->
-    <div class="cl-entry feature">
-      <div class="cl-version">v64 · FEATURE</div>
-      <div class="cl-date">July 2025</div>
-      <div class="cl-title">Transcript → Sheet: AI meeting transcript processor with GAS write-back</div>
-      <div class="cl-detail">
-        <span class="cl-tag added">New Feature</span>
-        <ul>
-          <li><strong>Upload icon</strong> added to admin panel icon strip (between Reminders and Report icons). Admin-only, gated by <code>diagUnlocked</code>.</li>
-          <li><strong>Modal UI</strong> (<code>#transcript-modal-overlay</code>): paste or drop .txt transcript, select project (Crossings/Annexe), optionally set meeting date. Auto-detects date from transcript header.</li>
-          <li><strong>AI parse</strong> (<code>tmStartParse()</code>): sends transcript to Groq → Cerebras with full skill logic prompt. Extracts action points, targets, operations metrics, statuses. Returns JSON.</li>
-          <li><strong>Status mapping</strong>: ontrack=green, delayed=red, onhold=amber, achieved=blue — applied as both JSON status field and Excel fill colour via GAS.</li>
-          <li><strong>Preview table</strong>: shows all extracted rows (dept, action, result, due, status) before push. Admin reviews and confirms.</li>
-          <li><strong>GAS push</strong> (<code>tmConfirmPush()</code> → GAS action <code>appendMeetingSheet</code>): POSTs structured JSON to GAS Web App. GAS writes new sheet tab with correct column structure (B=S/N, C=Dept, D=Next Steps, E=Due, F=Result, G=Explanation, H=Project, I=Status), colour-codes all rows, inserts dept header rows, auto-resizes columns, freezes header row.</li>
-          <li><strong>Auto-sync</strong>: calls <code>syncWithGoogleSheet()</code> immediately after GAS confirms success. New session appears in history bar automatically.</li>
-          <li><strong>GAS file</strong>: <code>GAS_appendMeetingSheet.gs</code> — add <code>handleAppendMeetingSheet()</code> to existing Apps Script project and add case to <code>doPost()</code> switch. Fill in spreadsheet IDs. Redeploy.</li>
-        </ul>
-        <span class="cl-tag info">Column structure</span>
-        <ul>
-          <li>Exact match to <code>processSheet()</code> header detection: S/N, Department, Next Steps, Next Steps Timeline, Result/Context, Explanation Notes, Project, Status.</li>
-          <li>Targets written as dept="Targets" rows (processSheet strict target detection reads these correctly).</li>
-          <li>Operations metrics written as single action-point row in Operations dept (metric extraction pattern matches).</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- v63 fix -->
-    <div class="cl-entry fix">
-      <div class="cl-version">v63 · FIX</div>
-      <div class="cl-date">July 2025</div>
-      <div class="cl-title">Updates posted by team members not appearing on other devices</div>
-      <div class="cl-detail">
-        <span class="cl-tag warning">Root Cause</span>
-        <ul>
-          <li><strong>Session key drift:</strong> when a new Google Sheet tab syncs, <code>availableSessions[proj][0]</code> shifts to the new session. Updates posted just before that sync are tagged to the previous <code>[0]</code> key (now <code>[1]</code>). The <code>renderUpdatesList</code> filter only showed <code>u.session === latestKey</code> or true orphans — so these updates, being valid but non-latest sessions, were permanently invisible on the admin dashboard.</li>
-          <li><strong>Listener gap:</strong> <code>_resubscribeDeptUpdates</code> subscribed to only one Firebase path (the current latest session). The <code>child_added</code> event for updates on the previous session never fired on the viewer's device.</li>
-          <li><strong>Reconciler blind spot:</strong> <code>_reconcileLocalToFirebase</code> used <code>k.split(':').length === 4</code> — silently skipping any dept name containing a colon.</li>
-        </ul>
-        <span class="cl-tag fixed">Three Fixes Applied</span>
-        <ul>
-          <li><strong>Fix 1 — renderUpdatesList filter:</strong> now includes <code>allSessions[1]</code> (previous session) in the "current" view. Updates from the immediately prior session always surface alongside the latest.</li>
-          <li><strong>Fix 2 — _resubscribeDeptUpdates:</strong> now subscribes to Firebase <code>child_added</code> on BOTH <code>[0]</code> and <code>[1]</code> session paths simultaneously. Each listener writes to its own <code>fb_dept:</code> localStorage key and calls <code>renderUpdatesList()</code> independently. Old single-ref (<code>_deptRef</code>/<code>_deptRefPath</code>) preserved as alias for backward compat.</li>
-          <li><strong>Fix 3 — reconciler key filter:</strong> changed from <code>=== 4</code> to <code>>= 4</code> so dept names with colons are no longer silently skipped during the 5-minute reconciliation cycle.</li>
-        </ul>
-        <span class="cl-tag info">Not Affected</span>
-        <ul>
-          <li>Updates already in Firebase (including H. Kacou's previously-missing updates) will appear immediately once the page is refreshed — the full <code>dept_updates.on('value')</code> snapshot listener already retrieved them into localStorage; the filter fix now lets them render.</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- v62 hotfix -->
-    <div class="cl-entry hotfix">
-      <div class="cl-version">v62 · HOTFIX</div>
-      <div class="cl-date">July 2025</div>
-      <div class="cl-title">Syntax error fix — page was not loading past project selection</div>
-      <div class="cl-detail">
-        <span class="cl-tag warning">Root Cause</span>
-        <ul>
-          <li>Python heredoc string injection for the PMB JS treated <code>
-</code> as literal newlines inside single-quoted JS strings, splitting them across file lines. The browser JS engine failed to parse the entire main script block (block 9, ~462k chars), meaning <code>selectProject()</code>, <code>showPage()</code>, and every other function in that block never loaded.</li>
-          <li>Secondary: <code>pmbGenerate()</code> retry button had collapsed quotes from the same escape issue.</li>
-        </ul>
-        <span class="cl-tag fixed">Fixes Applied</span>
-        <ul>
-          <li>Rewrote <code>_pmbBuildContext()</code> to use <code>const NL = '
-'</code> variable — no escape sequences needed.</li>
-          <li>Fixed retry button onclick attribute escaping.</li>
-          <li>Validated all 13 script blocks with acorn (V8-spec JS parser) before shipping.</li>
-        </ul>
-        <span class="cl-tag info">Diagnosis</span>
-        <ul>
-          <li>Update reflection issue reported simultaneously was confirmed to be pre-existing (all update pipeline functions byte-for-byte identical to v61). Not introduced by v62.</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- v62 main release -->
-    <div class="cl-entry feature">
-      <div class="cl-version">v62 · FEATURE + FIX</div>
-      <div class="cl-date">July 2025</div>
-      <div class="cl-title">Pre-Meeting Briefing page + c.ajie admin role fix</div>
-      <div class="cl-detail">
-        <span class="cl-tag fixed">Bug Fix</span>
-        <ul>
-          <li><code>c.ajie@mixtafrica.com</code> had <code>role:'editor', dept:'Operations'</code> in USER_ROLES — should be <code>role:'admin', dept:null</code>. This blocked admin panel access and diagUnlocked features for the second admin. Fixed in USER_ROLES only (auth file already had correct allowlist entry).</li>
-        </ul>
-        <span class="cl-tag added">New Feature — Pre-Meeting Briefing</span>
-        <ul>
-          <li>New page: <code>#page-briefing</code> — admin-only, hidden until <code>diagUnlocked</code>.</li>
-          <li>Toggle: 1 / 2 / 4 / 5 meetings back per project. Default: 4. Stored in session only.</li>
-          <li>Data source: <code>availableSessions[proj].slice(0, n)</code> — dynamic, never <code>[0]</code>-indexed. Pulls tasks from <code>taskDatabase</code>, statuses from <code>getStatusOverrides()</code>, team comments from <code>_getDeptUpdates()</code>, financials from <code>window._firebaseMetrics</code>.</li>
-          <li>Token optimisation: action text capped 60–180 chars, notes 40–140 chars, max 2–4 team updates per dept/session — all scaling with N to avoid token overflow.</li>
-          <li>AI chain: Groq (llama-3.3-70b) → Cerebras (llama-3.3-70b) → Anthropic (claude-sonnet). Matches existing PI pattern.</li>
-          <li>Output: agenda-style HTML with four sections — Critical Flags, Requires a Decision, Progress Updates, Financial Pulse. Omitted if empty.</li>
-          <li>Auto-generates on page open via <code>_onShowBriefing()</code> hook in <code>showPage()</code>.</li>
-          <li>Nav: desktop tab (hidden until admin unlock), mobile bottom nav button (hidden until admin unlock). Revealed in <code>submitAdmin()</code> alongside Updates Hub.</li>
-        </ul>
-        <span class="cl-tag info">No Deletions</span>
-        <ul>
-          <li>Zero existing functions modified or removed. Net addition: +523 lines / +27KB.</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- v61 baseline -->
-    <div class="cl-entry feature">
-      <div class="cl-version">v61 · BASELINE</div>
-      <div class="cl-date">June–July 2025</div>
-      <div class="cl-title">Baseline version at start of changelog tracking</div>
-      <div class="cl-detail">
-        <span class="cl-tag info">Architecture at v61</span>
-        <ul>
-          <li>Single-file PWA: <code>index.html</code> + <code>dashboard-auth.js</code> (external). Hosted on GitHub Pages via <code>deploy.yml</code> with <code>sed</code> secret injection.</li>
-          <li>Data: dual Google Sheets (Crossings + Annexe) via XLSX.js published endpoints. Firebase Realtime DB for auth, dept_updates, metrics, reminders, access_requests.</li>
-          <li>Pages: Landing, Dashboard, Departments, Milestones, Predictive Intelligence, Trend Intelligence, Updates Hub (admin-only).</li>
-          <li>AI: Groq primary → Cerebras fallback for PI and reports. Anthropic claude-sonnet for chatbot.</li>
-          <li>Admin panel: password <code>PDadmin1234</code> gates diagUnlocked. Commercial Strategy role = admin. Write queue pattern for Firebase timing.</li>
-          <li>Known architectural rules: Crossings ≠ Annexe structurally (bullet vs dash format, K vs M balance, different target columns). Never merge parsing logic. Session keys read dynamically, never from fixed index.</li>
-          <li>Admin bugs fixed by v61: dept normalisation, AMC sync disconnect, user authority queue shims, Firebase session-key drift, silent write failures, slash-in-dept-name path parsing.</li>
-        </ul>
-      </div>
-    </div>
-
-  </div>
-  <div id="changelog-footer">
-    Mixta Africa Projects Tracker — Immutable Change Record &nbsp;·&nbsp; Add entries at top, never remove
-  </div>
-</div>
-<!-- /changelog-panel -->
-
 </body>
 </html>`;
 }
@@ -13668,6 +13310,366 @@ function _generateDocx() {
 }
 
 </script>
+
+
+<!-- ══ TRANSCRIPT UPLOAD MODAL ══════════════════════════════════════════════ -->
+<div id="transcript-modal-overlay">
+  <div id="transcript-modal">
+    <div class="tm-header">
+      <div class="tm-header-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <div>
+        <div class="tm-header-title">Process Meeting Transcript</div>
+        <div class="tm-header-sub">AI extracts action points → appends new sheet to Google Sheets</div>
+      </div>
+      <button class="tm-close" onclick="closeTranscriptModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="tm-body" id="tm-body">
+
+      <!-- Step 1: Config -->
+      <div id="tm-step-config">
+        <div class="tm-section">
+          <div class="tm-label">Meeting Details</div>
+          <div class="tm-row">
+            <select class="tm-select" id="tm-project">
+              <option value="Crossings">Lakowe Crossings</option>
+              <option value="Annexe">Lakowe Annexe</option>
+            </select>
+            <input type="text" class="tm-date-input" id="tm-date" placeholder="e.g. Jul 17" style="max-width:120px;" />
+            <span style="font-size:11px;color:var(--text-muted);font-weight:600;">Sheet tab name (auto-detected from transcript if blank)</span>
+          </div>
+        </div>
+
+        <div class="tm-section">
+          <div class="tm-label">Transcript</div>
+          <div class="tm-file-drop" id="tm-file-drop" onclick="document.getElementById('tm-file-input').click()" ondrop="tmHandleDrop(event)" ondragover="tmHandleDragOver(event)" ondragleave="tmHandleDragLeave(event)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px;opacity:0.5;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <div>Drop a .txt or .docx transcript here</div>
+            <div style="font-size:10px;margin-top:3px;opacity:0.7;">Supports plain text and Word documents</div>
+          </div>
+          <input type="file" id="tm-file-input" accept=".txt,.docx,.doc" style="display:none;" onchange="tmHandleFile(this)">
+          <div class="tm-or">— or paste transcript below —</div>
+          <textarea class="tm-textarea" id="tm-transcript-text" placeholder="Paste the full meeting transcript here. The AI will identify departments, action points, statuses, and timelines automatically..."></textarea>
+        </div>
+      </div>
+
+      <!-- Step 2: AI Processing progress -->
+      <div id="tm-step-processing" class="tm-progress" style="display:none;">
+        <div style="font-weight:700;font-size:12px;margin-bottom:8px;">Processing transcript…</div>
+        <div class="tm-progress-steps">
+          <div class="tm-step active" id="tmstep-parse"><div class="tm-step-dot"></div> Parsing transcript with AI</div>
+          <div class="tm-step" id="tmstep-structure"><div class="tm-step-dot"></div> Structuring into action-point rows</div>
+          <div class="tm-step" id="tmstep-preview"><div class="tm-step-dot"></div> Building preview table</div>
+          <div class="tm-step" id="tmstep-gas"><div class="tm-step-dot"></div> Writing new sheet tab to Google Sheets</div>
+          <div class="tm-step" id="tmstep-sync"><div class="tm-step-dot"></div> Syncing dashboard</div>
+        </div>
+      </div>
+
+      <!-- Step 3: Preview -->
+      <div id="tm-preview-section" style="display:none;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:700;color:var(--text-primary);">Preview — <span id="tm-preview-count">0</span> action points extracted</div>
+          <span id="tm-preview-sheet-label" style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px;background:var(--brand-grey-light);color:var(--text-secondary);"></span>
+        </div>
+        <div style="overflow-x:auto;max-height:320px;overflow-y:auto;">
+          <table class="tm-preview-table">
+            <thead>
+              <tr><th>Dept</th><th>Next Steps / Action</th><th>Result/Context</th><th>Due</th><th>Status</th></tr>
+            </thead>
+            <tbody id="tm-preview-tbody"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:10px;padding:10px;background:var(--brand-grey-light);border-radius:var(--radius-sm);font-size:11px;color:var(--text-muted);font-weight:600;">
+          Review the extracted rows above. Click <strong>Confirm &amp; Push to Sheets</strong> to append this as a new tab to your Google Sheet and sync the dashboard.
+        </div>
+      </div>
+
+      <!-- Step 4: Success -->
+      <div id="tm-step-success" style="display:none;" class="tm-success-box">
+        <div class="tm-success-icon">✅</div>
+        <div class="tm-success-title">Sheet tab created successfully</div>
+        <div class="tm-success-sub" id="tm-success-msg">New meeting session appended to Google Sheets. Dashboard syncing now…</div>
+      </div>
+
+    </div><!-- /tm-body -->
+
+    <div class="tm-footer" id="tm-footer">
+      <button class="tm-btn tm-btn-secondary" onclick="closeTranscriptModal()">Cancel</button>
+      <button class="tm-btn tm-btn-primary" id="tm-parse-btn" onclick="tmStartParse()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:5px;"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Parse with AI
+      </button>
+      <button class="tm-btn tm-btn-primary" id="tm-confirm-btn" style="display:none;" onclick="tmConfirmPush()">Confirm &amp; Push to Sheets</button>
+    </div>
+  </div>
+</div>
+<!-- /transcript-modal -->
+
+
+<!-- ══ IMMUTABLE CHANGE LOG PANEL ══════════════════════════════════════════
+     Every change to this dashboard is permanently recorded here.
+     This block must never be deleted. Add entries only — never remove.
+     Format: version · date · type (feature/fix/hotfix/breaking) · description
+     ════════════════════════════════════════════════════════════════════════ -->
+<div id="changelog-panel">
+  <div id="changelog-panel-header">
+    <h3>&#x1F4CB; Dashboard Change Log</h3>
+    <span class="cl-badge">IMMUTABLE</span>
+    <button id="changelog-close-btn" onclick="closeChangelog()" title="Close">&#x2715;</button>
+  </div>
+  <div id="changelog-body">
+
+    <!-- ════════════════════════════════════════════════════════════════
+         INSTRUCTIONS FOR FUTURE ENTRIES:
+         Copy a .cl-entry block, fill in version/date/title/detail.
+         Types: class="cl-entry feature"  → new capability
+                class="cl-entry fix"      → bug fix
+                class="cl-entry hotfix"   → urgent patch
+                class="cl-entry breaking" → change that broke something
+         Add newest entries at the TOP of the entries list (below the
+         PROTECTED FEATURES block, which must always remain first).
+         ════════════════════════════════════════════════════════════════ -->
+
+    <!-- ══ PROTECTED FEATURES CONVENTION — READ BEFORE ANY EDIT ══════════
+         This block is PERMANENT. Never remove it. Never edit existing items.
+         Every feature listed here must be verified present before shipping
+         any new version. If a feature is missing from the output file,
+         the version must not be deployed.
+         ════════════════════════════════════════════════════════════════ -->
+    <div style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:14px 16px;margin-bottom:20px;">
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#f59e0b;margin-bottom:10px;">&#x26A0; Protected Features — Must Never Be Removed</div>
+      <div style="font-size:11px;color:#94a3b8;line-height:1.7;font-family:'DM Sans',sans-serif;">
+        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
+          <span style="color:#fbbf24;font-weight:700;">1. Date / Session History Control</span><br>
+          HTML: <code>#history-bar</code> div inside <code>#dynamic-dept-container</code> &gt; <code>.dept-header-right</code>.<br>
+          Label: <code>#viewing-date-label</code> span in dept subtitle.<br>
+          JS: <code>buildHistoryBar()</code>, <code>switchSession()</code>, <code>expandMonth()</code>.<br>
+          CSS: <code>.dept-history-bar</code>, <code>.history-pill</code>, <code>.date-pill</code>.<br>
+          State: <code>viewingSessionDate</code> global. Reset to <code>'current'</code> on every <code>showDept()</code> / <code>showDeptMobile()</code> / <code>selectProject()</code>.<br>
+          <em>Never remove. Never merge into another control. Never change IDs.</em>
+        </div>
+        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
+          <span style="color:#fbbf24;font-weight:700;">2. Active Users Bar</span><br>
+          HTML: bar above the main nav, toggled by <code>body.users-bar-visible</code>.<br>
+          JS: <code>_startPassiveMonitor()</code>, <code>_passiveFirebaseCheck()</code>.<br>
+          <em>Previously deleted accidentally. Must remain. Do not remove the passive monitor interval.</em>
+        </div>
+        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
+          <span style="color:#fbbf24;font-weight:700;">3. Firebase Write Queue + Reconciler</span><br>
+          JS: <code>_queueDeptUpdate()</code>, <code>_pushDeptUpdate()</code>, <code>_flushDeptUpdateQueue()</code>, <code>_reconcileLocalDeptUpdates()</code>, <code>_reconcileLocalToFirebase()</code>.<br>
+          The queue (<code>_deptUpdateQueue</code>) is persisted to localStorage key <code>_deptUpdateQueue</code>.<br>
+          <em>Never remove any of these five functions or the queue persistence. They prevent silent data loss.</em>
+        </div>
+        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
+          <span style="color:#fbbf24;font-weight:700;">4. Dual-Session Child_Added Listener</span><br>
+          JS: <code>_resubscribeDeptUpdates()</code> inside <code>_subscribeCurrentDeptUpdates()</code> IIFE.<br>
+          Must subscribe to BOTH <code>availableSessions[proj][0]</code> and <code>[1]</code> simultaneously.<br>
+          <code>_deptRefs[]</code> array tracks all active listeners. Backward-compat aliases: <code>_deptRef</code>, <code>_deptRefPath</code>.<br>
+          <em>Never collapse back to single-session subscription. This is the permanent session-drift fix.</em>
+        </div>
+        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
+          <span style="color:#fbbf24;font-weight:700;">5. Team Updates Feed + Chat UI</span><br>
+          HTML: <code>#updates-list</code>, <code>.update-input-group</code>, reply strip, media upload row.<br>
+          JS: <code>renderUpdatesList()</code>, <code>_collectDeptUpdates()</code>, <code>_saveUpdate()</code>, <code>submitTeamUpdate()</code>, <code>deleteUpdate()</code>, <code>setReply()</code>, <code>cancelReply()</code>.<br>
+          <em>The renderUpdatesList filter must always include latestKey, prevKey (allSessions[1]), and untagged legacy updates when in current view.</em>
+        </div>
+        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
+          <span style="color:#fbbf24;font-weight:700;">6. Updates Hub Page (admin-only)</span><br>
+          HTML: <code>#page-updates</code>. Gated by <code>diagUnlocked</code>.<br>
+          JS: <code>openUpdatesHub()</code>, <code>renderUpdatesDoc()</code>, <code>exportUpdatesAsWord()</code>.<br>
+          <em>Must not be merged with or replaced by the Pre-Meeting Briefing page.</em>
+        </div>
+        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
+          <span style="color:#fbbf24;font-weight:700;">7. Metric Extraction — Operations Row Rules</span><br>
+          Account balance only valid from the Operations row alongside inflow and sales value.<br>
+          Offer letters only sourced from Operations department rows.<br>
+          Crossings: metrics in bullet-separated action column, balance in K/thousands.<br>
+          Annexe: metrics in sub-rows, Result column, dash-separated, balance in M/millions.<br>
+          <em>Never unify these two extraction paths. They are structurally incompatible.</em>
+        </div>
+        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
+          <span style="color:#fbbf24;font-weight:700;">8. DEPT_NORMALIZE_MAP + Slash-Dept Path Walker</span><br>
+          JS: <code>DEPT_NORMALIZE_MAP</code>, <code>fuzzyMatchDept()</code>, <code>_walk()</code> recursive tree walker in <code>attachDbListeners</code>.<br>
+          <em>The _walk function must remain. Dept names like IPD/PMU create extra Firebase path levels; fixed-depth parsing breaks them silently.</em>
+        </div>
+        <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;">
+          <span style="color:#fbbf24;font-weight:700;">9. Admin Panel + USER_ROLES</span><br>
+          Both <code>o.olasunkanmi@mixtafrica.com</code> AND <code>c.ajie@mixtafrica.com</code> must have <code>role:'admin', dept:null, project:'Both'</code>.<br>
+          Admin password: <code>PDadmin1234</code> sets <code>diagUnlocked = true</code>.<br>
+          <em>Never demote either admin to editor. Never set dept to a specific department for admins.</em>
+        </div>
+        <div>
+          <span style="color:#fbbf24;font-weight:700;">10. Seed Data + Historical Chart Arrays</span><br>
+          <code>const SEED_TASKS</code> and all hardcoded chart metric arrays (1,200+ lines of historical data).<br>
+          <em>Never truncate, summarise, or remove. These are the permanent historical record.</em>
+        </div>
+      </div>
+    </div>
+
+    <!-- v65 fix+feature -->
+    <div class="cl-entry fix">
+      <div class="cl-version">v65 · FIX + FEATURE</div>
+      <div class="cl-date">July 2025</div>
+      <div class="cl-title">Co-admin email CC, transcript sync guard, prior meeting context injection</div>
+      <div class="cl-detail">
+        <span class="cl-tag fixed">Email CC fixes (3 paths)</span>
+        <ul>
+          <li><strong>Update alerts</strong> (<code>sendUpdateAlertEmail</code>): previously hardcoded to <code>o.olasunkanmi@mixtafrica.com</code> only. Now sends to <code>ADMIN_EMAILS_ALL</code> = both admins. Any update posted anywhere on the dashboard alerts both immediately.</li>
+          <li><strong>Reply notifications</strong> (<code>maybeSendAdminReplyEmail</code>): previously only fired when o.olasunkanmi replied. Now fires when EITHER admin replies, identifies the replying admin by name from USER_ROLES, and CCs the other admin.</li>
+          <li><strong>Reminders</strong> (reminder send loop): now includes <code>cc: ADMIN_EMAILS_ALL</code> (filtered to exclude recipients already in <code>to</code>) on every reminder email sent. Both admins see every outbound reminder.</li>
+          <li><strong>GAS handler</strong>: embedded <code>sendEmail</code> action updated to pass <code>cc</code> field through <code>GmailApp.sendEmail()</code> options. Update your live GAS deployment with the new handler.</li>
+          <li><strong>Constant</strong>: <code>ADMIN_EMAILS_ALL = ['o.olasunkanmi@mixtafrica.com', 'c.ajie@mixtafrica.com']</code> declared once near <code>GMAIL_REPLY_TO</code>. Add new admins here in future.</li>
+        </ul>
+        <span class="cl-tag added">Transcript sync guard</span>
+        <ul>
+          <li>Before parsing, <code>tmStartParse()</code> checks if <code>taskDatabase</code> has any records for the selected project. If empty, prompts user to sync first (recommended) or proceed anyway with a warning.</li>
+          <li>If user confirms sync, calls <code>syncWithGoogleSheet()</code> and awaits completion before continuing. Parse button shows "Syncing…" state during this.</li>
+          <li>Protects against AI classifying all items as "ontrack" due to missing historical context.</li>
+        </ul>
+        <span class="cl-tag added">Prior meeting context injection</span>
+        <ul>
+          <li><code>_tmBuildPriorContext()</code> logic inside <code>tmStartParse()</code>: reads last 3 sessions from <code>taskDatabase</code> for the selected project, organises by dept, and formats as structured text prepended to the AI prompt.</li>
+          <li>AI receives full prior status history: DELAYED / ON HOLD / DONE / on-track per task per session. Explicit instruction: if an item was delayed/onhold across multiple prior sessions and the transcript does not explicitly resolve it, carry forward that status.</li>
+          <li>Items stalled 3+ sessions flagged as "especially critical" in AI instructions.</li>
+          <li>Transcript token cap reduced from 18k to 14k chars to accommodate prior context within model limits.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- v64 feature -->
+    <div class="cl-entry feature">
+      <div class="cl-version">v64 · FEATURE</div>
+      <div class="cl-date">July 2025</div>
+      <div class="cl-title">Transcript → Sheet: AI meeting transcript processor with GAS write-back</div>
+      <div class="cl-detail">
+        <span class="cl-tag added">New Feature</span>
+        <ul>
+          <li><strong>Upload icon</strong> added to admin panel icon strip (between Reminders and Report icons). Admin-only, gated by <code>diagUnlocked</code>.</li>
+          <li><strong>Modal UI</strong> (<code>#transcript-modal-overlay</code>): paste or drop .txt transcript, select project (Crossings/Annexe), optionally set meeting date. Auto-detects date from transcript header.</li>
+          <li><strong>AI parse</strong> (<code>tmStartParse()</code>): sends transcript to Groq → Cerebras with full skill logic prompt. Extracts action points, targets, operations metrics, statuses. Returns JSON.</li>
+          <li><strong>Status mapping</strong>: ontrack=green, delayed=red, onhold=amber, achieved=blue — applied as both JSON status field and Excel fill colour via GAS.</li>
+          <li><strong>Preview table</strong>: shows all extracted rows (dept, action, result, due, status) before push. Admin reviews and confirms.</li>
+          <li><strong>GAS push</strong> (<code>tmConfirmPush()</code> → GAS action <code>appendMeetingSheet</code>): POSTs structured JSON to GAS Web App. GAS writes new sheet tab with correct column structure (B=S/N, C=Dept, D=Next Steps, E=Due, F=Result, G=Explanation, H=Project, I=Status), colour-codes all rows, inserts dept header rows, auto-resizes columns, freezes header row.</li>
+          <li><strong>Auto-sync</strong>: calls <code>syncWithGoogleSheet()</code> immediately after GAS confirms success. New session appears in history bar automatically.</li>
+          <li><strong>GAS file</strong>: <code>GAS_appendMeetingSheet.gs</code> — add <code>handleAppendMeetingSheet()</code> to existing Apps Script project and add case to <code>doPost()</code> switch. Fill in spreadsheet IDs. Redeploy.</li>
+        </ul>
+        <span class="cl-tag info">Column structure</span>
+        <ul>
+          <li>Exact match to <code>processSheet()</code> header detection: S/N, Department, Next Steps, Next Steps Timeline, Result/Context, Explanation Notes, Project, Status.</li>
+          <li>Targets written as dept="Targets" rows (processSheet strict target detection reads these correctly).</li>
+          <li>Operations metrics written as single action-point row in Operations dept (metric extraction pattern matches).</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- v63 fix -->
+    <div class="cl-entry fix">
+      <div class="cl-version">v63 · FIX</div>
+      <div class="cl-date">July 2025</div>
+      <div class="cl-title">Updates posted by team members not appearing on other devices</div>
+      <div class="cl-detail">
+        <span class="cl-tag warning">Root Cause</span>
+        <ul>
+          <li><strong>Session key drift:</strong> when a new Google Sheet tab syncs, <code>availableSessions[proj][0]</code> shifts to the new session. Updates posted just before that sync are tagged to the previous <code>[0]</code> key (now <code>[1]</code>). The <code>renderUpdatesList</code> filter only showed <code>u.session === latestKey</code> or true orphans — so these updates, being valid but non-latest sessions, were permanently invisible on the admin dashboard.</li>
+          <li><strong>Listener gap:</strong> <code>_resubscribeDeptUpdates</code> subscribed to only one Firebase path (the current latest session). The <code>child_added</code> event for updates on the previous session never fired on the viewer's device.</li>
+          <li><strong>Reconciler blind spot:</strong> <code>_reconcileLocalToFirebase</code> used <code>k.split(':').length === 4</code> — silently skipping any dept name containing a colon.</li>
+        </ul>
+        <span class="cl-tag fixed">Three Fixes Applied</span>
+        <ul>
+          <li><strong>Fix 1 — renderUpdatesList filter:</strong> now includes <code>allSessions[1]</code> (previous session) in the "current" view. Updates from the immediately prior session always surface alongside the latest.</li>
+          <li><strong>Fix 2 — _resubscribeDeptUpdates:</strong> now subscribes to Firebase <code>child_added</code> on BOTH <code>[0]</code> and <code>[1]</code> session paths simultaneously. Each listener writes to its own <code>fb_dept:</code> localStorage key and calls <code>renderUpdatesList()</code> independently. Old single-ref (<code>_deptRef</code>/<code>_deptRefPath</code>) preserved as alias for backward compat.</li>
+          <li><strong>Fix 3 — reconciler key filter:</strong> changed from <code>=== 4</code> to <code>>= 4</code> so dept names with colons are no longer silently skipped during the 5-minute reconciliation cycle.</li>
+        </ul>
+        <span class="cl-tag info">Not Affected</span>
+        <ul>
+          <li>Updates already in Firebase (including H. Kacou's previously-missing updates) will appear immediately once the page is refreshed — the full <code>dept_updates.on('value')</code> snapshot listener already retrieved them into localStorage; the filter fix now lets them render.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- v62 hotfix -->
+    <div class="cl-entry hotfix">
+      <div class="cl-version">v62 · HOTFIX</div>
+      <div class="cl-date">July 2025</div>
+      <div class="cl-title">Syntax error fix — page was not loading past project selection</div>
+      <div class="cl-detail">
+        <span class="cl-tag warning">Root Cause</span>
+        <ul>
+          <li>Python heredoc string injection for the PMB JS treated <code>
+</code> as literal newlines inside single-quoted JS strings, splitting them across file lines. The browser JS engine failed to parse the entire main script block (block 9, ~462k chars), meaning <code>selectProject()</code>, <code>showPage()</code>, and every other function in that block never loaded.</li>
+          <li>Secondary: <code>pmbGenerate()</code> retry button had collapsed quotes from the same escape issue.</li>
+        </ul>
+        <span class="cl-tag fixed">Fixes Applied</span>
+        <ul>
+          <li>Rewrote <code>_pmbBuildContext()</code> to use <code>const NL = '
+'</code> variable — no escape sequences needed.</li>
+          <li>Fixed retry button onclick attribute escaping.</li>
+          <li>Validated all 13 script blocks with acorn (V8-spec JS parser) before shipping.</li>
+        </ul>
+        <span class="cl-tag info">Diagnosis</span>
+        <ul>
+          <li>Update reflection issue reported simultaneously was confirmed to be pre-existing (all update pipeline functions byte-for-byte identical to v61). Not introduced by v62.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- v62 main release -->
+    <div class="cl-entry feature">
+      <div class="cl-version">v62 · FEATURE + FIX</div>
+      <div class="cl-date">July 2025</div>
+      <div class="cl-title">Pre-Meeting Briefing page + c.ajie admin role fix</div>
+      <div class="cl-detail">
+        <span class="cl-tag fixed">Bug Fix</span>
+        <ul>
+          <li><code>c.ajie@mixtafrica.com</code> had <code>role:'editor', dept:'Operations'</code> in USER_ROLES — should be <code>role:'admin', dept:null</code>. This blocked admin panel access and diagUnlocked features for the second admin. Fixed in USER_ROLES only (auth file already had correct allowlist entry).</li>
+        </ul>
+        <span class="cl-tag added">New Feature — Pre-Meeting Briefing</span>
+        <ul>
+          <li>New page: <code>#page-briefing</code> — admin-only, hidden until <code>diagUnlocked</code>.</li>
+          <li>Toggle: 1 / 2 / 4 / 5 meetings back per project. Default: 4. Stored in session only.</li>
+          <li>Data source: <code>availableSessions[proj].slice(0, n)</code> — dynamic, never <code>[0]</code>-indexed. Pulls tasks from <code>taskDatabase</code>, statuses from <code>getStatusOverrides()</code>, team comments from <code>_getDeptUpdates()</code>, financials from <code>window._firebaseMetrics</code>.</li>
+          <li>Token optimisation: action text capped 60–180 chars, notes 40–140 chars, max 2–4 team updates per dept/session — all scaling with N to avoid token overflow.</li>
+          <li>AI chain: Groq (llama-3.3-70b) → Cerebras (llama-3.3-70b) → Anthropic (claude-sonnet). Matches existing PI pattern.</li>
+          <li>Output: agenda-style HTML with four sections — Critical Flags, Requires a Decision, Progress Updates, Financial Pulse. Omitted if empty.</li>
+          <li>Auto-generates on page open via <code>_onShowBriefing()</code> hook in <code>showPage()</code>.</li>
+          <li>Nav: desktop tab (hidden until admin unlock), mobile bottom nav button (hidden until admin unlock). Revealed in <code>submitAdmin()</code> alongside Updates Hub.</li>
+        </ul>
+        <span class="cl-tag info">No Deletions</span>
+        <ul>
+          <li>Zero existing functions modified or removed. Net addition: +523 lines / +27KB.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- v61 baseline -->
+    <div class="cl-entry feature">
+      <div class="cl-version">v61 · BASELINE</div>
+      <div class="cl-date">June–July 2025</div>
+      <div class="cl-title">Baseline version at start of changelog tracking</div>
+      <div class="cl-detail">
+        <span class="cl-tag info">Architecture at v61</span>
+        <ul>
+          <li>Single-file PWA: <code>index.html</code> + <code>dashboard-auth.js</code> (external). Hosted on GitHub Pages via <code>deploy.yml</code> with <code>sed</code> secret injection.</li>
+          <li>Data: dual Google Sheets (Crossings + Annexe) via XLSX.js published endpoints. Firebase Realtime DB for auth, dept_updates, metrics, reminders, access_requests.</li>
+          <li>Pages: Landing, Dashboard, Departments, Milestones, Predictive Intelligence, Trend Intelligence, Updates Hub (admin-only).</li>
+          <li>AI: Groq primary → Cerebras fallback for PI and reports. Anthropic claude-sonnet for chatbot.</li>
+          <li>Admin panel: password <code>PDadmin1234</code> gates diagUnlocked. Commercial Strategy role = admin. Write queue pattern for Firebase timing.</li>
+          <li>Known architectural rules: Crossings ≠ Annexe structurally (bullet vs dash format, K vs M balance, different target columns). Never merge parsing logic. Session keys read dynamically, never from fixed index.</li>
+          <li>Admin bugs fixed by v61: dept normalisation, AMC sync disconnect, user authority queue shims, Firebase session-key drift, silent write failures, slash-in-dept-name path parsing.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+  <div id="changelog-footer">
+    Mixta Africa Projects Tracker — Immutable Change Record &nbsp;·&nbsp; Add entries at top, never remove
+  </div>
+</div>
+<!-- /changelog-panel -->
 
 </body>
 
