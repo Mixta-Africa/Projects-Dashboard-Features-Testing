@@ -1899,6 +1899,65 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
 .pmb-nav-tab { display: none; }
 .pmb-nav-tab.admin-visible { display: inline-flex; }
 
+/* ── TRANSCRIPT UPLOAD MODAL ────────────────────────────────────────── */
+#transcript-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:4000; display:none; align-items:center; justify-content:center; padding:16px; }
+#transcript-modal-overlay.open { display:flex; }
+#transcript-modal { background:var(--white); border-radius:var(--radius); box-shadow:0 20px 60px rgba(0,0,0,0.18); width:100%; max-width:640px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; }
+.tm-header { padding:16px 18px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; flex-shrink:0; }
+.tm-header-icon { width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg,#1565C0,#0D47A1); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.tm-header-title { font-size:13px; font-weight:800; color:var(--text-primary); }
+.tm-header-sub { font-size:11px; color:var(--text-muted); font-weight:500; }
+.tm-close { margin-left:auto; background:none; border:none; cursor:pointer; color:var(--text-muted); padding:4px; border-radius:4px; }
+.tm-close:hover { background:var(--brand-grey-light); color:var(--text-primary); }
+.tm-body { flex:1; overflow-y:auto; padding:18px; }
+.tm-section { margin-bottom:16px; }
+.tm-label { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; }
+.tm-row { display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
+.tm-select { font-size:12px; font-weight:700; padding:7px 10px; border:1.5px solid var(--border-md); border-radius:var(--radius-sm); background:var(--white); color:var(--text-primary); font-family:inherit; cursor:pointer; }
+.tm-select:focus { outline:none; border-color:var(--cx-color); }
+.tm-date-input { font-size:12px; font-weight:700; padding:7px 10px; border:1.5px solid var(--border-md); border-radius:var(--radius-sm); background:var(--white); color:var(--text-primary); font-family:inherit; }
+.tm-textarea { width:100%; box-sizing:border-box; min-height:200px; padding:10px 12px; border:1.5px solid var(--border-md); border-radius:var(--radius-sm); font-size:12px; line-height:1.6; font-family:'DM Sans',sans-serif; color:var(--text-primary); resize:vertical; }
+.tm-textarea:focus { outline:none; border-color:var(--cx-color); }
+.tm-file-drop { border:2px dashed var(--border-md); border-radius:var(--radius-sm); padding:16px; text-align:center; cursor:pointer; font-size:12px; color:var(--text-muted); font-weight:600; transition:all 0.18s; margin-bottom:10px; }
+.tm-file-drop:hover, .tm-file-drop.dragover { border-color:var(--cx-color); background:var(--cx-bg); color:var(--cx-color); }
+.tm-or { text-align:center; font-size:11px; color:var(--text-muted); font-weight:700; margin:8px 0; }
+/* Preview table */
+#tm-preview-section { display:none; }
+.tm-preview-table { width:100%; border-collapse:collapse; font-size:11px; margin-top:8px; }
+.tm-preview-table th { background:var(--brand-grey-light); padding:5px 8px; text-align:left; font-weight:700; font-size:10px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); border:1px solid var(--border); }
+.tm-preview-table td { padding:5px 8px; border:1px solid var(--border); vertical-align:top; }
+.tm-preview-table tr.tm-delayed td { background:#fff5f5; }
+.tm-preview-table tr.tm-onhold td { background:#fffbf0; }
+.tm-preview-table tr.tm-achieved td { background:#f0fff4; }
+.tm-status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:4px; flex-shrink:0; }
+.tm-status-dot.ontrack { background:#2E7D32; }
+.tm-status-dot.delayed { background:#D32F2F; }
+.tm-status-dot.onhold { background:#F57F17; }
+.tm-status-dot.achieved { background:#1565C0; }
+/* Progress / status */
+.tm-progress { padding:14px; background:var(--brand-grey-light); border-radius:var(--radius-sm); font-size:12px; font-weight:600; display:none; }
+.tm-progress-steps { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+.tm-step { display:flex; align-items:center; gap:8px; font-size:11px; color:var(--text-muted); }
+.tm-step.active { color:var(--text-primary); font-weight:700; }
+.tm-step.done { color:#2E7D32; }
+.tm-step.error { color:#D32F2F; }
+.tm-step-dot { width:8px; height:8px; border-radius:50%; background:var(--border-md); flex-shrink:0; }
+.tm-step.active .tm-step-dot { background:var(--cx-color); animation:pmbPulse 1s infinite; }
+.tm-step.done .tm-step-dot { background:#2E7D32; }
+.tm-step.error .tm-step-dot { background:#D32F2F; }
+.tm-footer { padding:14px 18px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end; flex-shrink:0; }
+.tm-btn { padding:8px 18px; border-radius:var(--radius-pill); font-size:12px; font-weight:700; cursor:pointer; border:none; font-family:inherit; transition:all 0.18s; }
+.tm-btn-secondary { background:var(--brand-grey-light); color:var(--text-secondary); border:1.5px solid var(--border-md); }
+.tm-btn-secondary:hover { background:var(--border-md); }
+.tm-btn-primary { background:var(--cx-color); color:#fff; }
+.tm-btn-primary:hover { opacity:0.9; }
+.tm-btn-primary:disabled { opacity:0.45; cursor:not-allowed; }
+.tm-btn-annex { background:var(--brand-red); color:#fff; }
+.tm-success-box { background:#f0fff4; border:1px solid #a7f3d0; border-radius:var(--radius-sm); padding:14px; text-align:center; }
+.tm-success-icon { font-size:24px; margin-bottom:6px; }
+.tm-success-title { font-size:13px; font-weight:800; color:#065f46; margin-bottom:4px; }
+.tm-success-sub { font-size:11px; color:#047857; }
+
 /* ── IMMUTABLE CHANGE LOG PANEL ─────────────────────────────────────────── */
 #changelog-panel { position:fixed; top:0; right:0; bottom:0; width:420px; max-width:95vw; background:#0f172a; color:#e2e8f0; z-index:5000; transform:translateX(100%); transition:transform 0.28s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; box-shadow:-4px 0 24px rgba(0,0,0,0.4); font-family:'DM Mono','DM Sans',monospace; }
 #changelog-panel.open { transform:translateX(0); }
@@ -3039,6 +3098,10 @@ body.project-annexe .ti-page-icon { background: var(--annex-color); }
       <button class="diag-icon-btn" onclick="openReminderModal()" title="Send Reminders">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3z"/><path d="M15 17v1a3 3 0 0 1-6 0v-1"/></svg>
       </button>
+      <!-- Transcript Upload -->
+      <button class="diag-icon-btn" onclick="openTranscriptModal()" title="Process Meeting Transcript → Sheet">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </button>
       <!-- Report -->
       <button class="diag-icon-btn" onclick="openReportModal()" title="Monthly Report">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -3618,6 +3681,22 @@ function doPost(e) {
     const body = `Hi,\n\nHere are your reminder tasks from the Mixta Africa Projects Dashboard:\n\n${lines.join('\n')}\n\nOpen the dashboard to update status: https://mixta-africa.github.io/Projects-Dashboard/\n\n— Automated reminder`;
     MailApp.sendEmail(toEmail, 'Your task reminders — Mixta Africa Dashboard', body);
     return ContentService.createTextOutput(JSON.stringify({success:true})).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // ── sendEmail: used by update alerts, reply notifications, and reminders ──
+  if (action === 'sendEmail') {
+    const to      = (data.to || []).join(',');
+    const cc      = data.cc && data.cc.length > 0 ? data.cc.join(',') : null;
+    const subject = data.subject || '(no subject)';
+    const html    = data.html    || '';
+    const replyTo = data.reply_to || null;
+    if (!to) return ContentService.createTextOutput(JSON.stringify({error:'Missing to'})).setMimeType(ContentService.MimeType.JSON);
+
+    const options = { htmlBody: html };
+    if (cc)      options.cc      = cc;
+    if (replyTo) options.replyTo = replyTo;
+    GmailApp.sendEmail(to, subject, '', options);
+    return ContentService.createTextOutput(JSON.stringify({success:true, sent: to + (cc ? ' (cc: ' + cc + ')' : '')})).setMimeType(ContentService.MimeType.JSON);
   }
 
   return ContentService.createTextOutput(JSON.stringify({error:'Unknown action'})).setMimeType(ContentService.MimeType.JSON);
@@ -4383,7 +4462,8 @@ const STATUS_KEY = 'lakowe_status_v5';
 // ── Gmail Apps Script Email Configuration ──
 // URL and token injected at build time by GitHub Actions.
 // Falls back to localStorage for local development.
-const GMAIL_REPLY_TO = 'o.olasunkanmi@mixtafrica.com';
+const GMAIL_REPLY_TO   = 'o.olasunkanmi@mixtafrica.com';
+const ADMIN_EMAILS_ALL = ['o.olasunkanmi@mixtafrica.com', 'c.ajie@mixtafrica.com']; // all admins — CC'd on all alert/reminder emails
 function getStatusOverrides() { try { return JSON.parse(localStorage.getItem(STATUS_KEY)) || {}; } catch { return {}; } }
 function saveStatus(taskId, status) { const o = getStatusOverrides(); o[taskId] = status; localStorage.setItem(STATUS_KEY, JSON.stringify(o)); }
 function taskId(t) { return (t.project + '_' + t.dept + '_' + t.session + '_' + t.action).replace(/\W+/g,'_').substring(0, 60); }
@@ -5263,10 +5343,18 @@ async function uploadOneFileToGAS(file, project, dept, fileIndex) {
 
 // Admin reply email — only fires when admin (o.olasunkanmi) posts a reply
 function maybeSendAdminReplyEmail(author, replyRef, text, dept, project) {
-  const ADMIN_EMAIL = 'o.olasunkanmi@mixtafrica.com';
+  // Fires when either admin posts a reply — identifies the replying admin by name
   const myEmail = currentUser ? currentUser.email : null;
-  if (!myEmail || myEmail.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) return;
+  if (!myEmail) return;
+  const isAdmin = ADMIN_EMAILS_ALL.some(a => a.toLowerCase() === myEmail.toLowerCase());
+  if (!isAdmin) return;
   if (!replyRef) return; // only send for replies, not fresh posts
+
+  // Identify which admin is replying (for the email subject/header)
+  const replyingAdminName = (function() {
+    const u = USER_ROLES[myEmail.toLowerCase()] || USER_ROLES[myEmail];
+    return (u && u.name) ? u.name : 'Admin';
+  })();
 
   // Find the original poster's email from localStorage
   const sessionKey = (viewingSessionDate && viewingSessionDate !== 'current')
@@ -5276,7 +5364,10 @@ function maybeSendAdminReplyEmail(author, replyRef, text, dept, project) {
   let updates = JSON.parse(localStorage.getItem(key) || '[]');
   const original = updates.find(u => u.timestamp === replyRef.timestamp);
   const toEmail  = original && original.authorEmail ? original.authorEmail : null;
-  if (!toEmail || toEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase()) return;
+  // Don't email the admin themselves, but CC the other admin
+  const ccEmails = ADMIN_EMAILS_ALL.filter(a => a.toLowerCase() !== myEmail.toLowerCase()
+    && (!toEmail || a.toLowerCase() !== toEmail.toLowerCase()));
+  if (!toEmail || ADMIN_EMAILS_ALL.some(a => a.toLowerCase() === toEmail.toLowerCase())) return;
 
   const SCRIPT_URL   = window.APPS_SCRIPT_URL   || localStorage.getItem('APPS_SCRIPT_URL');
   const SCRIPT_TOKEN = window.APPS_SCRIPT_TOKEN  || localStorage.getItem('APPS_SCRIPT_TOKEN');
@@ -5289,7 +5380,7 @@ function maybeSendAdminReplyEmail(author, replyRef, text, dept, project) {
 <div style="font-family:'DM Sans',Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb;">
   <div style="background:#1b5e20;padding:18px 24px;">
     <p style="margin:0;color:#fff;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Mixta Africa — Projects Tracker</p>
-    <h2 style="margin:4px 0 0;color:#fff;font-size:18px;font-weight:800;">O. Olasunkanmi replied to your update</h2>
+    <h2 style="margin:4px 0 0;color:#fff;font-size:18px;font-weight:800;">${replyingAdminName} replied to your update</h2>
   </div>
   <div style="padding:24px;">
     <p style="margin:0 0 8px;"><strong>Project:</strong> ${projectLabel} — ${dept}</p>
@@ -5307,8 +5398,10 @@ function maybeSendAdminReplyEmail(author, replyRef, text, dept, project) {
   fetch(SCRIPT_URL, {
     method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify({ action: 'sendEmail', token: SCRIPT_TOKEN,
-      to: [toEmail], subject: `[${projectLabel} — ${dept}] O. Olasunkanmi replied to your update`,
-      html, reply_to: ADMIN_EMAIL })
+      to: [toEmail],
+      cc: ccEmails.length > 0 ? ccEmails : undefined,  // CC the other admin on all reply emails
+      subject: `[${projectLabel} — ${dept}] ${replyingAdminName} replied to your update`,
+      html, reply_to: myEmail })
   }).catch(e => console.warn('[Reply email] failed:', e));
 }
 
@@ -5347,8 +5440,9 @@ function sendUpdateAlertEmail(author, dept, project, text, linkedTask) {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify({
+      action:   'sendEmail',
       token:    SCRIPT_TOKEN,
-      to:       ['o.olasunkanmi@mixtafrica.com'],
+      to:       ADMIN_EMAILS_ALL,          // both admins always receive update alerts
       subject:  `[${projectLabel}] New update from ${author} — ${dept}`,
       html:     html,
       reply_to: GMAIL_REPLY_TO
@@ -6527,6 +6621,417 @@ function _pmbRenderOutput(proj, raw, n, sessions) {
   }
   _pmbGenerated[proj] = true;
 }
+
+
+// ══════════════════════════════════════════════════════════════════════
+// TRANSCRIPT UPLOAD & SHEET APPEND SYSTEM
+// Flow: paste/upload transcript → AI parses → preview → GAS writes sheet
+// GAS action: 'appendMeetingSheet'
+// Sheet format: matches processSheet() column expectations exactly
+// Status colours: ontrack=green, delayed=red, onhold=amber, achieved=blue
+// ══════════════════════════════════════════════════════════════════════
+
+let _tmParsedRows = [];      // parsed rows ready for push
+let _tmSheetName  = '';      // detected/entered sheet tab name
+let _tmProject    = '';      // Crossings or Annexe
+
+function openTranscriptModal() {
+  if (!diagUnlocked) return;
+  _tmReset();
+  document.getElementById('transcript-modal-overlay').classList.add('open');
+  // Pre-fill project from currentProject if set
+  if (currentProject) document.getElementById('tm-project').value = currentProject;
+}
+
+function closeTranscriptModal() {
+  document.getElementById('transcript-modal-overlay').classList.remove('open');
+}
+
+function _tmReset() {
+  _tmParsedRows = [];
+  _tmSheetName  = '';
+  _tmProject    = '';
+  document.getElementById('tm-step-config').style.display   = '';
+  document.getElementById('tm-step-processing').style.display = 'none';
+  document.getElementById('tm-preview-section').style.display = 'none';
+  document.getElementById('tm-step-success').style.display  = 'none';
+  document.getElementById('tm-parse-btn').style.display     = '';
+  document.getElementById('tm-confirm-btn').style.display   = 'none';
+  document.getElementById('tm-transcript-text').value       = '';
+  document.getElementById('tm-date').value                  = '';
+  document.getElementById('tm-preview-tbody').innerHTML     = '';
+  var steps = ['tmstep-parse','tmstep-structure','tmstep-preview','tmstep-gas','tmstep-sync'];
+  steps.forEach(function(id) { var el = document.getElementById(id); if(el){el.className='tm-step';} });
+}
+
+function tmHandleDragOver(e)  { e.preventDefault(); document.getElementById('tm-file-drop').classList.add('dragover'); }
+function tmHandleDragLeave(e) { document.getElementById('tm-file-drop').classList.remove('dragover'); }
+function tmHandleDrop(e) {
+  e.preventDefault();
+  document.getElementById('tm-file-drop').classList.remove('dragover');
+  var files = e.dataTransfer.files;
+  if (files.length > 0) _tmReadFile(files[0]);
+}
+function tmHandleFile(input) { if (input.files.length > 0) _tmReadFile(input.files[0]); }
+function _tmReadFile(file) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    // For txt files, read as text; for docx, mammoth.js would be needed
+    // Since mammoth may not be loaded, we just use text extraction for txt
+    var text = e.target.result;
+    document.getElementById('tm-transcript-text').value = text;
+    document.getElementById('tm-file-drop').innerHTML = '<div style="color:var(--cx-color);font-weight:700;">&#10003; ' + file.name + ' loaded</div>';
+  };
+  reader.readAsText(file);
+}
+
+function _tmSetStep(stepId, state) {
+  var el = document.getElementById(stepId);
+  if (!el) return;
+  el.className = 'tm-step ' + state;
+}
+
+async function tmStartParse() {
+  var transcript = document.getElementById('tm-transcript-text').value.trim();
+  if (transcript.length < 50) { alert('Please paste the meeting transcript first (minimum 50 characters).'); return; }
+
+  _tmProject = document.getElementById('tm-project').value;
+  var manualDate = document.getElementById('tm-date').value.trim();
+
+  // ── SYNC GUARD: ensure session history is loaded before parsing ────────────
+  // Prior context is built from taskDatabase. If it's empty, the AI has no history
+  // to compare against — it would classify everything as "ontrack" with no awareness
+  // of recurring delays. Force a sync first.
+  var hasPriorData = taskDatabase.some(function(t) { return t.project === _tmProject; });
+  if (!hasPriorData) {
+    var syncConfirm = confirm('The dashboard has not synced yet for Lakowe ' + _tmProject + '.\n\nWithout prior meeting data, the AI cannot detect recurring delays or stalled items.\n\nSync now before parsing? (Recommended - takes ~5 seconds)');
+    if (syncConfirm) {
+      document.getElementById('tm-parse-btn').disabled = true;
+      document.getElementById('tm-parse-btn').textContent = 'Syncing…';
+      try {
+        await syncWithGoogleSheet();
+      } catch(e) {
+        console.warn('[Transcript] Pre-parse sync failed:', e);
+      }
+      document.getElementById('tm-parse-btn').disabled = false;
+      document.getElementById('tm-parse-btn').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:5px;"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>Parse with AI';
+      // Re-check after sync
+      hasPriorData = taskDatabase.some(function(t) { return t.project === _tmProject; });
+      if (!hasPriorData) {
+        alert('Sync completed but no prior data found for Lakowe ' + _tmProject + '. The AI will parse the transcript without historical context — results may be less accurate for recurring items.');
+      }
+    }
+    // If they declined, proceed anyway — just warn in prompt
+  }
+
+  // Show processing UI
+  document.getElementById('tm-step-config').style.display    = 'none';
+  document.getElementById('tm-step-processing').style.display = 'block';
+  document.getElementById('tm-parse-btn').style.display      = 'none';
+  document.getElementById('tm-footer').querySelector('.tm-btn-secondary').textContent = 'Cancel';
+
+  _tmSetStep('tmstep-parse', 'active');
+
+  // ── BUILD PRIOR SESSION CONTEXT from taskDatabase ────────────────────────
+  // Pull last 3 sessions for this project. Organised by dept so the AI can see
+  // exactly what was pending, delayed, or resolved in prior meetings.
+  var priorContext = '';
+  var _NL = '\n';
+  var priorSessions = (availableSessions[_tmProject] || []).slice(0, 3);
+  if (priorSessions.length > 0) {
+    priorContext = _NL + _NL + 'PRIOR MEETING HISTORY (last ' + priorSessions.length + ' sessions - use to detect recurring/stalled items):' + _NL;
+    priorSessions.forEach(function(sess, si) {
+      priorContext += _NL + '[' + sess + (si === 0 ? ' - most recent before this transcript' : '') + ']' + _NL;
+      var sessTasksByDept = {};
+      taskDatabase.forEach(function(t) {
+        if (t.project !== _tmProject || t.session !== sess) return;
+        if (!sessTasksByDept[t.dept]) sessTasksByDept[t.dept] = [];
+        sessTasksByDept[t.dept].push(t);
+      });
+      Object.keys(sessTasksByDept).sort().forEach(function(dept) {
+        priorContext += '  ' + dept.toUpperCase() + ':' + _NL;
+        sessTasksByDept[dept].forEach(function(t) {
+          var st = t.status === 'delayed' ? 'DELAYED' : t.status === 'onhold' ? 'ON HOLD' : t.status === 'achieved' ? 'DONE' : 'on-track';
+          var action = t.action.length > 100 ? t.action.substring(0, 97) + '...' : t.action;
+          priorContext += '    [' + st + '] ' + action + _NL;
+        });
+      });
+    });
+    priorContext += _NL + 'RULE: If an item was DELAYED or ON HOLD across multiple prior sessions and the transcript does not explicitly resolve it, keep that status. Items stalled 3+ sessions are critical.' + _NL;
+  }
+
+    // Build the AI prompt — full skill logic encoded in prompt
+  var projectFull = _tmProject === 'Crossings' ? 'Lakowe Crossings' : 'Lakowe Annexe';
+  var deptList = _tmProject === 'Crossings'
+    ? 'Design, Costing, AMC, IPD/PMU, Landscape, Operations, Fincon, Sales, MCC, Legal, General, Telemarketing, Financial Planning, Collections, Risk'
+    : 'Design, Costing, IPD, Operations, Fincon, Telemarketing, MCC, Sales, Legal, General, Collections, Fin Planning, Risk';
+
+  var systemPrompt = 'You are a senior project management analyst for Mixta Africa, a real estate developer in Lagos Nigeria. You extract structured meeting action points from raw transcripts. You output ONLY valid JSON with no markdown, no preamble, no postamble.';
+
+  var userPrompt = `You are processing a meeting transcript for ${projectFull}.
+
+KNOWN DEPARTMENTS: ${deptList}
+Use DEPT_NORMALIZE rules: IPD/PMO/PMU/PDU → "IPD", Finance/FinCon → "Fincon", Financial Planning/Fin Planning → "FinPlanning"
+
+EXTRACT all action points, next steps, and commitments from the transcript.
+
+RULES:
+1. For each action point, identify: dept, action (the task/next step), result (context/what is to be achieved), due date (if mentioned, format as "MMM DD" e.g. "Jul 24"), status
+2. STATUS RULES (critical):
+   - "ontrack"  → item is progressing normally, no issues flagged
+   - "delayed"  → explicitly behind schedule, missed deadline, stalled, "still not done", "overdue"
+   - "onhold"   → explicitly paused, blocked, waiting for something external, "on hold", "pending approval"
+   - "achieved" → explicitly completed, confirmed done, "concluded", "delivered", "achieved"
+3. Also extract TARGET items — the session targets/KPIs mentioned (e.g. end of month targets, project milestones)
+4. Also extract OPERATIONS metrics if mentioned: inflow, account balance, value of sales, units sold, offer letters
+5. Detect meeting date from transcript header/content (look for date in format "Monday July 17" or "17 July 2026")
+
+Return ONLY this JSON structure:
+{
+  "meetingDate": "Jul 17",
+  "project": "${_tmProject}",
+  "actionPoints": [
+    {
+      "dept": "Design",
+      "action": "Complete gatehouse design by end of week",
+      "result": "Detailed architectural drawings for gatehouse submitted to ARUP",
+      "due": "Jul 24",
+      "status": "ontrack"
+    }
+  ],
+  "targets": [
+    "Complete drainage by end of July",
+    "Achieve ₦800M cumulative sales milestone"
+  ],
+  "operationsMetrics": {
+    "inflow": "₦1.72B",
+    "balance": "₦62M",
+    "salesValue": "₦2.07B",
+    "units": "6",
+    "offers": "2"
+  }
+}
+
+TRANSCRIPT:
+${transcript.substring(0, 14000)}
+
+PRIOR HISTORY:
+${priorContext || "(No prior session data — classify based on transcript only)"}` ;
+
+  try {
+    var GROQ_KEY = window.GROQ_API_KEY || localStorage.getItem('GROQ_API_KEY');
+    var CEREBRAS_KEY = window.CEREBRAS_API_KEY || localStorage.getItem('CEREBRAS_API_KEY');
+    var result = null;
+
+    // Try Groq first
+    if (GROQ_KEY) {
+      var res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          max_tokens: 4000,
+          temperature: 0.1,
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ]
+        })
+      });
+      if (res.ok) {
+        var d = await res.json();
+        result = JSON.parse(d.choices[0].message.content);
+      }
+    }
+
+    // Cerebras fallback
+    if (!result && CEREBRAS_KEY) {
+      var res2 = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CEREBRAS_KEY },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b',
+          max_tokens: 4000,
+          temperature: 0.1,
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ]
+        })
+      });
+      if (res2.ok) {
+        var d2 = await res2.json();
+        result = JSON.parse(d2.choices[0].message.content);
+      }
+    }
+
+    if (!result) throw new Error('No AI provider available. Configure GROQ_API_KEY in admin diagnostics.');
+
+    _tmSetStep('tmstep-parse', 'done');
+    _tmSetStep('tmstep-structure', 'active');
+
+    // Determine sheet tab name
+    _tmSheetName = manualDate || result.meetingDate || new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}).replace(' ','').replace(/(\d+)([A-Z][a-z]+)/, '$2 $1');
+    _tmParsedRows = result.actionPoints || [];
+
+    // Append targets as a special row if any
+    if (result.targets && result.targets.length > 0) {
+      result.targets.forEach(function(t) {
+        _tmParsedRows.push({ dept: 'Targets', action: t, result: '', due: '', status: 'ontrack', _isTarget: true });
+      });
+    }
+
+    // Append operations metrics row if present
+    if (result.operationsMetrics) {
+      var m = result.operationsMetrics;
+      var metricsLine = [];
+      if (m.units)      metricsLine.push('Sales: ' + m.units + ' units');
+      if (m.salesValue) metricsLine.push('Value of Sales: ' + m.salesValue);
+      if (m.inflow)     metricsLine.push('Inflow: ' + m.inflow);
+      if (m.balance)    metricsLine.push('Account Balance: ' + m.balance);
+      if (m.offers)     metricsLine.push('Active Offer Letters: ' + m.offers);
+      if (metricsLine.length > 0) {
+        _tmParsedRows.push({
+          dept: 'Operations',
+          action: 'Provide weekly update on all metrics - ' + metricsLine.join(', '),
+          result: '',
+          due: '',
+          status: 'ontrack',
+          _isMetrics: true
+        });
+      }
+    }
+
+    _tmSetStep('tmstep-structure', 'done');
+    _tmSetStep('tmstep-preview', 'active');
+
+    // Build preview table
+    _tmBuildPreview();
+
+    _tmSetStep('tmstep-preview', 'done');
+
+    // Show preview
+    document.getElementById('tm-step-processing').style.display = 'none';
+    document.getElementById('tm-preview-section').style.display = '';
+    document.getElementById('tm-preview-count').textContent = _tmParsedRows.filter(function(r){return !r._isTarget;}).length;
+    document.getElementById('tm-preview-sheet-label').textContent = 'New tab: "' + _tmSheetName + '"';
+    document.getElementById('tm-preview-sheet-label').style.background = _tmProject === 'Crossings' ? 'var(--cx-bg)' : '#fff5f5';
+    document.getElementById('tm-preview-sheet-label').style.color = _tmProject === 'Crossings' ? 'var(--cx-color)' : 'var(--brand-red)';
+    document.getElementById('tm-confirm-btn').style.display = '';
+    document.getElementById('tm-footer').querySelector('.tm-btn-secondary').textContent = 'Back';
+
+  } catch(err) {
+    _tmSetStep('tmstep-parse', 'error');
+    document.getElementById('tm-step-processing').style.display = 'none';
+    document.getElementById('tm-step-config').style.display = '';
+    document.getElementById('tm-parse-btn').style.display = '';
+    alert('Parse failed: ' + err.message);
+  }
+}
+
+function _tmBuildPreview() {
+  var tbody = document.getElementById('tm-preview-tbody');
+  var statusColors = { ontrack:'#2E7D32', delayed:'#D32F2F', onhold:'#F57F17', achieved:'#1565C0' };
+  var statusLabels = { ontrack:'On Track', delayed:'Delayed', onhold:'On Hold', achieved:'Achieved' };
+  var rowClass = { ontrack:'', delayed:'tm-delayed', onhold:'tm-onhold', achieved:'tm-achieved' };
+
+  tbody.innerHTML = _tmParsedRows.map(function(row) {
+    var st = row.status || 'ontrack';
+    var dotColor = statusColors[st] || '#888';
+    var label = statusLabels[st] || st;
+    var rClass = rowClass[st] || '';
+    return '<tr class="' + rClass + '">' +
+      '<td style="font-weight:700;font-size:11px;white-space:nowrap;">' + (row._isTarget ? '<em style="color:var(--text-muted);">Targets</em>' : row.dept) + '</td>' +
+      '<td>' + row.action + '</td>' +
+      '<td style="color:var(--text-muted);">' + (row.result || '') + '</td>' +
+      '<td style="white-space:nowrap;font-weight:600;">' + (row.due || '—') + '</td>' +
+      '<td style="white-space:nowrap;"><span class="tm-status-dot ' + st + '" style="background:' + dotColor + '"></span>' + label + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+async function tmConfirmPush() {
+  var SCRIPT_URL   = window.APPS_SCRIPT_URL   || localStorage.getItem('APPS_SCRIPT_URL');
+  var SCRIPT_TOKEN = window.APPS_SCRIPT_TOKEN  || localStorage.getItem('APPS_SCRIPT_TOKEN');
+
+  if (!SCRIPT_URL || SCRIPT_URL.startsWith('__') || !SCRIPT_TOKEN) {
+    alert('GAS Web App URL not configured. Go to Admin → Diagnostics → GAS Config and paste your Web App URL + token.');
+    return;
+  }
+  if (_tmParsedRows.length === 0) { alert('No rows to push.'); return; }
+
+  document.getElementById('tm-preview-section').style.display = 'none';
+  document.getElementById('tm-step-processing').style.display = 'block';
+  document.getElementById('tm-confirm-btn').style.display = 'none';
+
+  // Reset steps
+  ['tmstep-parse','tmstep-structure','tmstep-preview'].forEach(function(id){ _tmSetStep(id,'done'); });
+  _tmSetStep('tmstep-gas','active');
+
+  // Build the payload that GAS will use to write the sheet
+  // Exact column structure matching processSheet() header expectations:
+  // Col A: empty, B: S/N, C: Department, D: Next Steps, E: Due Date, F: Result/Context, G: Explanation Notes, H: Project, I: Status
+  var payload = {
+    action:    'appendMeetingSheet',
+    token:     SCRIPT_TOKEN,
+    project:   _tmProject,
+    sheetName: _tmSheetName,
+    rows:      _tmParsedRows.map(function(r, i) {
+      return {
+        sn:          r._isTarget ? 'T' : String(i + 1),
+        dept:        r.dept || '',
+        action:      r.action || '',
+        due:         r.due || '',
+        result:      r.result || '',
+        explanation: r.explanation || '',
+        project:     _tmProject,
+        status:      r.status || 'ontrack',
+        isTarget:    !!r._isTarget
+      };
+    })
+  };
+
+  try {
+    var res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout ? AbortSignal.timeout(60000) : undefined
+    });
+
+    if (!res.ok) throw new Error('GAS returned HTTP ' + res.status);
+    var data = await res.json();
+    if (!data.success) throw new Error(data.error || 'GAS write failed');
+
+    _tmSetStep('tmstep-gas','done');
+    _tmSetStep('tmstep-sync','active');
+
+    // Auto-sync the dashboard to pull in the new sheet
+    await syncWithGoogleSheet();
+
+    _tmSetStep('tmstep-sync','done');
+
+    document.getElementById('tm-step-processing').style.display = 'none';
+    document.getElementById('tm-step-success').style.display    = '';
+    document.getElementById('tm-success-msg').textContent =
+      '"' + _tmSheetName + '" tab added to Lakowe ' + _tmProject + ' sheet. ' + _tmParsedRows.length + ' rows written. Dashboard synced.';
+
+    document.getElementById('tm-footer').innerHTML =
+      '<button class="tm-btn tm-btn-secondary" onclick="closeTranscriptModal()">Close</button>' +
+      '<button class="tm-btn tm-btn-primary" onclick="_tmReset()">Process Another</button>';
+
+  } catch(err) {
+    _tmSetStep('tmstep-gas','error');
+    document.getElementById('tm-step-processing').style.display = 'none';
+    document.getElementById('tm-preview-section').style.display = '';
+    document.getElementById('tm-confirm-btn').style.display     = '';
+    alert('Push to Google Sheets failed: ' + err.message + '\n\nCheck your GAS Web App URL and token in Admin Diagnostics.');
+  }
+}
+
+// ══ END TRANSCRIPT UPLOAD SYSTEM ══
 
 // ══ END PRE-MEETING BRIEFING ══
 
@@ -8951,6 +9456,104 @@ function buildReminderEmailBody(proj, dept, tasks) {
     </td></tr>
   </table>
 
+
+<!-- ══ TRANSCRIPT UPLOAD MODAL ══════════════════════════════════════════════ -->
+<div id="transcript-modal-overlay">
+  <div id="transcript-modal">
+    <div class="tm-header">
+      <div class="tm-header-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <div>
+        <div class="tm-header-title">Process Meeting Transcript</div>
+        <div class="tm-header-sub">AI extracts action points → appends new sheet to Google Sheets</div>
+      </div>
+      <button class="tm-close" onclick="closeTranscriptModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="tm-body" id="tm-body">
+
+      <!-- Step 1: Config -->
+      <div id="tm-step-config">
+        <div class="tm-section">
+          <div class="tm-label">Meeting Details</div>
+          <div class="tm-row">
+            <select class="tm-select" id="tm-project">
+              <option value="Crossings">Lakowe Crossings</option>
+              <option value="Annexe">Lakowe Annexe</option>
+            </select>
+            <input type="text" class="tm-date-input" id="tm-date" placeholder="e.g. Jul 17" style="max-width:120px;" />
+            <span style="font-size:11px;color:var(--text-muted);font-weight:600;">Sheet tab name (auto-detected from transcript if blank)</span>
+          </div>
+        </div>
+
+        <div class="tm-section">
+          <div class="tm-label">Transcript</div>
+          <div class="tm-file-drop" id="tm-file-drop" onclick="document.getElementById('tm-file-input').click()" ondrop="tmHandleDrop(event)" ondragover="tmHandleDragOver(event)" ondragleave="tmHandleDragLeave(event)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px;opacity:0.5;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <div>Drop a .txt or .docx transcript here</div>
+            <div style="font-size:10px;margin-top:3px;opacity:0.7;">Supports plain text and Word documents</div>
+          </div>
+          <input type="file" id="tm-file-input" accept=".txt,.docx,.doc" style="display:none;" onchange="tmHandleFile(this)">
+          <div class="tm-or">— or paste transcript below —</div>
+          <textarea class="tm-textarea" id="tm-transcript-text" placeholder="Paste the full meeting transcript here. The AI will identify departments, action points, statuses, and timelines automatically..."></textarea>
+        </div>
+      </div>
+
+      <!-- Step 2: AI Processing progress -->
+      <div id="tm-step-processing" class="tm-progress" style="display:none;">
+        <div style="font-weight:700;font-size:12px;margin-bottom:8px;">Processing transcript…</div>
+        <div class="tm-progress-steps">
+          <div class="tm-step active" id="tmstep-parse"><div class="tm-step-dot"></div> Parsing transcript with AI</div>
+          <div class="tm-step" id="tmstep-structure"><div class="tm-step-dot"></div> Structuring into action-point rows</div>
+          <div class="tm-step" id="tmstep-preview"><div class="tm-step-dot"></div> Building preview table</div>
+          <div class="tm-step" id="tmstep-gas"><div class="tm-step-dot"></div> Writing new sheet tab to Google Sheets</div>
+          <div class="tm-step" id="tmstep-sync"><div class="tm-step-dot"></div> Syncing dashboard</div>
+        </div>
+      </div>
+
+      <!-- Step 3: Preview -->
+      <div id="tm-preview-section" style="display:none;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:700;color:var(--text-primary);">Preview — <span id="tm-preview-count">0</span> action points extracted</div>
+          <span id="tm-preview-sheet-label" style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px;background:var(--brand-grey-light);color:var(--text-secondary);"></span>
+        </div>
+        <div style="overflow-x:auto;max-height:320px;overflow-y:auto;">
+          <table class="tm-preview-table">
+            <thead>
+              <tr><th>Dept</th><th>Next Steps / Action</th><th>Result/Context</th><th>Due</th><th>Status</th></tr>
+            </thead>
+            <tbody id="tm-preview-tbody"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:10px;padding:10px;background:var(--brand-grey-light);border-radius:var(--radius-sm);font-size:11px;color:var(--text-muted);font-weight:600;">
+          Review the extracted rows above. Click <strong>Confirm &amp; Push to Sheets</strong> to append this as a new tab to your Google Sheet and sync the dashboard.
+        </div>
+      </div>
+
+      <!-- Step 4: Success -->
+      <div id="tm-step-success" style="display:none;" class="tm-success-box">
+        <div class="tm-success-icon">✅</div>
+        <div class="tm-success-title">Sheet tab created successfully</div>
+        <div class="tm-success-sub" id="tm-success-msg">New meeting session appended to Google Sheets. Dashboard syncing now…</div>
+      </div>
+
+    </div><!-- /tm-body -->
+
+    <div class="tm-footer" id="tm-footer">
+      <button class="tm-btn tm-btn-secondary" onclick="closeTranscriptModal()">Cancel</button>
+      <button class="tm-btn tm-btn-primary" id="tm-parse-btn" onclick="tmStartParse()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:5px;"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Parse with AI
+      </button>
+      <button class="tm-btn tm-btn-primary" id="tm-confirm-btn" style="display:none;" onclick="tmConfirmPush()">Confirm &amp; Push to Sheets</button>
+    </div>
+  </div>
+</div>
+<!-- /transcript-modal -->
+
 <!-- ══ IMMUTABLE CHANGE LOG PANEL ══════════════════════════════════════════
      Every change to this dashboard is permanently recorded here.
      This block must never be deleted. Add entries only — never remove.
@@ -9048,6 +9651,62 @@ function buildReminderEmailBody(proj, dept, tasks) {
           <code>const SEED_TASKS</code> and all hardcoded chart metric arrays (1,200+ lines of historical data).<br>
           <em>Never truncate, summarise, or remove. These are the permanent historical record.</em>
         </div>
+      </div>
+    </div>
+
+    <!-- v65 fix+feature -->
+    <div class="cl-entry fix">
+      <div class="cl-version">v65 · FIX + FEATURE</div>
+      <div class="cl-date">July 2025</div>
+      <div class="cl-title">Co-admin email CC, transcript sync guard, prior meeting context injection</div>
+      <div class="cl-detail">
+        <span class="cl-tag fixed">Email CC fixes (3 paths)</span>
+        <ul>
+          <li><strong>Update alerts</strong> (<code>sendUpdateAlertEmail</code>): previously hardcoded to <code>o.olasunkanmi@mixtafrica.com</code> only. Now sends to <code>ADMIN_EMAILS_ALL</code> = both admins. Any update posted anywhere on the dashboard alerts both immediately.</li>
+          <li><strong>Reply notifications</strong> (<code>maybeSendAdminReplyEmail</code>): previously only fired when o.olasunkanmi replied. Now fires when EITHER admin replies, identifies the replying admin by name from USER_ROLES, and CCs the other admin.</li>
+          <li><strong>Reminders</strong> (reminder send loop): now includes <code>cc: ADMIN_EMAILS_ALL</code> (filtered to exclude recipients already in <code>to</code>) on every reminder email sent. Both admins see every outbound reminder.</li>
+          <li><strong>GAS handler</strong>: embedded <code>sendEmail</code> action updated to pass <code>cc</code> field through <code>GmailApp.sendEmail()</code> options. Update your live GAS deployment with the new handler.</li>
+          <li><strong>Constant</strong>: <code>ADMIN_EMAILS_ALL = ['o.olasunkanmi@mixtafrica.com', 'c.ajie@mixtafrica.com']</code> declared once near <code>GMAIL_REPLY_TO</code>. Add new admins here in future.</li>
+        </ul>
+        <span class="cl-tag added">Transcript sync guard</span>
+        <ul>
+          <li>Before parsing, <code>tmStartParse()</code> checks if <code>taskDatabase</code> has any records for the selected project. If empty, prompts user to sync first (recommended) or proceed anyway with a warning.</li>
+          <li>If user confirms sync, calls <code>syncWithGoogleSheet()</code> and awaits completion before continuing. Parse button shows "Syncing…" state during this.</li>
+          <li>Protects against AI classifying all items as "ontrack" due to missing historical context.</li>
+        </ul>
+        <span class="cl-tag added">Prior meeting context injection</span>
+        <ul>
+          <li><code>_tmBuildPriorContext()</code> logic inside <code>tmStartParse()</code>: reads last 3 sessions from <code>taskDatabase</code> for the selected project, organises by dept, and formats as structured text prepended to the AI prompt.</li>
+          <li>AI receives full prior status history: DELAYED / ON HOLD / DONE / on-track per task per session. Explicit instruction: if an item was delayed/onhold across multiple prior sessions and the transcript does not explicitly resolve it, carry forward that status.</li>
+          <li>Items stalled 3+ sessions flagged as "especially critical" in AI instructions.</li>
+          <li>Transcript token cap reduced from 18k to 14k chars to accommodate prior context within model limits.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- v64 feature -->
+    <div class="cl-entry feature">
+      <div class="cl-version">v64 · FEATURE</div>
+      <div class="cl-date">July 2025</div>
+      <div class="cl-title">Transcript → Sheet: AI meeting transcript processor with GAS write-back</div>
+      <div class="cl-detail">
+        <span class="cl-tag added">New Feature</span>
+        <ul>
+          <li><strong>Upload icon</strong> added to admin panel icon strip (between Reminders and Report icons). Admin-only, gated by <code>diagUnlocked</code>.</li>
+          <li><strong>Modal UI</strong> (<code>#transcript-modal-overlay</code>): paste or drop .txt transcript, select project (Crossings/Annexe), optionally set meeting date. Auto-detects date from transcript header.</li>
+          <li><strong>AI parse</strong> (<code>tmStartParse()</code>): sends transcript to Groq → Cerebras with full skill logic prompt. Extracts action points, targets, operations metrics, statuses. Returns JSON.</li>
+          <li><strong>Status mapping</strong>: ontrack=green, delayed=red, onhold=amber, achieved=blue — applied as both JSON status field and Excel fill colour via GAS.</li>
+          <li><strong>Preview table</strong>: shows all extracted rows (dept, action, result, due, status) before push. Admin reviews and confirms.</li>
+          <li><strong>GAS push</strong> (<code>tmConfirmPush()</code> → GAS action <code>appendMeetingSheet</code>): POSTs structured JSON to GAS Web App. GAS writes new sheet tab with correct column structure (B=S/N, C=Dept, D=Next Steps, E=Due, F=Result, G=Explanation, H=Project, I=Status), colour-codes all rows, inserts dept header rows, auto-resizes columns, freezes header row.</li>
+          <li><strong>Auto-sync</strong>: calls <code>syncWithGoogleSheet()</code> immediately after GAS confirms success. New session appears in history bar automatically.</li>
+          <li><strong>GAS file</strong>: <code>GAS_appendMeetingSheet.gs</code> — add <code>handleAppendMeetingSheet()</code> to existing Apps Script project and add case to <code>doPost()</code> switch. Fill in spreadsheet IDs. Redeploy.</li>
+        </ul>
+        <span class="cl-tag info">Column structure</span>
+        <ul>
+          <li>Exact match to <code>processSheet()</code> header detection: S/N, Department, Next Steps, Next Steps Timeline, Result/Context, Explanation Notes, Project, Status.</li>
+          <li>Targets written as dept="Targets" rows (processSheet strict target detection reads these correctly).</li>
+          <li>Operations metrics written as single action-point row in Operations dept (metric extraction pattern matches).</li>
+        </ul>
       </div>
     </div>
 
@@ -9344,8 +10003,13 @@ function sendReminderEmail() {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Ensures emojis don't get scrambled
       body: JSON.stringify({
+        action:   'sendEmail',
         token:    SCRIPT_TOKEN,
         to:       emailGroup.to,
+        // CC both admins on every reminder so neither misses what was sent out
+        cc:       ADMIN_EMAILS_ALL.filter(function(a) {
+          return !emailGroup.to.some(function(r) { return r.toLowerCase() === a.toLowerCase(); });
+        }),
         subject:  emailGroup.subject,
         html:     emailGroup.html,
         reply_to: GMAIL_REPLY_TO
